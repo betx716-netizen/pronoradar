@@ -19,7 +19,7 @@ export type SourceType = z.infer<typeof SourceTypeSchema>;
 
 export const SourceSchema = z.object({
   name: z.string().describe("Nom du site ou de l'auteur (ex : Forebet, L'Équipe, Betclic)"),
-  url: z.string().describe("URL exacte de la page où le pronostic a été trouvé"),
+  url: z.string().describe("URL de la page où le pronostic a été trouvé, ou chaîne vide si inconnue"),
   type: SourceTypeSchema,
   pick: z
     .enum(["home", "draw", "away", "none"])
@@ -93,7 +93,25 @@ export const FixturesSchema = z.object({
     }),
   ),
 });
-export type Fixture = z.infer<typeof FixturesSchema>["fixtures"][number];
+
+// Résumé des cotes d'un match (moyenne des bookmakers, marge incluse).
+export const OddsSummarySchema = z.object({
+  bookmakers: z.number(),
+  home: z.number(),
+  draw: z.number().nullable(),
+  away: z.number(),
+  exchange: z
+    .object({ name: z.string(), home: z.number(), draw: z.number().nullable(), away: z.number() })
+    .nullable(),
+});
+export type OddsSummary = z.infer<typeof OddsSummarySchema>;
+
+// Un match à analyser, avec les identifiants des API qui le connaissent.
+export const FixtureSchema = FixturesSchema.shape.fixtures.element.extend({
+  odds: OddsSummarySchema.nullable().optional(),
+  apiFootballId: z.number().nullable().optional(),
+});
+export type Fixture = z.infer<typeof FixtureSchema>;
 
 export const AnalysisModeSchema = z.enum(["rapide", "complete"]);
 export type AnalysisMode = z.infer<typeof AnalysisModeSchema>;
@@ -105,6 +123,8 @@ export const AnalyzeRequestSchema = z.object({
   away: z.string().trim().min(2).max(80),
   competition: z.string().trim().max(80).optional().default(""),
   date: z.string().trim().max(40).optional().default(""),
+  odds: OddsSummarySchema.nullable().optional(),
+  apiFootballId: z.number().nullable().optional(),
 });
 export type AnalyzeRequest = z.infer<typeof AnalyzeRequestSchema>;
 
@@ -113,12 +133,12 @@ export const FixturesRequestSchema = z.object({
   competition: z.string().trim().min(2).max(80),
 });
 
+// Consommation des quotas gratuits : affichée pour surveiller les limites.
 export type Usage = {
-  inputTokens: number;
-  outputTokens: number;
-  cacheReadTokens: number;
+  geminiRequests: number;
   webSearches: number;
-  estimatedCostUsd: number;
+  oddsRequestsRemaining: number | null;
+  apiFootballRequestsRemaining: number | null;
 };
 
 export type ConsultedPage = { title: string; url: string };
@@ -137,4 +157,4 @@ export type AnalysisResult = {
 export type StreamEvent =
   | { type: "progress"; message: string }
   | { type: "result"; data: unknown }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string; code?: "quota" };

@@ -105,7 +105,7 @@ export async function demoAnalysis(req: AnalyzeRequest, onProgress: (m: string) 
     analysis,
     consensus: computeConsensus(analysis),
     consultedPages: [{ title: "Page de démonstration", url: "https://example.com/demo" }],
-    usage: { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, webSearches: 0, estimatedCostUsd: 0 },
+    usage: { geminiRequests: 0, webSearches: 0, oddsRequestsRemaining: null, apiFootballRequestsRemaining: null },
     createdAt: new Date().toISOString(),
     mode: req.mode,
     demo: true,

@@ -78,7 +78,7 @@ function SourceCard({ s, name, sport }: { s: Source; name: (o: Outcome) => strin
   const pick = sourcePick(s, sport);
   const dist = sourceDistribution(s, sport);
   const hasOdds = s.odds_home != null && s.odds_away != null;
-  let host = s.url;
+  let host = "";
   try {
     host = new URL(s.url).hostname.replace(/^www\./, "");
   } catch {}
@@ -86,14 +86,20 @@ function SourceCard({ s, name, sport }: { s: Source; name: (o: Outcome) => strin
   return (
     <li className="rounded-lg border border-border p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <a href={s.url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">
-          {s.name}
-        </a>
+        {host ? (
+          <a href={s.url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">
+            {s.name}
+          </a>
+        ) : (
+          <span className="font-medium">{s.name}</span>
+        )}
         <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">
           {TYPE_LABELS[s.type]} · poids {SOURCE_WEIGHTS[s.type]}
         </span>
       </div>
-      <p className="mt-0.5 truncate text-xs text-muted">{host}{s.published ? ` · ${s.published}` : ""}</p>
+      {(host || s.published) && (
+        <p className="mt-0.5 truncate text-xs text-muted">{[host, s.published].filter(Boolean).join(" · ")}</p>
+      )}
       <p className="mt-2 text-sm">
         Pronostic :{" "}
         {pick ? (
@@ -302,8 +308,8 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
 
       <p className="text-xs text-muted">
         Analyse du {new Date(result.createdAt).toLocaleString("fr-FR")}
-        {!result.demo &&
-          ` · ${usage.webSearches} recherches web · coût estimé ${usage.estimatedCostUsd.toFixed(2)} $`}
+        {!result.demo && ` · ${usage.geminiRequests} requêtes Gemini · ${usage.webSearches} recherches Google`}
+        {usage.apiFootballRequestsRemaining !== null && ` · ${usage.apiFootballRequestsRemaining} requêtes API-Football restantes aujourd'hui`}
         . Ces informations sont une aide à la réflexion, pas une garantie : aucun pronostic n'est sûr. Pariez de façon responsable.
       </p>
     </div>

@@ -97,7 +97,7 @@ export function JobBoard({
   const [sort, setSort] = useState<Sort>("order");
   const done = jobs.filter((j) => j.status === "done");
   const remaining = jobs.filter((j) => j.status === "pending" || j.status === "error" || j.status === "cancelled").length;
-  const cost = done.reduce((s, j) => s + (j.result?.usage.estimatedCostUsd ?? 0), 0);
+  const geminiRequests = done.reduce((s, j) => s + (j.result?.usage.geminiRequests ?? 0), 0);
 
   const sorted =
     sort === "order"
@@ -110,7 +110,7 @@ export function JobBoard({
         <div>
           <h2 className="text-lg font-semibold">Récapitulatif</h2>
           <p className="text-sm text-muted">
-            {done.length} / {jobs.length} matchs analysés · coût réel {cost.toFixed(2)} $
+            {done.length} / {jobs.length} matchs analysés · {geminiRequests} requêtes Gemini utilisées
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -143,7 +143,7 @@ export function JobBoard({
       </div>
       {running && (
         <p className="mt-2 text-xs text-muted">
-          Deux matchs sont analysés à la fois. « Arrêter » laisse finir les analyses en cours (déjà payées) et n&apos;en lance pas d&apos;autres.
+          Deux matchs sont analysés à la fois. « Arrêter » laisse finir les analyses en cours et n&apos;en lance pas d&apos;autres.
         </p>
       )}
       <ul className="mt-4 grid gap-2">

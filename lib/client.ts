@@ -3,6 +3,7 @@
 import type { StreamEvent } from "./schemas";
 
 export class UnauthorizedError extends Error {}
+export class QuotaError extends Error {}
 
 const PASSWORD_KEY = "pronoradar:password";
 const HISTORY_KEY = "pronoradar:history";
@@ -61,7 +62,7 @@ export async function callStreaming<T>(
     if (!line.trim()) return;
     const event = JSON.parse(line) as StreamEvent;
     if (event.type === "progress") onProgress(event.message);
-    else if (event.type === "error") throw new Error(event.message);
+    else if (event.type === "error") throw event.code === "quota" ? new QuotaError(event.message) : new Error(event.message);
     else result = event.data as T;
   };
 

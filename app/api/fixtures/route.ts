@@ -16,6 +16,6 @@ export async function POST(req: Request) {
   }
   const { sport, competition } = parsed.data;
   return streamTask(async (progress) =>
-    isDemo() ? { fixtures: await demoFixtures(sport, competition, progress) } : findFixtures(sport, competition, progress),
+    isDemo() ? { fixtures: await demoFixtures(sport, competition, progress), notes: [] } : findFixtures(sport, competition, progress),
   );
 }

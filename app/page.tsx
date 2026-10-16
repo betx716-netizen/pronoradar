@@ -3,16 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { AnalysisView } from "@/components/AnalysisView";
 import { JobBoard } from "@/components/JobBoard";
-import { UnauthorizedError, callStreaming, loadHistory, saveHistory, setPassword } from "@/lib/client";
+import { QuotaError, UnauthorizedError, callStreaming, loadHistory, saveHistory, setPassword } from "@/lib/client";
 import { fixtureId, runPool, type Job } from "@/lib/jobs";
-import { LEAGUES, MAX_LEAGUES, MODES, estimateCost } from "@/lib/leagues";
-import type { AnalysisMode, AnalysisResult, Fixture, Sport } from "@/lib/schemas";
+import { LEAGUES, MAX_LEAGUES, MODES } from "@/lib/leagues";
+import type { AnalysisMode, AnalysisResult, Fixture, Sport, Usage } from "@/lib/schemas";
 
 const MAX_HISTORY = 60;
 const CONCURRENCY = 2;
-const CONFIRM_ABOVE_USD = 10;
+const CONFIRM_ABOVE_MATCHES = 30;
 
-type LeagueFixtures = { status: "loading" | "done" | "error"; fixtures: Fixture[]; error?: string };
+type LeagueFixtures = { status: "loading" | "done" | "error"; fixtures: Fixture[]; error?: string; notes?: string[] };
+type Quotas = { odds: number | null; apiFootball: number | null };
 
 const inputClass =
   "w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-base outline-none focus:border-accent focus:ring-2 focus:ring-accent/30";
@@ -35,6 +36,7 @@ export default function Home() {
   const [needPassword, setNeedPassword] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [quotas, setQuotas] = useState<Quotas>({ odds: null, apiFootball: null });
 
   const [detail, setDetail] = useState<{ id: string; result: AnalysisResult } | null>(null);
   const [history, setHistory] = useState<AnalysisResult[]>([]);
@@ -45,7 +47,15 @@ export default function Home() {
   const searching = Object.values(byLeague).some((l) => l.status === "loading");
   const allFixtures = leagues.flatMap((l) => byLeague[l]?.fixtures ?? []);
   const selectedFixtures = allFixtures.filter((f) => selected.has(fixtureId(f)));
-  const estimate = estimateCost(mode, selectedFixtures.length);
+  const apiFootballNeeded = selectedFixtures.filter((f) => f.apiFootballId).length * MODES[mode].apiFootballPerMatch;
+  const geminiNeeded = selectedFixtures.length * MODES[mode].geminiPerMatch;
+
+  function trackQuotas(u: Usage) {
+    setQuotas((q) => ({
+      odds: u.oddsRequestsRemaining ?? q.odds,
+      apiFootball: u.apiFootballRequestsRemaining ?? q.apiFootball,
+    }));
+  }
 
   function switchSport(next: Sport) {
     if (next === sport) return;
@@ -63,6 +73,9 @@ export default function Home() {
     if (e instanceof UnauthorizedError) {
       setNeedPassword(true);
       stopRef.current = true;
+    } else if (e instanceof QuotaError) {
+      stopRef.current = true;
+      setError(e.message);
     } else {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -75,13 +88,14 @@ export default function Home() {
     await Promise.all(
       leagues.map(async (league) => {
         try {
-          const { fixtures } = await callStreaming<{ fixtures: Fixture[] }>(
+          const { fixtures, usage, notes } = await callStreaming<{ fixtures: Fixture[]; usage?: Usage; notes: string[] }>(
             "/api/fixtures",
             { sport, competition: league },
             () => {},
           );
+          if (usage) trackQuotas(usage);
           const tagged = fixtures.map((f) => ({ ...f, competition: league }));
-          setByLeague((prev) => ({ ...prev, [league]: { status: "done", fixtures: tagged } }));
+          setByLeague((prev) => ({ ...prev, [league]: { status: "done", fixtures: tagged, notes } }));
           setSelected((prev) => new Set([...prev, ...tagged.map(fixtureId)]));
         } catch (e) {
           if (e instanceof UnauthorizedError) handleError(e);
@@ -128,9 +142,19 @@ export default function Home() {
       try {
         const result = await callStreaming<AnalysisResult>(
           "/api/analyze",
-          { sport, mode, home: job.fixture.home, away: job.fixture.away, competition: job.fixture.competition, date: job.fixture.date },
+          {
+            sport,
+            mode,
+            home: job.fixture.home,
+            away: job.fixture.away,
+            competition: job.fixture.competition,
+            date: job.fixture.date,
+            odds: job.fixture.odds ?? null,
+            apiFootballId: job.fixture.apiFootballId ?? null,
+          },
           (message) => updateJob(job.id, { message }),
         );
+        trackQuotas(result.usage);
         updateJob(job.id, { status: "done", message: "Terminé", result });
         setHistory((prev) => {
           const next = [result, ...prev].slice(0, MAX_HISTORY);
@@ -160,10 +184,13 @@ export default function Home() {
   }
 
   function launchSelected() {
+    const overQuota = quotas.apiFootball !== null && apiFootballNeeded > quotas.apiFootball;
     if (
-      estimate.max >= CONFIRM_ABOVE_USD &&
+      (overQuota || selectedFixtures.length > CONFIRM_ABOVE_MATCHES) &&
       !window.confirm(
-        `Vous allez analyser ${selectedFixtures.length} matchs. Coût estimé : ${estimate.min.toFixed(0)} à ${estimate.max.toFixed(0)} $. Continuer ?`,
+        overQuota
+          ? `Il reste ${quotas.apiFootball} requêtes API-Football aujourd'hui, il en faudrait ${apiFootballNeeded}. Les derniers matchs seront analysés sans les statistiques API-Football. Continuer ?`
+          : `Vous allez analyser ${selectedFixtures.length} matchs (${geminiNeeded} requêtes Gemini). Continuer ?`,
       )
     ) {
       return;
@@ -173,7 +200,7 @@ export default function Home() {
 
   function launchManual(e: React.FormEvent) {
     e.preventDefault();
-    const f: Fixture = { ...manual, competition: manual.competition || "Match", time: null, stage: null };
+    const f: Fixture = { ...manual, competition: manual.competition || "Match", time: null, stage: null, odds: null, apiFootballId: null };
     runJobs(enqueue([f]));
   }
 
@@ -243,7 +270,7 @@ export default function Home() {
           Jusqu&apos;à {MAX_LEAGUES} · {leagues.length} sélectionné{leagues.length > 1 ? "s" : ""}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          {LEAGUES[sport].map((l) => {
+          {LEAGUES[sport].map(({ name: l }) => {
             const on = leagues.includes(l);
             const full = !on && leagues.length >= MAX_LEAGUES;
             return (
@@ -270,6 +297,13 @@ export default function Home() {
       {leagues.some((l) => byLeague[l]) && (
         <section className={`${cardClass} mt-4`}>
           <h2 className="text-lg font-semibold">2. Choisissez les matchs à analyser</h2>
+          {(quotas.odds !== null || quotas.apiFootball !== null) && (
+            <p className="mt-1 text-xs text-muted">
+              Quotas gratuits restants :{quotas.odds !== null ? ` The Odds API ${quotas.odds} ce mois-ci` : ""}
+              {quotas.odds !== null && quotas.apiFootball !== null ? " ·" : ""}
+              {quotas.apiFootball !== null ? ` API-Football ${quotas.apiFootball} aujourd'hui` : ""}
+            </p>
+          )}
           <div className="mt-3 space-y-4">
             {leagues.map((league) => {
               const lf = byLeague[league];
@@ -293,6 +327,11 @@ export default function Home() {
                     </p>
                   )}
                   {lf.status === "error" && <p className="text-sm text-danger">{lf.error}</p>}
+                  {lf.notes?.map((n) => (
+                    <p key={n} className="text-xs text-warn-text">
+                      {n}
+                    </p>
+                  ))}
                   {lf.status === "done" && lf.fixtures.length === 0 && (
                     <p className="text-sm text-muted">Aucun match dans les 7 prochains jours.</p>
                   )}
@@ -339,9 +378,7 @@ export default function Home() {
                   <input type="radio" name="mode" checked={mode === m} onChange={() => setMode(m)} className="mt-1 accent-[var(--accent)]" />
                   <span>
                     <span className="block font-semibold">{MODES[m].label}</span>
-                    <span className="text-xs text-muted">
-                      {MODES[m].description} · ≈ {MODES[m].costMin.toFixed(2)}–{MODES[m].costMax.toFixed(2)} $ / match
-                    </span>
+                    <span className="text-xs text-muted">{MODES[m].description}</span>
                   </span>
                 </label>
               ))}
@@ -351,9 +388,10 @@ export default function Home() {
                 <strong>{selectedFixtures.length}</strong> match{selectedFixtures.length > 1 ? "s" : ""} sélectionné
                 {selectedFixtures.length > 1 ? "s" : ""}
                 {selectedFixtures.length > 0 && (
-                  <span className="text-muted">
-                    {" "}
-                    · coût estimé {estimate.min.toFixed(2)} à {estimate.max.toFixed(2)} $
+                  <span className="block text-xs text-muted">
+                    Consommera {geminiNeeded} requêtes Gemini
+                    {apiFootballNeeded > 0 ? ` et ${apiFootballNeeded} requêtes API-Football` : ""}
+                    {quotas.apiFootball !== null ? ` (il en reste ${quotas.apiFootball} aujourd'hui)` : ""}.
                   </span>
                 )}
               </p>

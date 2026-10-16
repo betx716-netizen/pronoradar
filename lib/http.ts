@@ -1,5 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { AnalysisError } from "./claude";
+import { ApiError } from "@google/genai";
+import { ApiFootballError } from "./apifootball";
+import { AnalysisError } from "./gemini";
+import { OddsApiError } from "./odds";
 import type { StreamEvent } from "./schemas";
 
 export const isDemo = () => process.env.DEMO_MODE === "1";
@@ -7,9 +9,9 @@ export const isDemo = () => process.env.DEMO_MODE === "1";
 // Si APP_PASSWORD est défini, seules les requêtes portant ce mot de passe passent :
 // évite qu'un inconnu consomme votre crédit API.
 export function guard(req: Request): Response | null {
-  if (!isDemo() && !process.env.ANTHROPIC_API_KEY) {
+  if (!isDemo() && !process.env.GEMINI_API_KEY) {
     return Response.json(
-      { error: "Clé API manquante : définissez ANTHROPIC_API_KEY (ou DEMO_MODE=1 pour tester sans clé)." },
+      { error: "Clé Gemini manquante : définissez GEMINI_API_KEY (ou DEMO_MODE=1 pour tester sans clé)." },
       { status: 500 },
     );
   }
@@ -18,14 +20,14 @@ export function guard(req: Request): Response | null {
   return Response.json({ error: "Mot de passe incorrect." }, { status: 401 });
 }
 
-function errorMessage(err: unknown): string {
-  if (err instanceof AnalysisError) return err.message;
-  if (err instanceof Anthropic.AuthenticationError) return "Clé API Anthropic invalide ou absente (ANTHROPIC_API_KEY).";
-  if (err instanceof Anthropic.RateLimitError) return "Trop de requêtes en même temps. Patientez une minute et réessayez.";
-  if (err instanceof Anthropic.InternalServerError) return "Le service d'IA est momentanément indisponible. Réessayez.";
-  if (err instanceof Anthropic.APIConnectionError) return "Impossible de joindre le service d'IA. Vérifiez la connexion.";
+function errorEvent(err: unknown): StreamEvent {
+  if (err instanceof AnalysisError) return { type: "error", message: err.message, code: err.code };
+  if (err instanceof OddsApiError || err instanceof ApiFootballError) return { type: "error", message: err.message };
+  if (err instanceof ApiError && err.status >= 500) {
+    return { type: "error", message: "Gemini est momentanément indisponible. Réessayez." };
+  }
   console.error(err);
-  return "Une erreur inattendue est survenue.";
+  return { type: "error", message: "Une erreur inattendue est survenue." };
 }
 
 /** Exécute une tâche longue en envoyant sa progression ligne par ligne (NDJSON). */
@@ -38,7 +40,7 @@ export function streamTask(task: (progress: (message: string) => void) => Promis
         const data = await task((message) => send({ type: "progress", message }));
         send({ type: "result", data });
       } catch (err) {
-        send({ type: "error", message: errorMessage(err) });
+        send(errorEvent(err));
       } finally {
         controller.close();
       }
