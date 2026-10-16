@@ -48,7 +48,7 @@ N'invente aucune source, aucun pronostiqueur, aucune blessure récente : la list
 Rédige en français : contexte connu, ce que disent les cotes, puis TA propre analyse (probabilités en % pour chaque issue,
 issue la plus probable, score ou sets probables, confiance faible / moyenne / élevée, facteurs clés, risques).
 Précise que l'actualité récente (blessures, compositions) n'a pas pu être vérifiée.
-Donne aussi les marchés secondaires : Les marchés secondaires, chacun avec une probabilité en % et la moyenne attendue : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (ligne la plus pertinente entre 8,5 et 10,5), fautes (entre 20,5 et 24,5), cartons (3,5 ou 4,5). Au tennis : nombre de sets et de jeux. Appuie-toi sur les moyennes de la saison des deux équipes (buts, corners, fautes, cartons), le style de jeu et l'arbitre si connu.`;
+Donne aussi les marchés secondaires, chacun avec une probabilité en % et la moyenne attendue : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (ligne la plus pertinente entre 8,5 et 10,5), fautes (entre 20,5 et 24,5), cartons (3,5 ou 4,5). Au tennis : nombre de sets et de jeux. Appuie-toi sur les moyennes de la saison des deux équipes (buts, corners, fautes, cartons), le style de jeu et l'arbitre si connu.`;
 
 const MODE_SETTINGS = {
   rapide: { sourcesTarget: "4 à 6", injuries: false },
