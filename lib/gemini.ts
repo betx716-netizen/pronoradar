@@ -1,3 +1,4 @@
+import { readKey } from "./env";
 import { ApiError, GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 import type { ConsultedPage, Usage } from "./schemas";
@@ -8,7 +9,7 @@ const MAX_RETRIES = 2;
 const MAX_RETRY_DELAY_MS = 20_000;
 const QUOTA_PAUSE_MS = 30 * 60_000;
 
-export const hasGemini = () => Boolean(process.env.GEMINI_API_KEY);
+export const hasGemini = () => Boolean(readKey("GEMINI_API_KEY"));
 
 // Après un quota épuisé, on ne réessaie plus Gemini pendant un moment : inutile de faire attendre chaque match.
 let pausedUntil = 0;
@@ -16,7 +17,7 @@ export const geminiAvailable = () => hasGemini() && Date.now() >= pausedUntil;
 
 let client: GoogleGenAI | null = null;
 function getClient() {
-  client ??= new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  client ??= new GoogleGenAI({ apiKey: readKey("GEMINI_API_KEY") });
   return client;
 }
 

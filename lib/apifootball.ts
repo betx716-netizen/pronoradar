@@ -1,3 +1,4 @@
+import { readKey } from "./env";
 // API-Football (https://www.api-football.com) : calendrier, forme, blessés,
 // confrontations directes et pronostics chiffrés. Formule gratuite : environ 100 requêtes par jour.
 import { CACHE_SECONDS } from "./odds";
@@ -6,7 +7,7 @@ import type { Fixture } from "./schemas";
 
 const BASE = "https://v3.football.api-sports.io";
 
-export const hasApiFootball = () => Boolean(process.env.API_FOOTBALL_KEY);
+export const hasApiFootball = () => Boolean(readKey("API_FOOTBALL_KEY"));
 
 export class ApiFootballError extends Error {}
 
@@ -16,7 +17,7 @@ export const apiFootballRemaining = () => lastRemaining;
 async function get<T>(path: string, params: Record<string, string | number>): Promise<T[]> {
   const url = new URL(BASE + path);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
-  const res = await fetch(url, { headers: { "x-apisports-key": process.env.API_FOOTBALL_KEY ?? "" }, next: { revalidate: CACHE_SECONDS } });
+  const res = await fetch(url, { headers: { "x-apisports-key": readKey("API_FOOTBALL_KEY") }, next: { revalidate: CACHE_SECONDS } });
   const remaining = res.headers.get("x-ratelimit-requests-remaining");
   if (remaining !== null) lastRemaining = Number(remaining);
   if (!res.ok) throw new ApiFootballError(`API-Football : erreur ${res.status}`);

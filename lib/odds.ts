@@ -1,3 +1,4 @@
+import { readKey } from "./env";
 // The Odds API (https://the-odds-api.com) : cotes de dizaines de bookmakers.
 // Une requête renvoie tous les matchs à venir d'un championnat avec leurs cotes.
 import type { Fixture, OddsSummary, Sport } from "./schemas";
@@ -20,13 +21,13 @@ type OddsEvent = {
   bookmakers: { key: string; title: string; markets: { key: string; outcomes: Outcome[] }[] }[];
 };
 
-export const hasOddsApi = () => Boolean(process.env.ODDS_API_KEY);
+export const hasOddsApi = () => Boolean(readKey("ODDS_API_KEY"));
 
 export class OddsApiError extends Error {}
 
 async function get<T>(path: string, params: Record<string, string>) {
   const url = new URL(BASE + path);
-  url.searchParams.set("apiKey", process.env.ODDS_API_KEY ?? "");
+  url.searchParams.set("apiKey", readKey("ODDS_API_KEY"));
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   const res = await fetch(url, { next: { revalidate: CACHE_SECONDS } });
   const remaining = res.headers.get("x-requests-remaining");
