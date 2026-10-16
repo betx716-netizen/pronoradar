@@ -12,8 +12,10 @@ const QUOTA_PAUSE_MS = 30 * 60_000;
 export const hasGemini = () => Boolean(readKey("GEMINI_API_KEY"));
 
 // Après un quota épuisé, on ne réessaie plus Gemini pendant un moment : inutile de faire attendre chaque match.
-let pausedUntil = 0;
-export const geminiAvailable = () => hasGemini() && Date.now() >= pausedUntil;
+// Deux quotas distincts chez Google : la recherche Google intégrée s'épuise bien avant Gemini lui-même.
+const pausedUntil = { search: 0, plain: 0 };
+export const geminiAvailable = () => hasGemini() && Date.now() >= pausedUntil.plain;
+export const googleSearchAvailable = () => geminiAvailable() && Date.now() >= pausedUntil.search;
 
 let client: GoogleGenAI | null = null;
 function getClient() {
@@ -27,6 +29,8 @@ export class AnalysisError extends Error {
     readonly code?: "quota",
     // Vrai quand l'erreur vient de Gemini lui-même (quota, clé) : on peut alors se rabattre sur le calcul.
     readonly geminiUnavailable = false,
+    // Vrai quand seule la recherche Google est épuisée : Gemini reste utilisable sans le web.
+    readonly searchOnly = false,
   ) {
     super(message);
   }
@@ -39,7 +43,7 @@ function quotaDetails(message: string) {
   const perDay = /PerDay|per day/i.test(message);
   const retrySeconds = Number(message.match(/retry in ([\d.]+)s/i)?.[1] ?? NaN);
   const parts = [
-    limit !== undefined && `limite de ${limit} requêtes ${perDay ? "par jour" : "par minute"}`,
+    limit === "0" ? "aucune requête gratuite pour ce service" : limit !== undefined && `limite de ${limit} requêtes ${perDay ? "par jour" : "par minute"}`,
     model && `modèle ${model}`,
   ].filter(Boolean);
   return { detail: parts.length ? ` (${parts.join(", ")})` : "", hardLimit: perDay || limit === "0", retrySeconds };
@@ -62,7 +66,7 @@ export function todayInParis() {
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // Le palier gratuit limite le nombre de requêtes par minute : on patiente puis on réessaie.
-async function withRetry<T>(fn: () => Promise<T>, onProgress: (m: string) => void): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, onProgress: (m: string) => void, kind: "search" | "plain" = "plain"): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     try {
       return await fn();
@@ -76,9 +80,14 @@ async function withRetry<T>(fn: () => Promise<T>, onProgress: (m: string) => voi
           await wait(delay);
           continue;
         }
-        pausedUntil = Date.now() + QUOTA_PAUSE_MS;
+        pausedUntil[kind] = Date.now() + QUOTA_PAUSE_MS;
         console.error("Quota Gemini :", err.message);
-        throw new AnalysisError(`Gemini : quota gratuit atteint${detail}.`, "quota", true);
+        throw new AnalysisError(
+          kind === "search" ? `Gemini : quota gratuit de recherche Google atteint${detail}.` : `Gemini : quota gratuit atteint${detail}.`,
+          "quota",
+          true,
+          kind === "search",
+        );
       }
       if (err instanceof ApiError && (err.status === 400 || err.status === 403) && /api key|permission/i.test(err.message)) {
         throw new AnalysisError("Gemini : clé invalide ou non autorisée (GEMINI_API_KEY).", undefined, true);
@@ -110,6 +119,7 @@ export async function researchWithGoogle(opts: {
         config: { systemInstruction: opts.system, tools: [{ googleSearch: {} }] },
       }),
     opts.onProgress,
+    "search",
   );
   opts.usage.geminiRequests++;
 
@@ -161,4 +171,16 @@ export async function structure<T extends z.ZodType>(
     }
   }
   throw new AnalysisError("Impossible de mettre en forme les résultats. Réessayez.");
+}
+
+/** Gemini sans recherche web : quand le quota de recherche Google est épuisé, il raisonne sur les données fournies. */
+export async function writeWithoutSearch(opts: { system: string; prompt: string; usage: Usage; onProgress: (message: string) => void }) {
+  const response = await withRetry(
+    () => getClient().models.generateContent({ model: MODEL, contents: opts.prompt, config: { systemInstruction: opts.system } }),
+    opts.onProgress,
+  );
+  opts.usage.geminiRequests++;
+  const text = response.text?.trim();
+  if (!text) throw new AnalysisError("Aucun résultat exploitable n'a été trouvé.");
+  return { text, consultedPages: [] as ConsultedPage[] };
 }

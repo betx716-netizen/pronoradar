@@ -2,7 +2,17 @@ import { apiFootballRemaining, fetchInsight, hasApiFootball, type ApiFootballIns
 import { computeConsensus } from "./consensus";
 import { apiSources } from "./apiSources";
 import { analysisWithoutAI } from "./calculated";
-import { AnalysisError, emptyUsage, geminiAvailable, hasGemini, researchWithGoogle, structure, todayInParis } from "./gemini";
+import {
+  AnalysisError,
+  emptyUsage,
+  geminiAvailable,
+  googleSearchAvailable,
+  hasGemini,
+  researchWithGoogle,
+  structure,
+  todayInParis,
+  writeWithoutSearch,
+} from "./gemini";
 import { AnalysisSchema, type AnalysisResult, type AnalyzeRequest } from "./schemas";
 
 const researchSystem = (sourcesTarget: string) => `Tu es un analyste sportif rigoureux. Ton travail : recenser sur le web les pronostics publiés par d'autres pour un match précis, puis donner ta propre analyse.
@@ -27,6 +37,14 @@ const STRUCTURE_SYSTEM = `Tu convertis un dossier d'analyse sportive en JSON. Re
 - Les probabilités sont en pourcentage (0 à 100).
 - Dans "sources", mets uniquement les sources trouvées sur le web (pas les cotes ni API-Football, déjà comptées). Leurs cotes sont à null. Si l'URL d'une source n'est pas connue, mets une chaîne vide.
 - Rédige tous les textes en français.`;
+
+// Utilisé quand la recherche Google n'est plus disponible : Gemini analyse sans pouvoir citer de pronostiqueurs.
+const NO_SEARCH_SYSTEM = `Tu es un analyste sportif rigoureux. Tu n'as PAS accès au web pour cette analyse.
+Appuie-toi sur les données fournies (cotes, statistiques) et sur tes connaissances générales des équipes ou des joueurs.
+N'invente aucune source, aucun pronostiqueur, aucune blessure récente : la liste des sources doit rester vide.
+Rédige en français : contexte connu, ce que disent les cotes, puis TA propre analyse (probabilités en % pour chaque issue,
+issue la plus probable, score ou sets probables, confiance faible / moyenne / élevée, facteurs clés, risques).
+Précise que l'actualité récente (blessures, compositions) n'a pas pu être vérifiée.`;
 
 const MODE_SETTINGS = {
   rapide: { sourcesTarget: "4 à 6", injuries: false },
@@ -131,13 +149,25 @@ async function analyzeWithGemini(
     .filter(Boolean)
     .join("\n");
 
-  onProgress("Recherche des pronostics sur Google (Gemini)…");
-  const { text, consultedPages } = await researchWithGoogle({
-    system: researchSystem(sourcesTarget),
-    prompt,
-    usage,
-    onProgress,
-  });
+  let notice: string | undefined;
+  const withoutSearch = async (reason: string) => {
+    notice = `${reason} Analyse rédigée par Gemini à partir des cotes et de ses connaissances, sans recherche web : l'actualité récente n'a pas été vérifiée.`;
+    onProgress(`${reason} Analyse par Gemini à partir des cotes et de ses connaissances, sans recherche web.`);
+    return writeWithoutSearch({ system: NO_SEARCH_SYSTEM, prompt, usage, onProgress });
+  };
+  let research: { text: string; consultedPages: AnalysisResult["consultedPages"] };
+  if (!googleSearchAvailable()) {
+    research = await withoutSearch("Quota de recherche Google atteint récemment.");
+  } else {
+    try {
+      onProgress("Recherche des pronostics sur Google (Gemini)…");
+      research = await researchWithGoogle({ system: researchSystem(sourcesTarget), prompt, usage, onProgress });
+    } catch (e) {
+      if (!(e instanceof AnalysisError && e.searchOnly)) throw e;
+      research = await withoutSearch(e.message);
+    }
+  }
+  const { text, consultedPages } = research;
 
   onProgress("Synthèse des pronostics recensés…");
   const analysis = await structure(AnalysisSchema, STRUCTURE_SYSTEM, `${prompt}\n\n${text}`, usage, onProgress);
@@ -157,5 +187,6 @@ async function analyzeWithGemini(
     createdAt: new Date().toISOString(),
     mode: req.mode,
     engine: "ia",
+    notice,
   };
 }
