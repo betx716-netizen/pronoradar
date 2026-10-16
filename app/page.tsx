@@ -3,7 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import { AnalysisView } from "@/components/AnalysisView";
 import { JobBoard } from "@/components/JobBoard";
-import { QuotaError, UnauthorizedError, callStreaming, loadHistory, saveHistory, setPassword } from "@/lib/client";
+import {
+  QuotaError,
+  UnauthorizedError,
+  callStreaming,
+  loadFavorites,
+  loadHistory,
+  saveFavorites,
+  saveHistory,
+  setPassword,
+} from "@/lib/client";
 import { fixtureId, runPool, type Job } from "@/lib/jobs";
 import { LEAGUES, MAX_LEAGUES, MODES } from "@/lib/leagues";
 import type { AnalysisMode, AnalysisResult, Fixture, ServicesStatus, Sport, Usage } from "@/lib/schemas";
@@ -11,6 +20,12 @@ import type { AnalysisMode, AnalysisResult, Fixture, ServicesStatus, Sport, Usag
 const MAX_HISTORY = 60;
 const CONCURRENCY = 2;
 const CONFIRM_ABOVE_MATCHES = 30;
+
+// Championnats chargés à la première visite, avant que l'utilisateur ait choisi les siens.
+const DEFAULT_FAVORITES: Record<Sport, string[]> = {
+  football: ["Ligue des Champions", "Ligue 1", "Premier League"],
+  tennis: ["ATP", "WTA"],
+};
 
 type LeagueFixtures = { status: "loading" | "done" | "error"; fixtures: Fixture[]; error?: string; notes?: string[] };
 type Quotas = { odds: number | null; apiFootball: number | null };
@@ -45,6 +60,14 @@ export default function Home() {
   const [services, setServices] = useState<ServicesStatus | null>(null);
 
   useEffect(() => setHistory(loadHistory<AnalysisResult>()), []);
+
+  // À l'ouverture : les matchs de la semaine des championnats favoris s'affichent tout seuls.
+  useEffect(() => {
+    const favorites = loadFavorites("football", DEFAULT_FAVORITES.football);
+    setLeagues(favorites);
+    findFixtures(favorites, "football");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     fetch("/api/config")
       .then((r) => r.json())
@@ -69,9 +92,11 @@ export default function Home() {
   function switchSport(next: Sport) {
     if (next === sport) return;
     setSport(next);
-    setLeagues([]);
+    const favorites = loadFavorites(next, DEFAULT_FAVORITES[next]);
+    setLeagues(favorites);
     setByLeague({});
     setSelected(new Set());
+    findFixtures(favorites, next);
   }
 
   function toggleLeague(l: string) {
@@ -90,16 +115,18 @@ export default function Home() {
     }
   }
 
-  async function findFixtures() {
+  async function findFixtures(list: string[] = leagues, forSport: Sport = sport) {
+    if (list.length === 0) return;
+    saveFavorites(forSport, list);
     setError(null);
     setSelected(new Set());
-    setByLeague(Object.fromEntries(leagues.map((l) => [l, { status: "loading", fixtures: [] }])));
+    setByLeague(Object.fromEntries(list.map((l) => [l, { status: "loading", fixtures: [] }])));
     await Promise.all(
-      leagues.map(async (league) => {
+      list.map(async (league) => {
         try {
           const { fixtures, usage, notes } = await callStreaming<{ fixtures: Fixture[]; usage?: Usage; notes: string[] }>(
             "/api/fixtures",
-            { sport, competition: league },
+            { sport: forSport, competition: league },
             () => {},
           );
           if (usage) trackQuotas(usage);
@@ -294,9 +321,10 @@ export default function Home() {
       )}
 
       <section className={cardClass}>
-        <h2 className="text-lg font-semibold">1. Choisissez vos championnats</h2>
+        <h2 className="text-lg font-semibold">1. Vos championnats</h2>
         <p className="mt-1 text-sm text-muted">
-          Jusqu&apos;à {MAX_LEAGUES} · {leagues.length} sélectionné{leagues.length > 1 ? "s" : ""}
+          Jusqu&apos;à {MAX_LEAGUES} · {leagues.length} sélectionné{leagues.length > 1 ? "s" : ""} · mémorisés et chargés à
+          chaque ouverture · liste des matchs rafraîchie toutes les 2 heures
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {LEAGUES[sport].map(({ name: l }) => {
@@ -318,8 +346,8 @@ export default function Home() {
             );
           })}
         </div>
-        <button onClick={findFixtures} disabled={leagues.length === 0 || searching || running} className={`${buttonClass} mt-4 w-full sm:w-auto`}>
-          {searching ? "Recherche des matchs…" : "Trouver les matchs des 7 prochains jours"}
+        <button onClick={() => findFixtures()} disabled={leagues.length === 0 || searching || running} className={`${buttonClass} mt-4 w-full sm:w-auto`}>
+          {searching ? "Recherche des matchs…" : "Mettre à jour les matchs des 7 prochains jours"}
         </button>
       </section>
 

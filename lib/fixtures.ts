@@ -24,7 +24,8 @@ export async function findFixtures(sport: Sport, competition: string, onProgress
     try {
       const r = await fetchOddsFixtures(sport, competition, league.oddsKey);
       usage.oddsRequestsRemaining = r.remaining;
-      if (r.covered) fixtures = r.fixtures;
+      // Championnat absent de la liste active : pas de match à venir, inutile de chercher ailleurs.
+      fixtures = r.covered ? r.fixtures : [];
     } catch (e) {
       notes.push(e instanceof Error ? e.message : String(e));
     }

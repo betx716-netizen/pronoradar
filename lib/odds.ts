@@ -5,6 +5,10 @@ import type { Fixture, OddsSummary, Sport } from "./schemas";
 const BASE = "https://api.the-odds-api.com/v4";
 const EXCHANGE_KEYS = ["betfair_ex_eu", "betfair_ex_uk", "matchbook"];
 
+// Les réponses sont gardées en mémoire 2 heures par Vercel : ouvrir le site 1 ou 50 fois
+// ne coûte qu'une requête par championnat sur cette période.
+export const CACHE_SECONDS = 2 * 60 * 60;
+
 type Outcome = { name: string; price: number };
 type OddsEvent = {
   id: string;
@@ -24,7 +28,7 @@ async function get<T>(path: string, params: Record<string, string>) {
   const url = new URL(BASE + path);
   url.searchParams.set("apiKey", process.env.ODDS_API_KEY ?? "");
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, { next: { revalidate: CACHE_SECONDS } });
   const remaining = res.headers.get("x-requests-remaining");
   if (!res.ok) {
     const body = await res.json().catch(() => null);
@@ -75,7 +79,9 @@ function parisDateTime(iso: string) {
 }
 
 async function oddsForSport(sportKey: string, competition: string, sport: Sport) {
-  const now = new Date();
+  // Bornes arrondies à la tranche de 2 heures : l'adresse de la requête reste identique, donc la mémoire sert.
+  const slot = CACHE_SECONDS * 1000;
+  const now = new Date(Math.floor(Date.now() / slot) * slot);
   const in7days = new Date(now.getTime() + 7 * 86400000);
   const iso = (d: Date) => d.toISOString().replace(/\.\d{3}Z$/, "Z");
   const { data, remaining } = await get<OddsEvent[]>(`/sports/${sportKey}/odds`, {

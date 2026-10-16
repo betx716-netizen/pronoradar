@@ -7,6 +7,23 @@ export class QuotaError extends Error {}
 
 const PASSWORD_KEY = "pronoradar:password";
 const HISTORY_KEY = "pronoradar:history";
+const FAVORITES_KEY = "pronoradar:favorites";
+
+export function loadFavorites(sport: string, fallback: string[]): string[] {
+  try {
+    const all = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "{}") as Record<string, string[]>;
+    return all[sport]?.length ? all[sport] : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function saveFavorites(sport: string, leagues: string[]) {
+  try {
+    const all = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "{}") as Record<string, string[]>;
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify({ ...all, [sport]: leagues }));
+  } catch {}
+}
 
 export function getPassword(): string {
   try {
