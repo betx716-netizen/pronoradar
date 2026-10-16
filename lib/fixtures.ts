@@ -1,5 +1,5 @@
 import { apiFootballRemaining, attachApiFootballIds, fetchApiFootballFixtures, hasApiFootball } from "./apifootball";
-import { emptyUsage, hasGemini, researchWithGoogle, structure, todayInParis } from "./gemini";
+import { emptyUsage, geminiAvailable, hasGemini, researchWithGoogle, structure, todayInParis } from "./gemini";
 import { findLeague } from "./leagues";
 import { fetchOddsFixtures, hasOddsApi } from "./odds";
 import { FixturesSchema, type Fixture, type Sport } from "./schemas";
@@ -41,31 +41,38 @@ export async function findFixtures(sport: Sport, competition: string, onProgress
     usage.apiFootballRequestsRemaining = apiFootballRemaining();
   }
 
-  if (!fixtures && !hasGemini()) {
+  if (!fixtures && !geminiAvailable()) {
     notes.push(
-      sport === "tennis"
-        ? "Le tennis nécessite la clé The Odds API ou la clé Gemini."
-        : "Ce championnat n'a pas pu être chargé : il faut la clé The Odds API, API-Football ou Gemini.",
+      hasGemini()
+        ? "Gemini : quota gratuit atteint, impossible de chercher ce programme sur Google pour le moment."
+        : sport === "tennis"
+          ? "Le tennis nécessite la clé The Odds API ou la clé Gemini."
+          : "Ce championnat n'a pas pu être chargé : il faut la clé The Odds API, API-Football ou Gemini.",
     );
     return { fixtures: [] as Fixture[], usage, notes };
   }
 
   if (!fixtures) {
-    onProgress("Recherche du programme sur Google…");
-    const { text } = await researchWithGoogle({
-      system: FIXTURES_SYSTEM,
-      prompt: `Nous sommes le ${todayInParis()}. Sport : ${sport}. Compétition : ${competition}. Quels sont les prochains matchs ?`,
-      usage,
-      onProgress,
-    });
-    const parsed = await structure(
-      FixturesSchema,
-      "Convertis cette liste de matchs en JSON, sans rien inventer. Dates au format AAAA-MM-JJ.",
-      text,
-      usage,
-      onProgress,
-    );
-    fixtures = parsed.fixtures.map((f) => ({ ...f, competition, odds: null, apiFootballId: null }));
+    try {
+      onProgress("Recherche du programme sur Google…");
+      const { text } = await researchWithGoogle({
+        system: FIXTURES_SYSTEM,
+        prompt: `Nous sommes le ${todayInParis()}. Sport : ${sport}. Compétition : ${competition}. Quels sont les prochains matchs ?`,
+        usage,
+        onProgress,
+      });
+      const parsed = await structure(
+        FixturesSchema,
+        "Convertis cette liste de matchs en JSON, sans rien inventer. Dates au format AAAA-MM-JJ.",
+        text,
+        usage,
+        onProgress,
+      );
+      fixtures = parsed.fixtures.map((f) => ({ ...f, competition, odds: null, apiFootballId: null }));
+    } catch (e) {
+      notes.push(e instanceof Error ? e.message : String(e));
+      fixtures = [];
+    }
   }
 
   return { fixtures, usage, notes };

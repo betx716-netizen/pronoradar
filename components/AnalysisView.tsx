@@ -158,7 +158,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
 
       {calc && (
         <p className="rounded-lg bg-surface-2 px-4 py-2 text-sm text-muted">
-          Analyse calculée sans IA (pas de clé Gemini) : elle repose uniquement sur les cotes et les statistiques.
+          {result.notice ?? "Analyse calculée sans IA (pas de clé Gemini) : elle repose uniquement sur les cotes et les statistiques."}
         </p>
       )}
 

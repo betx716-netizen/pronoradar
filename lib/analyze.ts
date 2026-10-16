@@ -2,7 +2,7 @@ import { apiFootballRemaining, fetchInsight, hasApiFootball, type ApiFootballIns
 import { computeConsensus } from "./consensus";
 import { apiSources } from "./apiSources";
 import { analysisWithoutAI } from "./calculated";
-import { AnalysisError, emptyUsage, hasGemini, researchWithGoogle, structure, todayInParis } from "./gemini";
+import { AnalysisError, emptyUsage, geminiAvailable, hasGemini, researchWithGoogle, structure, todayInParis } from "./gemini";
 import { AnalysisSchema, type AnalysisResult, type AnalyzeRequest } from "./schemas";
 
 const researchSystem = (sourcesTarget: string) => `Tu es un analyste sportif rigoureux. Ton travail : recenser sur le web les pronostics publiés par d'autres pour un match précis, puis donner ta propre analyse.
@@ -71,13 +71,8 @@ export async function analyzeMatch(req: AnalyzeRequest, onProgress: (message: st
     usage.apiFootballRequestsRemaining = apiFootballRemaining();
   }
 
-  // Sans Gemini : analyse calculée à partir des seules données chiffrées.
-  if (!hasGemini()) {
-    if (!req.odds && !insight) {
-      throw new AnalysisError(
-        "Sans clé Gemini, l'analyse repose sur les cotes et API-Football : choisissez un match trouvé à l'étape 1.",
-      );
-    }
+  const hasData = Boolean(req.odds || insight);
+  const calculated = (notice?: string): AnalysisResult => {
     onProgress("Calcul de l'analyse à partir des cotes et des statistiques…");
     const analysis = analysisWithoutAI(req, insight);
     return {
@@ -88,8 +83,40 @@ export async function analyzeMatch(req: AnalyzeRequest, onProgress: (message: st
       createdAt: new Date().toISOString(),
       mode: req.mode,
       engine: "calcul",
+      notice,
     };
+  };
+
+  // Sans Gemini (pas de clé, ou quota épuisé il y a peu) : analyse calculée à partir des seules données chiffrées.
+  if (!geminiAvailable()) {
+    if (hasData) return calculated(hasGemini() ? "Quota Gemini atteint récemment : analyse calculée sans IA." : undefined);
+    throw new AnalysisError(
+      hasGemini()
+        ? "Gemini : quota gratuit atteint. Réessayez plus tard, ou choisissez un match trouvé à l'étape 1 (analyse calculée)."
+        : "Sans clé Gemini, l'analyse repose sur les cotes et API-Football : choisissez un match trouvé à l'étape 1.",
+      hasGemini() ? "quota" : undefined,
+    );
   }
+
+  try {
+    return await analyzeWithGemini(req, insight, usage, onProgress, settings.sourcesTarget);
+  } catch (e) {
+    // Quota ou clé Gemini en défaut : on continue avec les autres sources plutôt que d'échouer.
+    if (e instanceof AnalysisError && e.geminiUnavailable && hasData) {
+      onProgress(`${e.message} Passage en analyse calculée.`);
+      return calculated(`${e.message} L'analyse a été calculée à partir des cotes et des statistiques.`);
+    }
+    throw e;
+  }
+}
+
+async function analyzeWithGemini(
+  req: AnalyzeRequest,
+  insight: ApiFootballInsight | null,
+  usage: AnalysisResult["usage"],
+  onProgress: (message: string) => void,
+  sourcesTarget: string,
+): Promise<AnalysisResult> {
 
   const match =
     req.sport === "football" ? `${req.home} (domicile) contre ${req.away} (extérieur)` : `${req.home} contre ${req.away}`;
@@ -106,7 +133,7 @@ export async function analyzeMatch(req: AnalyzeRequest, onProgress: (message: st
 
   onProgress("Recherche des pronostics sur Google (Gemini)…");
   const { text, consultedPages } = await researchWithGoogle({
-    system: researchSystem(settings.sourcesTarget),
+    system: researchSystem(sourcesTarget),
     prompt,
     usage,
     onProgress,

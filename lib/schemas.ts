@@ -151,6 +151,7 @@ export type AnalysisResult = {
   createdAt: string;
   mode?: AnalysisMode;
   engine?: "ia" | "calcul"; // "calcul" : sans Gemini, à partir des cotes et d'API-Football
+  notice?: string; // explique pourquoi l'analyse a été calculée sans IA (quota Gemini atteint…)
   demo?: boolean;
 };
 

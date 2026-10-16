@@ -5,9 +5,14 @@ import type { ConsultedPage, Usage } from "./schemas";
 // "gemini-flash-latest" suit automatiquement le dernier modèle Flash ; GEMINI_MODEL permet d'en imposer un.
 const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
 const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 15_000;
+const MAX_RETRY_DELAY_MS = 20_000;
+const QUOTA_PAUSE_MS = 30 * 60_000;
 
 export const hasGemini = () => Boolean(process.env.GEMINI_API_KEY);
+
+// Après un quota épuisé, on ne réessaie plus Gemini pendant un moment : inutile de faire attendre chaque match.
+let pausedUntil = 0;
+export const geminiAvailable = () => hasGemini() && Date.now() >= pausedUntil;
 
 let client: GoogleGenAI | null = null;
 function getClient() {
@@ -19,9 +24,24 @@ export class AnalysisError extends Error {
   constructor(
     message: string,
     readonly code?: "quota",
+    // Vrai quand l'erreur vient de Gemini lui-même (quota, clé) : on peut alors se rabattre sur le calcul.
+    readonly geminiUnavailable = false,
   ) {
     super(message);
   }
+}
+
+// Extrait du message de Google la limite atteinte (ex. « limit: 20, model: gemini-3-flash ») et le délai conseillé.
+function quotaDetails(message: string) {
+  const limit = message.match(/limit:\s*(\d+)/)?.[1];
+  const model = message.match(/model:\s*([\w.-]+)/)?.[1];
+  const perDay = /PerDay|per day/i.test(message);
+  const retrySeconds = Number(message.match(/retry in ([\d.]+)s/i)?.[1] ?? NaN);
+  const parts = [
+    limit !== undefined && `limite de ${limit} requêtes ${perDay ? "par jour" : "par minute"}`,
+    model && `modèle ${model}`,
+  ].filter(Boolean);
+  return { detail: parts.length ? ` (${parts.join(", ")})` : "", hardLimit: perDay || limit === "0", retrySeconds };
 }
 
 export function emptyUsage(): Usage {
@@ -47,15 +67,20 @@ async function withRetry<T>(fn: () => Promise<T>, onProgress: (m: string) => voi
       return await fn();
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
-        if (attempt < MAX_RETRIES) {
-          onProgress("Limite de requêtes Gemini atteinte, nouvelle tentative dans 15 s…");
-          await wait(RETRY_DELAY_MS);
+        const { detail, hardLimit, retrySeconds } = quotaDetails(err.message);
+        // Limite par minute : on patiente et on réessaie. Limite par jour (ou nulle) : inutile d'attendre.
+        if (!hardLimit && attempt < MAX_RETRIES) {
+          const delay = Math.min(Number.isFinite(retrySeconds) ? retrySeconds * 1000 + 1000 : 15_000, MAX_RETRY_DELAY_MS);
+          onProgress(`Limite de requêtes Gemini par minute atteinte, nouvelle tentative dans ${Math.round(delay / 1000)} s…`);
+          await wait(delay);
           continue;
         }
-        throw new AnalysisError("Quota gratuit de Gemini atteint. Réessayez plus tard (la limite se remet à zéro chaque jour).", "quota");
+        pausedUntil = Date.now() + QUOTA_PAUSE_MS;
+        console.error("Quota Gemini :", err.message);
+        throw new AnalysisError(`Gemini : quota gratuit atteint${detail}.`, "quota", true);
       }
-      if (err instanceof ApiError && (err.status === 400 || err.status === 403) && /api key/i.test(err.message)) {
-        throw new AnalysisError("Clé Gemini invalide (GEMINI_API_KEY).");
+      if (err instanceof ApiError && (err.status === 400 || err.status === 403) && /api key|permission/i.test(err.message)) {
+        throw new AnalysisError("Gemini : clé invalide ou non autorisée (GEMINI_API_KEY).", undefined, true);
       }
       if (err instanceof ApiError && err.status >= 500 && attempt < MAX_RETRIES) {
         await wait(3000);
