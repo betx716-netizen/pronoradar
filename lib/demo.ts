@@ -34,10 +34,11 @@ export async function demoAnalysis(req: AnalyzeRequest, onProgress: (m: string) 
   ];
   for (const s of steps) {
     onProgress(s);
-    await wait(400);
+    await wait(300 + Math.random() * 500);
   }
 
   const tennis = req.sport === "tennis";
+  const swap = [...(req.home + req.away)].reduce((h, c) => h + c.charCodeAt(0), 0) % 2 === 1;
   const draw = (v: number) => (tennis ? null : v);
   const analysis: Analysis = {
     match: {
@@ -87,27 +88,45 @@ export async function demoAnalysis(req: AnalyzeRequest, onProgress: (m: string) 
     },
   };
 
+  if (swap) {
+    // Inverse les rôles pour que tous les matchs de démo n'aient pas le même favori.
+    const flip = (o: "home" | "draw" | "away" | "none") => (o === "home" ? "away" : o === "away" ? "home" : o);
+    for (const s of analysis.sources) {
+      [s.odds_home, s.odds_away] = [s.odds_away, s.odds_home];
+      [s.prob_home, s.prob_away] = [s.prob_away, s.prob_home];
+      s.pick = flip(s.pick);
+    }
+    const ai = analysis.ai_analysis;
+    [ai.prob_home, ai.prob_away] = [ai.prob_away, ai.prob_home];
+    ai.predicted_outcome = flip(ai.predicted_outcome) as "home" | "draw" | "away";
+  }
+
   return {
     analysis,
     consensus: computeConsensus(analysis),
     consultedPages: [{ title: "Page de démonstration", url: "https://example.com/demo" }],
     usage: { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, webSearches: 0, estimatedCostUsd: 0 },
     createdAt: new Date().toISOString(),
+    mode: req.mode,
     demo: true,
   };
 }
 
-export async function demoFixtures(sport: "football" | "tennis", onProgress: (m: string) => void): Promise<Fixture[]> {
-  onProgress("Recherche du programme…");
-  await wait(600);
+export async function demoFixtures(
+  sport: "football" | "tennis",
+  competition: string,
+  onProgress: (m: string) => void,
+): Promise<Fixture[]> {
+  onProgress(`Recherche du programme : ${competition}…`);
+  await wait(500 + Math.random() * 800);
   const d = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
-  return sport === "tennis"
-    ? [
-        { home: "Joueur A", away: "Joueur B", competition: "Tournoi démo", date: d, time: "14:00", stage: "Quart de finale" },
-        { home: "Joueur C", away: "Joueur D", competition: "Tournoi démo", date: d, time: "16:30", stage: "Quart de finale" },
-      ]
-    : [
-        { home: "Équipe A", away: "Équipe B", competition: "Ligue des Champions (démo)", date: d, time: "21:00", stage: "Phase de ligue" },
-        { home: "Équipe C", away: "Équipe D", competition: "Ligue des Champions (démo)", date: d, time: "18:45", stage: "Phase de ligue" },
-      ];
+  const who = sport === "tennis" ? "Joueur" : "Équipe";
+  return [1, 2, 3].map((n) => ({
+    home: `${who} ${competition.slice(0, 3)} ${2 * n - 1}`,
+    away: `${who} ${competition.slice(0, 3)} ${2 * n}`,
+    competition,
+    date: d,
+    time: ["18:45", "21:00", "16:30"][n - 1],
+    stage: sport === "tennis" ? "Quart de finale" : "Journée démo",
+  }));
 }

@@ -2,10 +2,10 @@ import { emptyUsage, researchWithWeb, structure, todayInParis } from "./claude";
 import { computeConsensus } from "./consensus";
 import { AnalysisSchema, type AnalysisResult, type AnalyzeRequest } from "./schemas";
 
-const RESEARCH_SYSTEM = `Tu es un analyste sportif rigoureux. Ton travail : recenser sur le web les pronostics publiés par d'autres pour un match précis, puis donner ta propre analyse.
+const researchSystem = (sourcesTarget: string) => `Tu es un analyste sportif rigoureux. Ton travail : recenser sur le web les pronostics publiés par d'autres pour un match précis, puis donner ta propre analyse.
 
 Règles de recherche :
-- Cherche des sources variées et indépendantes, en français et en anglais. Vise 8 à 15 sources distinctes réparties ainsi :
+- Cherche des sources variées et indépendantes, en français et en anglais. Vise ${sourcesTarget} sources distinctes réparties ainsi :
   1. Cotes des bookmakers ou des bourses de paris (comparateurs de cotes, Betfair…). Relève les cotes décimales de chaque issue.
   2. Modèles statistiques (Forebet, modèles xG, Opta, sites de prédictions chiffrées). Relève leurs probabilités en %.
   3. Pronostiqueurs et médias (sites de pronostics, journaux sportifs, experts). Relève leur pronostic et leur argument.
@@ -27,6 +27,12 @@ const STRUCTURE_SYSTEM = `Tu convertis un dossier d'analyse sportive en JSON. Re
 - Garde les URL exactement comme dans le dossier. Une source sans URL n'est pas retenue.
 - Rédige tous les textes en français.`;
 
+// Le mode rapide fait moins de recherches : moins cher, pour analyser beaucoup de matchs.
+const MODE_SETTINGS = {
+  rapide: { maxSearches: 6, effort: "medium", sourcesTarget: "5 à 8" },
+  complete: { maxSearches: 15, effort: "high", sourcesTarget: "8 à 15" },
+} as const;
+
 export async function analyzeMatch(
   req: AnalyzeRequest,
   onProgress: (message: string) => void,
@@ -46,12 +52,13 @@ export async function analyzeMatch(
     .filter(Boolean)
     .join("\n");
 
+  const settings = MODE_SETTINGS[req.mode];
   onProgress("Lancement des recherches sur le web…");
   const { dossier, consultedPages } = await researchWithWeb({
-    system: RESEARCH_SYSTEM,
+    system: researchSystem(settings.sourcesTarget),
     prompt,
-    maxSearches: 15,
-    effort: "high",
+    maxSearches: settings.maxSearches,
+    effort: settings.effort,
     usage,
     onProgress,
   });
@@ -66,5 +73,6 @@ export async function analyzeMatch(
     consultedPages,
     usage,
     createdAt: new Date().toISOString(),
+    mode: req.mode,
   };
 }

@@ -95,8 +95,12 @@ export const FixturesSchema = z.object({
 });
 export type Fixture = z.infer<typeof FixturesSchema>["fixtures"][number];
 
+export const AnalysisModeSchema = z.enum(["rapide", "complete"]);
+export type AnalysisMode = z.infer<typeof AnalysisModeSchema>;
+
 export const AnalyzeRequestSchema = z.object({
   sport: SportSchema,
+  mode: AnalysisModeSchema.optional().default("complete"),
   home: z.string().trim().min(2).max(80),
   away: z.string().trim().min(2).max(80),
   competition: z.string().trim().max(80).optional().default(""),
@@ -125,6 +129,7 @@ export type AnalysisResult = {
   consultedPages: ConsultedPage[];
   usage: Usage;
   createdAt: string;
+  mode?: AnalysisMode;
   demo?: boolean;
 };
 
