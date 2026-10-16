@@ -84,7 +84,9 @@ function average(dists: Distribution[], outcomes: Outcome[]): Distribution | nul
   return normalize(sum, outcomes);
 }
 
-export function computeConsensus(analysis: Analysis): Consensus {
+// `analyst` nomme l'auteur de ai_analysis : l'IA, ou le calcul automatique quand Gemini manque.
+// `compareToMarket` : faux quand ai_analysis est lui-même dérivé des cotes (l'écart n'aurait pas de sens).
+export function computeConsensus(analysis: Analysis, analyst = "l'IA", compareToMarket = true): Consensus {
   const sport = analysis.match.sport;
   const outcomes = outcomesFor(sport);
   const sources = analysis.sources;
@@ -115,7 +117,7 @@ export function computeConsensus(analysis: Analysis): Consensus {
   const pick = totalVotes > 0 ? argmax(votes, outcomes) : null;
   const agreement = pick ? votes[pick] : 0;
   const level: Consensus["level"] =
-    totalVotes < 3 ? "insuffisant" : agreement >= 75 ? "fort" : agreement >= 55 ? "modéré" : "partagé";
+    totalVotes < 2 ? "insuffisant" : agreement >= 75 ? "fort" : agreement >= 55 ? "modéré" : "partagé";
 
   const market = average(marketDists, outcomes);
   const models = average(modelDists, outcomes);
@@ -136,17 +138,17 @@ export function computeConsensus(analysis: Analysis): Consensus {
   const ai = analysis.ai_analysis;
   if (pick && ai.predicted_outcome !== pick) {
     divergences.push(
-      `L'analyse de l'IA (${label(ai.predicted_outcome)}) va à contre-courant du consensus (${label(pick)}).`,
+      `L'avis de ${analyst} (${label(ai.predicted_outcome)}) va à contre-courant du consensus (${label(pick)}).`,
     );
   }
-  if (market) {
+  if (market && compareToMarket) {
     const aiDist = normalize({ home: ai.prob_home, draw: ai.prob_draw, away: ai.prob_away }, outcomes);
     if (aiDist) {
       for (const o of outcomes) {
         const gap = aiDist[o] - market[o];
         if (Math.abs(gap) >= 10) {
           divergences.push(
-            `L'IA estime ${label(o)} à ${aiDist[o].toFixed(0)} %, contre ${market[o].toFixed(0)} % pour les bookmakers (écart de ${gap > 0 ? "+" : ""}${gap.toFixed(0)} points).`,
+            `Selon ${analyst}, ${label(o)} est à ${aiDist[o].toFixed(0)} %, contre ${market[o].toFixed(0)} % pour les bookmakers (écart de ${gap > 0 ? "+" : ""}${gap.toFixed(0)} points).`,
           );
         }
       }

@@ -21,6 +21,7 @@ function JobRow({ job, onOpen, active }: { job: Job; onOpen: () => void; active:
   const c = result?.consensus;
   const ai = result?.analysis.ai_analysis;
   const agree = c?.pick && ai && c.pick === ai.predicted_outcome;
+  const calc = result?.engine === "calcul";
 
   return (
     <li className={`rounded-lg border bg-surface p-3 ${active ? "border-accent" : "border-border"}`}>
@@ -51,10 +52,10 @@ function JobRow({ job, onOpen, active }: { job: Job; onOpen: () => void; active:
             </span>
           </p>
           <p>
-            <span className="text-muted">IA : </span>
+            <span className="text-muted">{calc ? "Calcul : " : "IA : "}</span>
             <strong>{outcomeName(ai.predicted_outcome, f.home, f.away)}</strong>{" "}
             <span className="text-xs text-muted">
-              ({ai.score_prediction}, confiance {ai.confidence})
+              ({calc ? "" : `${ai.score_prediction}, `}confiance {ai.confidence})
             </span>
             {c.pick && (
               <span className={`ml-1 text-xs font-semibold ${agree ? "text-accent" : "text-warn-text"}`}>
@@ -110,7 +111,8 @@ export function JobBoard({
         <div>
           <h2 className="text-lg font-semibold">Récapitulatif</h2>
           <p className="text-sm text-muted">
-            {done.length} / {jobs.length} matchs analysés · {geminiRequests} requêtes Gemini utilisées
+            {done.length} / {jobs.length} matchs analysés
+            {geminiRequests > 0 ? ` · ${geminiRequests} requêtes Gemini utilisées` : ""}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

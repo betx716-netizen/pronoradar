@@ -1,17 +1,25 @@
 import { ApiError } from "@google/genai";
-import { ApiFootballError } from "./apifootball";
-import { AnalysisError } from "./gemini";
-import { OddsApiError } from "./odds";
-import type { StreamEvent } from "./schemas";
+import { ApiFootballError, hasApiFootball } from "./apifootball";
+import { AnalysisError, hasGemini } from "./gemini";
+import { OddsApiError, hasOddsApi } from "./odds";
+import type { ServicesStatus, StreamEvent } from "./schemas";
 
 export const isDemo = () => process.env.DEMO_MODE === "1";
+
+export const servicesStatus = (): ServicesStatus => ({
+  gemini: hasGemini(),
+  odds: hasOddsApi(),
+  apiFootball: hasApiFootball(),
+  demo: isDemo(),
+});
 
 // Si APP_PASSWORD est défini, seules les requêtes portant ce mot de passe passent :
 // évite qu'un inconnu consomme votre crédit API.
 export function guard(req: Request): Response | null {
-  if (!isDemo() && !process.env.GEMINI_API_KEY) {
+  const s = servicesStatus();
+  if (!s.demo && !s.gemini && !s.odds && !s.apiFootball) {
     return Response.json(
-      { error: "Clé Gemini manquante : définissez GEMINI_API_KEY (ou DEMO_MODE=1 pour tester sans clé)." },
+      { error: "Aucune clé configurée : ajoutez GEMINI_API_KEY, ODDS_API_KEY ou API_FOOTBALL_KEY dans Vercel." },
       { status: 500 },
     );
   }

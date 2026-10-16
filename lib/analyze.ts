@@ -1,7 +1,9 @@
 import { apiFootballRemaining, fetchInsight, hasApiFootball, type ApiFootballInsight } from "./apifootball";
 import { computeConsensus } from "./consensus";
-import { emptyUsage, researchWithGoogle, structure, todayInParis } from "./gemini";
-import { AnalysisSchema, type AnalysisResult, type AnalyzeRequest, type Source } from "./schemas";
+import { apiSources } from "./apiSources";
+import { analysisWithoutAI } from "./calculated";
+import { AnalysisError, emptyUsage, hasGemini, researchWithGoogle, structure, todayInParis } from "./gemini";
+import { AnalysisSchema, type AnalysisResult, type AnalyzeRequest } from "./schemas";
 
 const researchSystem = (sourcesTarget: string) => `Tu es un analyste sportif rigoureux. Ton travail : recenser sur le web les pronostics publiés par d'autres pour un match précis, puis donner ta propre analyse.
 
@@ -31,81 +33,13 @@ const MODE_SETTINGS = {
   complete: { sourcesTarget: "8 à 12", injuries: true },
 } as const;
 
-function emptySource(partial: Partial<Source> & Pick<Source, "name" | "type" | "pick">): Source {
-  return {
-    url: "",
-    prob_home: null,
-    prob_draw: null,
-    prob_away: null,
-    odds_home: null,
-    odds_draw: null,
-    odds_away: null,
-    other_tips: [],
-    reasoning: "",
-    published: null,
-    ...partial,
-  };
-}
-
-// Sources « fiables » venues des API, ajoutées telles quelles à la liste des pronostics.
-function apiSources(req: AnalyzeRequest, insight: ApiFootballInsight | null): Source[] {
-  const sources: Source[] = [];
-  const tennis = req.sport === "tennis";
-  const o = req.odds;
-  if (o) {
-    sources.push(
-      emptySource({
-        name: `Moyenne de ${o.bookmakers} bookmakers`,
-        type: "bookmaker",
-        pick: "none",
-        url: "https://the-odds-api.com",
-        odds_home: o.home,
-        odds_draw: tennis ? null : o.draw,
-        odds_away: o.away,
-        reasoning: "Cotes relevées par The Odds API au moment de la recherche des matchs.",
-      }),
-    );
-    if (o.exchange) {
-      sources.push(
-        emptySource({
-          name: o.exchange.name,
-          type: "exchange",
-          pick: "none",
-          url: "https://the-odds-api.com",
-          odds_home: o.exchange.home,
-          odds_draw: tennis ? null : o.exchange.draw,
-          odds_away: o.exchange.away,
-          reasoning: "Bourse de paris : cotes fixées par les parieurs eux-mêmes, sans marge du bookmaker.",
-        }),
-      );
-    }
-  }
-  if (insight) {
-    const tips = [insight.advice, insight.underOver ? `Buts : ${insight.underOver}` : null].filter((t): t is string => Boolean(t));
-    sources.push(
-      emptySource({
-        name: "API-Football (modèle statistique)",
-        type: "stats_model",
-        pick: "none",
-        url: "https://www.api-football.com",
-        prob_home: insight.percent.home,
-        prob_draw: insight.percent.draw,
-        prob_away: insight.percent.away,
-        other_tips: tips,
-        reasoning: insight.winner ? `Vainqueur prédit : ${insight.winner}.` : "Pas de vainqueur net prédit.",
-      }),
-    );
-  }
-  return sources;
-}
-
 // Les données des API, présentées à Gemini comme des faits établis.
 function knownFacts(req: AnalyzeRequest, insight: ApiFootballInsight | null): string {
   const lines: string[] = [];
   const o = req.odds;
   if (o) {
     lines.push(
-      `Cotes moyennes de ${o.bookmakers} bookmakers : ${req.home} ${o.home}${o.draw ? ` / nul ${o.draw}` : ""} / ${req.away} ${o.away}.`,
+      `Cotes moyennes (${o.bookmakers} bookmaker${o.bookmakers > 1 ? "s" : ""}) : ${req.home} ${o.home}${o.draw ? ` / nul ${o.draw}` : ""} / ${req.away} ${o.away}.`,
     );
   }
   if (insight) {
@@ -124,7 +58,7 @@ export async function analyzeMatch(req: AnalyzeRequest, onProgress: (message: st
   const usage = emptyUsage();
   const settings = MODE_SETTINGS[req.mode];
 
-  if (req.odds) onProgress(`Cotes de ${req.odds.bookmakers} bookmakers récupérées.`);
+  if (req.odds) onProgress(`Cotes récupérées (${req.odds.bookmakers} bookmaker${req.odds.bookmakers > 1 ? "s" : ""}).`);
 
   let insight: ApiFootballInsight | null = null;
   if (req.sport === "football" && req.apiFootballId && hasApiFootball()) {
@@ -135,6 +69,26 @@ export async function analyzeMatch(req: AnalyzeRequest, onProgress: (message: st
       onProgress(e instanceof Error ? e.message : String(e));
     }
     usage.apiFootballRequestsRemaining = apiFootballRemaining();
+  }
+
+  // Sans Gemini : analyse calculée à partir des seules données chiffrées.
+  if (!hasGemini()) {
+    if (!req.odds && !insight) {
+      throw new AnalysisError(
+        "Sans clé Gemini, l'analyse repose sur les cotes et API-Football : choisissez un match trouvé à l'étape 1.",
+      );
+    }
+    onProgress("Calcul de l'analyse à partir des cotes et des statistiques…");
+    const analysis = analysisWithoutAI(req, insight);
+    return {
+      analysis,
+      consensus: computeConsensus(analysis, "le calcul automatique", false),
+      consultedPages: [],
+      usage,
+      createdAt: new Date().toISOString(),
+      mode: req.mode,
+      engine: "calcul",
+    };
   }
 
   const match =
@@ -175,5 +129,6 @@ export async function analyzeMatch(req: AnalyzeRequest, onProgress: (message: st
     usage,
     createdAt: new Date().toISOString(),
     mode: req.mode,
+    engine: "ia",
   };
 }

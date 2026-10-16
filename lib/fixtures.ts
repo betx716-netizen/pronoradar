@@ -1,5 +1,5 @@
 import { apiFootballRemaining, attachApiFootballIds, fetchApiFootballFixtures, hasApiFootball } from "./apifootball";
-import { emptyUsage, researchWithGoogle, structure, todayInParis } from "./gemini";
+import { emptyUsage, hasGemini, researchWithGoogle, structure, todayInParis } from "./gemini";
 import { findLeague } from "./leagues";
 import { fetchOddsFixtures, hasOddsApi } from "./odds";
 import { FixturesSchema, type Fixture, type Sport } from "./schemas";
@@ -39,6 +39,15 @@ export async function findFixtures(sport: Sport, competition: string, onProgress
       notes.push(e instanceof Error ? e.message : String(e));
     }
     usage.apiFootballRequestsRemaining = apiFootballRemaining();
+  }
+
+  if (!fixtures && !hasGemini()) {
+    notes.push(
+      sport === "tennis"
+        ? "Le tennis nécessite la clé The Odds API ou la clé Gemini."
+        : "Ce championnat n'a pas pu être chargé : il faut la clé The Odds API, API-Football ou Gemini.",
+    );
+    return { fixtures: [] as Fixture[], usage, notes };
   }
 
   if (!fixtures) {

@@ -6,7 +6,7 @@ import { JobBoard } from "@/components/JobBoard";
 import { QuotaError, UnauthorizedError, callStreaming, loadHistory, saveHistory, setPassword } from "@/lib/client";
 import { fixtureId, runPool, type Job } from "@/lib/jobs";
 import { LEAGUES, MAX_LEAGUES, MODES } from "@/lib/leagues";
-import type { AnalysisMode, AnalysisResult, Fixture, Sport, Usage } from "@/lib/schemas";
+import type { AnalysisMode, AnalysisResult, Fixture, ServicesStatus, Sport, Usage } from "@/lib/schemas";
 
 const MAX_HISTORY = 60;
 const CONCURRENCY = 2;
@@ -42,13 +42,22 @@ export default function Home() {
   const [history, setHistory] = useState<AnalysisResult[]>([]);
   const detailRef = useRef<HTMLDivElement>(null);
 
+  const [services, setServices] = useState<ServicesStatus | null>(null);
+
   useEffect(() => setHistory(loadHistory<AnalysisResult>()), []);
+  useEffect(() => {
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then(setServices)
+      .catch(() => {});
+  }, []);
 
   const searching = Object.values(byLeague).some((l) => l.status === "loading");
   const allFixtures = leagues.flatMap((l) => byLeague[l]?.fixtures ?? []);
   const selectedFixtures = allFixtures.filter((f) => selected.has(fixtureId(f)));
   const apiFootballNeeded = selectedFixtures.filter((f) => f.apiFootballId).length * MODES[mode].apiFootballPerMatch;
-  const geminiNeeded = selectedFixtures.length * MODES[mode].geminiPerMatch;
+  const gemini = services?.gemini ?? true;
+  const geminiNeeded = gemini ? selectedFixtures.length * MODES[mode].geminiPerMatch : 0;
 
   function trackQuotas(u: Usage) {
     setQuotas((q) => ({
@@ -189,7 +198,7 @@ export default function Home() {
       !window.confirm(
         overQuota
           ? `Il reste ${quotas.apiFootball} requêtes API-Football aujourd'hui, il en faudrait ${apiFootballNeeded}. Les derniers matchs seront analysés sans les statistiques API-Football. Continuer ?`
-          : `Vous allez analyser ${selectedFixtures.length} matchs (${geminiNeeded} requêtes Gemini). Continuer ?`,
+          : `Vous allez analyser ${selectedFixtures.length} matchs. Continuer ?`,
       )
     ) {
       return;
@@ -225,6 +234,27 @@ export default function Home() {
         <p className="mt-2 text-muted">
           L&apos;IA recense les pronostics publiés sur le web, les compare et vous dit ce qui en ressort, avec sa propre analyse.
         </p>
+        {services && !services.demo && (
+          <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+            <span>Services actifs :</span>
+            {(
+              [
+                ["Gemini", services.gemini],
+                ["The Odds API", services.odds],
+                ["API-Football", services.apiFootball],
+              ] as const
+            ).map(([label, on]) => (
+              <span key={label} className={on ? "text-accent" : "line-through"}>
+                {on ? "✓" : "✗"} {label}
+              </span>
+            ))}
+          </p>
+        )}
+        {services && !services.demo && !services.gemini && (
+          <p className="mt-2 text-xs text-warn-text">
+            Sans clé Gemini, les analyses sont calculées à partir des cotes et des statistiques, sans avis de pronostiqueurs.
+          </p>
+        )}
       </header>
 
       <div className="mb-6 inline-flex rounded-lg border border-border bg-surface p-1" role="tablist">
@@ -388,8 +418,7 @@ export default function Home() {
                 {selectedFixtures.length > 1 ? "s" : ""}
                 {selectedFixtures.length > 0 && (
                   <span className="block text-xs text-muted">
-                    Consommera {geminiNeeded} requêtes Gemini
-                    {apiFootballNeeded > 0 ? ` et ${apiFootballNeeded} requêtes API-Football` : ""}
+                    Consommera {[geminiNeeded > 0 && `${geminiNeeded} requêtes Gemini`, apiFootballNeeded > 0 && `${apiFootballNeeded} requêtes API-Football`].filter(Boolean).join(" et ") || "aucune requête payante"}
                     {quotas.apiFootball !== null ? ` (il en reste ${quotas.apiFootball} aujourd'hui)` : ""}.
                   </span>
                 )}
@@ -437,7 +466,11 @@ export default function Home() {
               aria-label="Date"
             />
           </div>
-          <p className="text-xs text-muted">Utilise le type d&apos;analyse choisi à l&apos;étape 3 ({MODES[mode].label}).</p>
+          <p className="text-xs text-muted">
+            {gemini
+              ? `Utilise le type d'analyse choisi à l'étape 3 (${MODES[mode].label}).`
+              : "Nécessite la clé Gemini : sans elle, choisissez plutôt un match trouvé à l'étape 1."}
+          </p>
           <button className={buttonClass} disabled={running || manual.home.trim().length < 2 || manual.away.trim().length < 2}>
             Analyser ce match
           </button>

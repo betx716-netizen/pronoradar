@@ -7,6 +7,8 @@ const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 15_000;
 
+export const hasGemini = () => Boolean(process.env.GEMINI_API_KEY);
+
 let client: GoogleGenAI | null = null;
 function getClient() {
   client ??= new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });

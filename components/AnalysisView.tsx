@@ -24,6 +24,8 @@ const OUTCOME_COLORS: Record<Outcome, string> = {
   away: "bg-away",
 };
 
+const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
+
 function Card({ title, children, className = "" }: { title?: string; children: React.ReactNode; className?: string }) {
   return (
     <section className={`rounded-xl border border-border bg-surface p-4 sm:p-5 ${className}`}>
@@ -144,12 +146,19 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
   const aiDist: Distribution = { home: 0, draw: 0, away: 0 };
   for (const o of consensus.outcomes) aiDist[o] = (aiRaw[o] / aiTotal) * 100;
   const totalSources = analysis.sources.length;
+  const calc = result.engine === "calcul";
 
   return (
     <div className="space-y-4">
       {result.demo && (
         <p className="rounded-lg bg-warn-bg px-4 py-2 text-sm text-warn-text">
           Mode démonstration : les sources et les chiffres ci-dessous sont fictifs.
+        </p>
+      )}
+
+      {calc && (
+        <p className="rounded-lg bg-surface-2 px-4 py-2 text-sm text-muted">
+          Analyse calculée sans IA (pas de clé Gemini) : elle repose uniquement sur les cotes et les statistiques.
         </p>
       )}
 
@@ -172,7 +181,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
             <>
               <p className="text-2xl font-bold">{name(consensus.pick)}</p>
               <p className="mt-1 text-sm text-muted">
-                {consensus.agreement.toFixed(0)} % du vote pondéré · {totalSources} sources recensées
+                {consensus.agreement.toFixed(0)} % du vote pondéré · {plural(totalSources, "source")} recensée{totalSources > 1 ? "s" : ""}
               </p>
             </>
           ) : (
@@ -182,11 +191,13 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
             Consensus {consensus.level}
           </span>
         </Card>
-        <Card title="L'analyse de l'IA">
+        <Card title={calc ? "Le calcul automatique" : "L'analyse de l'IA"}>
           <p className="text-2xl font-bold">{name(ai.predicted_outcome)}</p>
-          <p className="mt-1 text-sm text-muted">
-            {sport === "tennis" ? "Sets probables" : "Score probable"} : <strong className="text-text">{ai.score_prediction}</strong>
-          </p>
+          {!calc && (
+            <p className="mt-1 text-sm text-muted">
+              {sport === "tennis" ? "Sets probables" : "Score probable"} : <strong className="text-text">{ai.score_prediction}</strong>
+            </p>
+          )}
           <span className="mt-3 inline-block rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold">
             Confiance {ai.confidence}
           </span>
@@ -194,8 +205,8 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
       </div>
 
       <Card title="Comparaison des probabilités">
-        <ProbBar label="Bookmakers" hint={`marge retirée · ${consensus.counts.bookmaker + consensus.counts.exchange} sources`} dist={consensus.market} outcomes={consensus.outcomes} name={name} />
-        <ProbBar label="Modèles statistiques" hint={`${consensus.counts.stats_model} sources`} dist={consensus.models} outcomes={consensus.outcomes} name={name} />
+        <ProbBar label="Bookmakers" hint={`marge retirée · ${plural(consensus.counts.bookmaker + consensus.counts.exchange, "source")}`} dist={consensus.market} outcomes={consensus.outcomes} name={name} />
+        <ProbBar label="Modèles statistiques" hint={plural(consensus.counts.stats_model, "source")} dist={consensus.models} outcomes={consensus.outcomes} name={name} />
         <ProbBar
           label="Vote de toutes les sources"
           hint="pondéré : cotes ×3, modèles ×2, avis ×1"
@@ -203,7 +214,13 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
           outcomes={consensus.outcomes}
           name={name}
         />
-        <ProbBar label="Analyse de l'IA" dist={aiDist} outcomes={consensus.outcomes} name={name} />
+        <ProbBar
+          label={calc ? "Calcul automatique" : "Analyse de l'IA"}
+          hint={calc ? "cotes 60 % + modèle 40 %" : undefined}
+          dist={aiDist}
+          outcomes={consensus.outcomes}
+          name={name}
+        />
       </Card>
 
       {consensus.divergences.length > 0 && (
@@ -231,7 +248,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
         )}
       </Card>
 
-      <Card title="Analyse détaillée de l'IA">
+      <Card title={calc ? "Synthèse automatique" : "Analyse détaillée de l'IA"}>
         <p className="leading-relaxed">{ai.summary}</p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
@@ -308,7 +325,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
 
       <p className="text-xs text-muted">
         Analyse du {new Date(result.createdAt).toLocaleString("fr-FR")}
-        {!result.demo && ` · ${usage.geminiRequests} requêtes Gemini · ${usage.webSearches} recherches Google`}
+        {usage.geminiRequests > 0 && ` · ${usage.geminiRequests} requêtes Gemini · ${usage.webSearches} recherches Google`}
         {usage.apiFootballRequestsRemaining !== null && ` · ${usage.apiFootballRequestsRemaining} requêtes API-Football restantes aujourd'hui`}
         . Ces informations sont une aide à la réflexion, pas une garantie : aucun pronostic n'est sûr. Pariez de façon responsable.
       </p>

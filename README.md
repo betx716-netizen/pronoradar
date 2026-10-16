@@ -10,7 +10,7 @@ L'IA recense les pronostics publiés pour des matchs de **football** et de **ten
 | [API-Football](https://www.api-football.com) | Pronostic chiffré, forme, confrontations directes, blessés (football) | `API_FOOTBALL_KEY` |
 | [Google Gemini](https://aistudio.google.com/apikey) | Recherche Google des avis de pronostiqueurs et médias, synthèse et analyse | `GEMINI_API_KEY` |
 
-Seule la clé Gemini est obligatoire ; sans les deux autres, l'application se rabat sur la recherche Google.
+Une seule clé suffit : l'application utilise les services configurés. Sans Gemini, les analyses sont calculées à partir des cotes et des statistiques, sans avis de pronostiqueurs ni texte rédigé.
 
 ## Consensus (`lib/consensus.ts`)
 

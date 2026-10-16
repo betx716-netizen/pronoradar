@@ -150,8 +150,12 @@ export type AnalysisResult = {
   usage: Usage;
   createdAt: string;
   mode?: AnalysisMode;
+  engine?: "ia" | "calcul"; // "calcul" : sans Gemini, à partir des cotes et d'API-Football
   demo?: boolean;
 };
+
+// Services configurés sur le serveur (clés présentes).
+export type ServicesStatus = { gemini: boolean; odds: boolean; apiFootball: boolean; demo: boolean };
 
 // Événements envoyés au navigateur pendant l'analyse (une ligne JSON par événement).
 export type StreamEvent =
