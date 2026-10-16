@@ -1,0 +1,113 @@
+// Données fictives utilisées quand DEMO_MODE=1 : permettent de tester l'interface
+// sans clé API et sans frais. Les sources et les chiffres sont inventés.
+import { computeConsensus } from "./consensus";
+import type { Analysis, AnalysisResult, AnalyzeRequest, Fixture, Source } from "./schemas";
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+function src(partial: Partial<Source> & Pick<Source, "name" | "type" | "pick">): Source {
+  return {
+    url: `https://example.com/demo/${encodeURIComponent(partial.name.toLowerCase())}`,
+    prob_home: null,
+    prob_draw: null,
+    prob_away: null,
+    odds_home: null,
+    odds_draw: null,
+    odds_away: null,
+    other_tips: [],
+    reasoning: "",
+    published: null,
+    ...partial,
+  };
+}
+
+export async function demoAnalysis(req: AnalyzeRequest, onProgress: (m: string) => void): Promise<AnalysisResult> {
+  const steps = [
+    "Lancement des recherches sur le web…",
+    `Recherche : « pronostic ${req.home} ${req.away} »`,
+    "9 résultats trouvés",
+    `Recherche : « cotes ${req.home} ${req.away} »`,
+    "8 résultats trouvés",
+    `Recherche : « ${req.home} blessés absents »`,
+    "10 résultats trouvés",
+    "Synthèse des pronostics recensés…",
+  ];
+  for (const s of steps) {
+    onProgress(s);
+    await wait(400);
+  }
+
+  const tennis = req.sport === "tennis";
+  const draw = (v: number) => (tennis ? null : v);
+  const analysis: Analysis = {
+    match: {
+      sport: req.sport,
+      competition: req.competition || (tennis ? "Tournoi ATP (démo)" : "Ligue des Champions (démo)"),
+      home: req.home,
+      away: req.away,
+      date: req.date || null,
+      venue_or_surface: tennis ? "Dur intérieur" : "Stade de l'équipe à domicile",
+    },
+    sources: [
+      src({ name: "Bookmaker A", type: "bookmaker", pick: "home", odds_home: 1.95, odds_draw: draw(3.8), odds_away: tennis ? 1.9 : 3.6, reasoning: "Cotes relevées la veille du match." }),
+      src({ name: "Bookmaker B", type: "bookmaker", pick: "home", odds_home: 2.0, odds_draw: draw(3.7), odds_away: tennis ? 1.85 : 3.5, reasoning: "Cotes relevées le jour du match." }),
+      src({ name: "Bourse de paris C", type: "exchange", pick: "home", odds_home: 2.04, odds_draw: draw(3.95), odds_away: tennis ? 1.96 : 3.75, reasoning: "Cotes de la bourse, sans marge." }),
+      src({ name: "Modèle statistique D", type: "stats_model", pick: "home", prob_home: tennis ? 55 : 48, prob_draw: draw(27), prob_away: tennis ? 45 : 25, other_tips: [tennis ? "Victoire en 3 sets" : "Score : 2-1"], reasoning: "Modèle basé sur les buts attendus des 10 derniers matchs." }),
+      src({ name: "Modèle statistique E", type: "stats_model", pick: tennis ? "away" : "home", prob_home: tennis ? 47 : 44, prob_draw: draw(28), prob_away: tennis ? 53 : 28, reasoning: "Modèle Elo." }),
+      src({ name: "Pronostiqueur F", type: "tipster", pick: "home", other_tips: [tennis ? "Plus de 22,5 jeux" : "Plus de 2,5 buts"], reasoning: "Avantage du terrain et meilleure forme récente." }),
+      src({ name: "Pronostiqueur G", type: "tipster", pick: tennis ? "away" : "draw", other_tips: [tennis ? "Plus de 22,5 jeux" : "Les deux équipes marquent"], reasoning: "Match fermé attendu entre deux équipes prudentes." }),
+      src({ name: "Média H", type: "media", pick: "home", other_tips: [tennis ? "Victoire en 3 sets" : "Plus de 2,5 buts"], reasoning: "Le favori reste sur cinq victoires consécutives." }),
+      src({ name: "Média I", type: "media", pick: "away", reasoning: "Pari sur l'outsider, en grande forme à l'extérieur." }),
+    ],
+    secondary_trends: tennis
+      ? [{ market: "Plus de 22,5 jeux", verdict: "Oui pour 2 sources sur 2", sources_count: 2 }]
+      : [
+          { market: "Plus de 2,5 buts", verdict: "Oui pour 2 sources sur 2", sources_count: 2 },
+          { market: "Les deux équipes marquent", verdict: "Oui pour 1 source", sources_count: 1 },
+        ],
+    context: {
+      form_home: "4 victoires, 1 nul sur les 5 derniers matchs (démo).",
+      form_away: "3 victoires, 2 défaites sur les 5 derniers matchs (démo).",
+      absences: ["Défenseur central (blessure, démo)", "Milieu offensif incertain (démo)"],
+      head_to_head: "2 victoires chacun lors des 5 dernières confrontations (démo).",
+      key_facts: ["Données fictives générées pour la démonstration."],
+    },
+    ai_analysis: {
+      prob_home: tennis ? 54 : 47,
+      prob_draw: tennis ? 0 : 26,
+      prob_away: tennis ? 46 : 27,
+      predicted_outcome: "home",
+      score_prediction: tennis ? "2 sets à 1" : "2-1",
+      confidence: "moyenne",
+      key_factors: ["Avantage du terrain", "Forme récente supérieure", "Absences côté adverse"],
+      risks: ["Absence d'un défenseur clé", "Outsider dangereux en contre-attaque"],
+      consensus_comment:
+        "La majorité des sources, bookmakers en tête, voit l'équipe à domicile favorite. Je rejoins ce consensus, avec une confiance moyenne à cause des absences.",
+      summary: "Démonstration : ceci est une analyse fictive pour tester l'affichage de l'application.",
+    },
+  };
+
+  return {
+    analysis,
+    consensus: computeConsensus(analysis),
+    consultedPages: [{ title: "Page de démonstration", url: "https://example.com/demo" }],
+    usage: { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, webSearches: 0, estimatedCostUsd: 0 },
+    createdAt: new Date().toISOString(),
+    demo: true,
+  };
+}
+
+export async function demoFixtures(sport: "football" | "tennis", onProgress: (m: string) => void): Promise<Fixture[]> {
+  onProgress("Recherche du programme…");
+  await wait(600);
+  const d = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+  return sport === "tennis"
+    ? [
+        { home: "Joueur A", away: "Joueur B", competition: "Tournoi démo", date: d, time: "14:00", stage: "Quart de finale" },
+        { home: "Joueur C", away: "Joueur D", competition: "Tournoi démo", date: d, time: "16:30", stage: "Quart de finale" },
+      ]
+    : [
+        { home: "Équipe A", away: "Équipe B", competition: "Ligue des Champions (démo)", date: d, time: "21:00", stage: "Phase de ligue" },
+        { home: "Équipe C", away: "Équipe D", competition: "Ligue des Champions (démo)", date: d, time: "18:45", stage: "Phase de ligue" },
+      ];
+}

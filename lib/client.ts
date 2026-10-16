@@ -1,0 +1,80 @@
+"use client";
+
+import type { StreamEvent } from "./schemas";
+
+export class UnauthorizedError extends Error {}
+
+const PASSWORD_KEY = "pronoradar:password";
+const HISTORY_KEY = "pronoradar:history";
+
+export function getPassword(): string {
+  try {
+    return localStorage.getItem(PASSWORD_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+export function setPassword(value: string) {
+  try {
+    localStorage.setItem(PASSWORD_KEY, value);
+  } catch {}
+}
+
+export function loadHistory<T>(): T[] {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]") as T[];
+  } catch {
+    return [];
+  }
+}
+
+export function saveHistory<T>(items: T[]) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(items));
+  } catch {}
+}
+
+/** Appelle une route qui répond en NDJSON et relaie la progression. */
+export async function callStreaming<T>(
+  url: string,
+  body: unknown,
+  onProgress: (message: string) => void,
+): Promise<T> {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-app-password": getPassword() },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401) throw new UnauthorizedError("Mot de passe requis.");
+  if (!res.ok || !res.body) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error ?? `Erreur ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let result: T | undefined;
+
+  const handle = (line: string) => {
+    if (!line.trim()) return;
+    const event = JSON.parse(line) as StreamEvent;
+    if (event.type === "progress") onProgress(event.message);
+    else if (event.type === "error") throw new Error(event.message);
+    else result = event.data as T;
+  };
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    lines.forEach(handle);
+  }
+  handle(buffer);
+
+  if (result === undefined) throw new Error("La connexion a été interrompue avant la fin. Réessayez.");
+  return result;
+}

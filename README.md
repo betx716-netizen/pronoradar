@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PronoRadar
 
-## Getting Started
+L'IA recense les pronostics publiés sur le web pour un match de **football** ou de **tennis**, les compare, dit ce qui en ressort, puis donne sa propre analyse.
 
-First, run the development server:
+## Comment ça marche
+
+1. **Recherche** : Claude (Opus 5.5) fait jusqu'à 15 recherches web. Il relève les cotes des bookmakers, les probabilités des modèles statistiques, les avis des pronostiqueurs et des médias, et le contexte du match (forme, absences, confrontations directes).
+2. **Mise en forme** : le dossier obtenu est converti en données structurées.
+3. **Consensus** (calculé par le code, `lib/consensus.ts`) :
+   - les cotes sont converties en probabilités, marge du bookmaker retirée ;
+   - chaque source vote pour une issue, avec un poids : bookmaker/bourse ×3, modèle statistique ×2, pronostiqueur/média ×1 ;
+   - le niveau d'accord est fort (≥ 75 %), modéré (≥ 55 %) ou partagé ;
+   - les désaccords sont signalés (cotes contre majorité, modèles contre cotes, IA contre consensus).
+4. **Analyse de l'IA** : ses probabilités, le score probable, son niveau de confiance, les facteurs clés et les risques.
+
+## Lancer en local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # puis renseignez ANTHROPIC_API_KEY
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Pour tester l'interface sans clé : `DEMO_MODE=1 npm run dev`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Coût
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Chaque analyse coûte de l'ordre de quelques dizaines de centimes à environ 1 $ (recherches web et modèle). Le coût estimé s'affiche sous chaque analyse.
 
-## Learn More
+## Mise en ligne (Vercel)
 
-To learn more about Next.js, take a look at the following resources:
+Importez le dépôt dans Vercel, puis ajoutez `ANTHROPIC_API_KEY` et `APP_PASSWORD` dans les variables d'environnement.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Prochaines étapes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Enregistrer chaque analyse dans une base de données, puis comparer les pronostics aux résultats réels.
+- Calculer un score de fiabilité par source et l'utiliser comme poids à la place des poids fixes.
