@@ -32,6 +32,7 @@ export function analysisWithoutAI(req: AnalyzeRequest, insight: ApiFootballInsig
       venue_or_surface: null,
     },
     sources: apiSources(req, insight),
+    markets: [],
     secondary_trends: insight?.underOver
       ? [{ market: `Nombre de buts (${insight.underOver})`, verdict: "Tendance du modèle API-Football", sources_count: 1 }]
       : [],

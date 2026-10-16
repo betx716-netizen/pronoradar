@@ -2,6 +2,7 @@ import { apiFootballRemaining, fetchInsight, hasApiFootball, type ApiFootballIns
 import { computeConsensus } from "./consensus";
 import { apiSources } from "./apiSources";
 import { analysisWithoutAI } from "./calculated";
+import { buildPicks } from "./markets";
 import {
   AnalysisError,
   emptyUsage,
@@ -29,13 +30,15 @@ Rédige ensuite un dossier en français avec :
 1. Les sources trouvées sur le web, une par ligne (nom, type : tipster / media / stats_model, issue pronostiquée, probabilités, autres pronostics, argument, date).
 2. Le contexte (forme, absences, confrontations directes, faits marquants).
 3. Ce qui ressort de l'ensemble des pronostics, cotes comprises : où ils convergent, où ils divergent.
-4. TA propre analyse : probabilités en % pour chaque issue, issue la plus probable, score ou sets probables, niveau de confiance (faible / moyenne / élevée), facteurs clés, risques, et en quoi tu rejoins ou contredis le consensus. Sois honnête sur l'incertitude.`;
+4. TA propre analyse : probabilités en % pour chaque issue, issue la plus probable, score ou sets probables, niveau de confiance (faible / moyenne / élevée), facteurs clés, risques, et en quoi tu rejoins ou contredis le consensus. Sois honnête sur l'incertitude.
+5. Les marchés secondaires, chacun avec une probabilité en % et la moyenne attendue : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (ligne la plus pertinente entre 8,5 et 10,5), fautes (entre 20,5 et 24,5), cartons (3,5 ou 4,5). Au tennis : nombre de sets et de jeux. Appuie-toi sur les moyennes de la saison des deux équipes (buts, corners, fautes, cartons), le style de jeu et l'arbitre si connu.`;
 
 const STRUCTURE_SYSTEM = `Tu convertis un dossier d'analyse sportive en JSON. Recopie fidèlement les informations du dossier, sans rien inventer.
 - "home" désigne l'équipe à domicile (ou le joueur 1), "away" l'équipe à l'extérieur (ou le joueur 2), "draw" le match nul.
 - Au tennis, il n'y a pas de nul : mets prob_draw et odds_draw à null pour les sources, et ai_analysis.prob_draw à 0.
 - Les probabilités sont en pourcentage (0 à 100).
 - Dans "sources", mets uniquement les sources trouvées sur le web (pas les cotes ni API-Football, déjà comptées). Leurs cotes sont à null. Si l'URL d'une source n'est pas connue, mets une chaîne vide.
+- Dans "markets", recopie les marchés secondaires du dossier (buts, les deux marquent, corners, fautes, cartons, sets, jeux), un pari par ligne avec sa probabilité.
 - Rédige tous les textes en français.`;
 
 // Utilisé quand la recherche Google n'est plus disponible : Gemini analyse sans pouvoir citer de pronostiqueurs.
@@ -44,7 +47,8 @@ Appuie-toi sur les données fournies (cotes, statistiques) et sur tes connaissan
 N'invente aucune source, aucun pronostiqueur, aucune blessure récente : la liste des sources doit rester vide.
 Rédige en français : contexte connu, ce que disent les cotes, puis TA propre analyse (probabilités en % pour chaque issue,
 issue la plus probable, score ou sets probables, confiance faible / moyenne / élevée, facteurs clés, risques).
-Précise que l'actualité récente (blessures, compositions) n'a pas pu être vérifiée.`;
+Précise que l'actualité récente (blessures, compositions) n'a pas pu être vérifiée.
+Donne aussi les marchés secondaires : Les marchés secondaires, chacun avec une probabilité en % et la moyenne attendue : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (ligne la plus pertinente entre 8,5 et 10,5), fautes (entre 20,5 et 24,5), cartons (3,5 ou 4,5). Au tennis : nombre de sets et de jeux. Appuie-toi sur les moyennes de la saison des deux équipes (buts, corners, fautes, cartons), le style de jeu et l'arbitre si connu.`;
 
 const MODE_SETTINGS = {
   rapide: { sourcesTarget: "4 à 6", injuries: false },
@@ -101,6 +105,7 @@ export async function analyzeMatch(req: AnalyzeRequest, onProgress: (message: st
       createdAt: new Date().toISOString(),
       mode: req.mode,
       engine: "calcul",
+      picks: buildPicks(analysis, req.odds, "calcul"),
       notice,
     };
   };
@@ -187,6 +192,7 @@ async function analyzeWithGemini(
     createdAt: new Date().toISOString(),
     mode: req.mode,
     engine: "ia",
+    picks: buildPicks(analysis, req.odds, "ia"),
     notice,
   };
 }

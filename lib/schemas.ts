@@ -38,6 +38,29 @@ export const SourceSchema = z.object({
 });
 export type Source = z.infer<typeof SourceSchema>;
 
+export const MarketCategorySchema = z.enum([
+  "resultat",
+  "double_chance",
+  "buts",
+  "les_deux_marquent",
+  "corners",
+  "fautes",
+  "cartons",
+  "sets",
+  "jeux",
+]);
+export type MarketCategory = z.infer<typeof MarketCategorySchema>;
+
+// Estimation de l'IA pour un marché secondaire (buts, corners, fautes…).
+export const MarketEstimateSchema = z.object({
+  category: MarketCategorySchema,
+  selection: z.string().describe("Pari précis, ex : 'Plus de 2,5 buts', 'Moins de 9,5 corners', 'Plus de 22,5 fautes'"),
+  probability: z.number().describe("Probabilité estimée en % que ce pari soit gagnant"),
+  expected_value: z.number().nullable().describe("Nombre moyen attendu (buts, corners, fautes, cartons…) si pertinent"),
+  reasoning: z.string().describe("Justification courte : moyennes des équipes, style de jeu, arbitre…"),
+});
+export type MarketEstimate = z.infer<typeof MarketEstimateSchema>;
+
 export const AnalysisSchema = z.object({
   match: z.object({
     sport: SportSchema,
@@ -78,6 +101,11 @@ export const AnalysisSchema = z.object({
       .describe("Ce qui ressort des pronostics recensés et où l'IA est d'accord ou non avec eux"),
     summary: z.string().describe("Synthèse finale en un paragraphe"),
   }),
+  markets: z
+    .array(MarketEstimateSchema)
+    .describe(
+      "Football : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (plus/moins 8,5 à 10,5), fautes (plus/moins 20,5 à 24,5), cartons (plus/moins 3,5 ou 4,5). Tennis : nombre de sets, nombre de jeux. Une ligne par pari, en choisissant le côté (plus ou moins) le plus probable.",
+    ),
 });
 export type Analysis = z.infer<typeof AnalysisSchema>;
 
@@ -103,6 +131,8 @@ export const OddsSummarySchema = z.object({
   exchange: z
     .object({ name: z.string(), home: z.number(), draw: z.number().nullable(), away: z.number() })
     .nullable(),
+  // Ligne de buts (ou de jeux au tennis) la plus proposée, avec les cotes moyennes plus / moins.
+  totals: z.object({ point: z.number(), over: z.number(), under: z.number() }).nullable().optional(),
 });
 export type OddsSummary = z.infer<typeof OddsSummarySchema>;
 
@@ -150,9 +180,21 @@ export type AnalysisResult = {
   usage: Usage;
   createdAt: string;
   mode?: AnalysisMode;
+  picks?: MarketPick[]; // tous les paris proposés pour ce match, prêts pour le coupon
   engine?: "ia" | "calcul"; // "calcul" : sans Gemini, à partir des cotes et d'API-Football
   notice?: string; // explique pourquoi l'analyse a été calculée sans IA (quota Gemini atteint…)
   demo?: boolean;
+};
+
+// Un pari proposé, avec sa probabilité et la cote (bookmaker si connue, sinon cote juste estimée).
+export type MarketPick = {
+  category: MarketCategory;
+  selection: string;
+  probability: number;
+  odds: number;
+  oddsSource: "bookmaker" | "estimée";
+  basis: "cotes" | "cotes + IA" | "estimation IA" | "calcul";
+  reasoning: string;
 };
 
 // Services configurés sur le serveur (clés présentes).

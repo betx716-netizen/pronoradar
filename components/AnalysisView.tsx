@@ -2,6 +2,7 @@
 
 import { SOURCE_WEIGHTS, sourceDistribution, sourcePick, type Consensus, type Distribution } from "@/lib/consensus";
 import type { AnalysisResult, Outcome, Source, SourceType } from "@/lib/schemas";
+import { MarketsPanel } from "./MarketsPanel";
 
 const TYPE_LABELS: Record<SourceType, string> = {
   bookmaker: "Bookmaker",
@@ -28,7 +29,7 @@ const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
 
 function Card({ title, children, className = "" }: { title?: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className={`rounded-xl border border-border bg-surface p-4 sm:p-5 ${className}`}>
+    <section className={`rounded-2xl border border-border bg-surface p-4 sm:p-5 ${className}`}>
       {title && <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">{title}</h3>}
       {children}
     </section>
@@ -162,7 +163,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
         </p>
       )}
 
-      <header className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+      <header className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
         <p className="text-sm text-muted">
           {match.competition}
           {match.date ? ` · ${match.date}` : ""}
@@ -203,6 +204,8 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
           </span>
         </Card>
       </div>
+
+      {result.picks && result.picks.length > 0 && <MarketsPanel picks={result.picks} />}
 
       <Card title="Comparaison des probabilités">
         <ProbBar label="Bookmakers" hint={`marge retirée · ${plural(consensus.counts.bookmaker + consensus.counts.exchange, "source")}`} dist={consensus.market} outcomes={consensus.outcomes} name={name} />
@@ -307,7 +310,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
       </Card>
 
       {consultedPages.length > 0 && (
-        <details className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+        <details className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
           <summary className="cursor-pointer text-sm font-semibold text-muted">
             {consultedPages.length} page{consultedPages.length > 1 ? "s" : ""} consultée{consultedPages.length > 1 ? "s" : ""} pendant la recherche
           </summary>

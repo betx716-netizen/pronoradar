@@ -1,6 +1,7 @@
 // Données fictives utilisées quand DEMO_MODE=1 : permettent de tester l'interface
 // sans clé API et sans frais. Les sources et les chiffres sont inventés.
 import { computeConsensus } from "./consensus";
+import { buildPicks } from "./markets";
 import type { Analysis, AnalysisResult, AnalyzeRequest, Fixture, Source } from "./schemas";
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -60,6 +61,15 @@ export async function demoAnalysis(req: AnalyzeRequest, onProgress: (m: string) 
       src({ name: "Média H", type: "media", pick: "home", other_tips: [tennis ? "Victoire en 3 sets" : "Plus de 2,5 buts"], reasoning: "Le favori reste sur cinq victoires consécutives." }),
       src({ name: "Média I", type: "media", pick: "away", reasoning: "Pari sur l'outsider, en grande forme à l'extérieur." }),
     ],
+    markets: tennis
+      ? [{ category: "jeux", selection: "Plus de 22,5 jeux", probability: 61, expected_value: 23.4, reasoning: "Deux serveurs solides (démo)." }]
+      : [
+          { category: "buts", selection: "Plus de 1,5 buts", probability: 78, expected_value: 2.9, reasoning: "Deux attaques efficaces (démo)." },
+          { category: "les_deux_marquent", selection: "Les deux équipes marquent : oui", probability: 62, expected_value: null, reasoning: "Défenses perméables (démo)." },
+          { category: "corners", selection: "Plus de 9,5 corners", probability: 57, expected_value: 10.4, reasoning: "Jeu sur les ailes (démo)." },
+          { category: "fautes", selection: "Moins de 24,5 fautes", probability: 64, expected_value: 22.1, reasoning: "Arbitre qui laisse jouer (démo)." },
+          { category: "cartons", selection: "Plus de 3,5 cartons", probability: 55, expected_value: 4.1, reasoning: "Rivalité tendue (démo)." },
+        ],
     secondary_trends: tennis
       ? [{ market: "Plus de 22,5 jeux", verdict: "Oui pour 2 sources sur 2", sources_count: 2 }]
       : [
@@ -108,8 +118,17 @@ export async function demoAnalysis(req: AnalyzeRequest, onProgress: (m: string) 
     usage: { geminiRequests: 0, webSearches: 0, oddsRequestsRemaining: null, apiFootballRequestsRemaining: null },
     createdAt: new Date().toISOString(),
     mode: req.mode,
+    engine: "ia",
+    picks: buildPicks(analysis, demoOdds(tennis, swap), "ia"),
     demo: true,
   };
+}
+
+function demoOdds(tennis: boolean, swap: boolean) {
+  const [h, a] = swap ? [3.6, 1.95] : [1.95, 3.6];
+  return tennis
+    ? { bookmakers: 3, home: swap ? 2.0 : 1.8, draw: null, away: swap ? 1.8 : 2.0, exchange: null, totals: { point: 22.5, over: 1.85, under: 1.95 } }
+    : { bookmakers: 3, home: h, draw: 3.8, away: a, exchange: null, totals: { point: 2.5, over: 1.75, under: 2.1 } };
 }
 
 export async function demoFixtures(
@@ -128,5 +147,6 @@ export async function demoFixtures(
     date: d,
     time: ["18:45", "21:00", "16:30"][n - 1],
     stage: sport === "tennis" ? "Quart de finale" : "Journée démo",
+    odds: demoOdds(sport === "tennis", n === 2),
   }));
 }

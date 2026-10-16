@@ -1,50 +1,41 @@
 @import "tailwindcss";
 
+/* Thème premium sombre, identique quel que soit le réglage du système. */
 :root {
-  --bg: #f6f7f9;
-  --surface: #ffffff;
-  --surface-2: #f0f2f5;
-  --border: #e2e5ea;
-  --text: #14171c;
-  --muted: #5d6573;
-  --accent: #0f7b4f;
-  --accent-soft: #e3f3ec;
-  --home: #2563c9;
-  --draw: #8a93a3;
-  --away: #d9731a;
-  --warn-bg: #fff6e6;
-  --warn-text: #8a5300;
-  --danger: #c0392b;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0e1116;
-    --surface: #161a21;
-    --surface-2: #1d222b;
-    --border: #2a303b;
-    --text: #e8ebf0;
-    --muted: #9aa3b2;
-    --accent: #3ccf8e;
-    --accent-soft: #15302a;
-    --home: #5b8ff0;
-    --draw: #8a93a3;
-    --away: #f0954a;
-    --warn-bg: #2d2412;
-    --warn-text: #f3c26b;
-    --danger: #ff7a6b;
-  }
+  color-scheme: dark;
+  --bg: #07090d;
+  --surface: #0f1319;
+  --surface-2: #161b23;
+  --surface-3: #1d2430;
+  --border: #242c39;
+  --text: #eef1f6;
+  --muted: #8b95a7;
+  --accent: #3ddc97;
+  --accent-strong: #23c47f;
+  --accent-soft: rgba(61, 220, 151, 0.12);
+  --gold: #f2c35b;
+  --gold-soft: rgba(242, 195, 91, 0.12);
+  --home: #60a5fa;
+  --draw: #94a3b8;
+  --away: #fb923c;
+  --warn-bg: rgba(242, 195, 91, 0.1);
+  --warn-text: #f2c35b;
+  --danger: #f87171;
 }
 
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --color-border: var(--border);
   --color-text: var(--text);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
   --color-accent-soft: var(--accent-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
   --color-home: var(--home);
   --color-draw: var(--draw);
   --color-away: var(--away);
@@ -55,6 +46,35 @@
 }
 
 body {
-  background: var(--bg);
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(61, 220, 151, 0.08), transparent 60%),
+    radial-gradient(900px 400px at 100% 0%, rgba(96, 165, 250, 0.07), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+@keyframes slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.drawer {
+  animation: slide-in 0.25s ease-out;
 }

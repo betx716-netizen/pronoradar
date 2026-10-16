@@ -50,8 +50,18 @@ function summarize(e: OddsEvent): OddsSummary | null {
     .map((b) => {
       const market = b.markets.find((m) => m.key === "h2h");
       if (!market) return null;
+      const totals = b.markets.find((m) => m.key === "totals");
+      const over = totals?.outcomes.find((o) => o.name === "Over") as (Outcome & { point?: number }) | undefined;
+      const under = totals?.outcomes.find((o) => o.name === "Under" && (o as Outcome & { point?: number }).point === over?.point);
       const find = (name: string) => market.outcomes.find((o) => o.name === name)?.price ?? null;
-      return { key: b.key, title: b.title, home: find(e.home_team), draw: find("Draw"), away: find(e.away_team) };
+      return {
+        key: b.key,
+        title: b.title,
+        home: find(e.home_team),
+        draw: find("Draw"),
+        away: find(e.away_team),
+        totals: over?.point !== undefined && under ? { point: over.point, over: over.price, under: under.price } : null,
+      };
     })
     .filter((b): b is NonNullable<typeof b> => b !== null && b.home !== null && b.away !== null);
   if (books.length === 0) return null;
@@ -69,7 +79,19 @@ function summarize(e: OddsEvent): OddsSummary | null {
     draw: avg(pool.map((b) => b.draw)),
     away: avg(pool.map((b) => b.away))!,
     exchange: ex ? { name: ex.title, home: ex.home!, draw: ex.draw, away: ex.away! } : null,
+    totals: summarizeTotals(pool.map((b) => b.totals).filter((t): t is NonNullable<typeof t> => t !== null)),
   };
+}
+
+// Garde la ligne la plus proposée (souvent 2,5 buts) et fait la moyenne des cotes plus / moins.
+function summarizeTotals(lines: { point: number; over: number; under: number }[]) {
+  if (lines.length === 0) return null;
+  const counts = new Map<number, number>();
+  for (const l of lines) counts.set(l.point, (counts.get(l.point) ?? 0) + 1);
+  const point = [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+  const same = lines.filter((l) => l.point === point);
+  const mean = (v: number[]) => Math.round((v.reduce((s, x) => s + x, 0) / v.length) * 100) / 100;
+  return { point, over: mean(same.map((l) => l.over)), under: mean(same.map((l) => l.under)) };
 }
 
 function parisDateTime(iso: string) {
@@ -87,7 +109,7 @@ async function oddsForSport(sportKey: string, competition: string, sport: Sport)
   const iso = (d: Date) => d.toISOString().replace(/\.\d{3}Z$/, "Z");
   const { data, remaining } = await get<OddsEvent[]>(`/sports/${sportKey}/odds`, {
     regions: "eu",
-    markets: "h2h",
+    markets: "h2h,totals",
     oddsFormat: "decimal",
     commenceTimeFrom: iso(now),
     commenceTimeTo: iso(in7days),
