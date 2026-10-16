@@ -94,9 +94,8 @@ export default function Home() {
             () => {},
           );
           if (usage) trackQuotas(usage);
-          const tagged = fixtures.map((f) => ({ ...f, competition: league }));
-          setByLeague((prev) => ({ ...prev, [league]: { status: "done", fixtures: tagged, notes } }));
-          setSelected((prev) => new Set([...prev, ...tagged.map(fixtureId)]));
+          setByLeague((prev) => ({ ...prev, [league]: { status: "done", fixtures, notes } }));
+          setSelected((prev) => new Set([...prev, ...fixtures.map(fixtureId)]));
         } catch (e) {
           if (e instanceof UnauthorizedError) handleError(e);
           setByLeague((prev) => ({
