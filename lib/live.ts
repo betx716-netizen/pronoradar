@@ -10,6 +10,7 @@ export function useLiveScores(leagues: string[], world = false) {
   const key = [...new Set(leagues)].sort().join(",");
   const [matches, setMatches] = useState<LiveMatch[]>([]);
   const [worldMatches, setWorld] = useState<LiveMatch[]>([]);
+  const [fullCoverage, setFull] = useState(true);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
 
   useEffect(() => {
@@ -22,10 +23,11 @@ export function useLiveScores(leagues: string[], world = false) {
       if (document.hidden) return;
       fetch(`/api/live?leagues=${encodeURIComponent(key)}${world ? "&world=1" : ""}`)
         .then((r) => r.json())
-        .then((d: { matches: LiveMatch[]; world?: LiveMatch[] }) => {
+        .then((d: { matches: LiveMatch[]; world?: LiveMatch[]; fullCoverage?: boolean }) => {
           if (!alive) return;
           setMatches(d.matches ?? []);
           setWorld(d.world ?? []);
+          setFull(d.fullCoverage !== false);
           setUpdatedAt(Date.now());
         })
         .catch(() => {});
@@ -40,7 +42,7 @@ export function useLiveScores(leagues: string[], world = false) {
     };
   }, [key, world]);
 
-  return { matches, worldMatches, updatedAt };
+  return { matches, worldMatches, updatedAt, fullCoverage };
 }
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "");

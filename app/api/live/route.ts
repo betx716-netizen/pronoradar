@@ -13,6 +13,7 @@ export async function GET(req: Request) {
   const all = await Promise.all(leagues.map((l) => fetchLiveScores(l).catch(() => [])));
   const mine = all.flat();
   // Avec ?world=1 : on ajoute les matchs en cours dans tous les autres championnats suivis.
-  const others = world ? (await fetchWorldLive()).filter((m) => !mine.some((x) => x.id === m.id)) : [];
-  return Response.json({ matches: mine, world: others }, { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=30" } });
+  const w = world ? await fetchWorldLive() : { matches: [], sofaOk: true };
+  const others = w.matches.filter((m) => !mine.some((x) => x.id === m.id));
+  return Response.json({ matches: mine, world: others, fullCoverage: w.sofaOk }, { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=30" } });
 }

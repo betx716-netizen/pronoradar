@@ -59,7 +59,7 @@ function Row({ m, onAnalyze }: { m: LiveMatch; onAnalyze: (m: LiveMatch) => void
 
 /** Onglet Direct : matchs en cours, terminés et à venir des championnats choisis, rafraîchis toutes les 30 secondes. */
 export function LiveBoard({ leagues, priorFor }: { leagues: string[]; priorFor: (home: string, away: string) => string | null }) {
-  const { matches, worldMatches, updatedAt } = useLiveScores(leagues, true);
+  const { matches, worldMatches, updatedAt, fullCoverage } = useLiveScores(leagues, true);
   const [analyzing, setAnalyzing] = useState<LiveMatch | null>(null);
 
   if (!updatedAt) return <div className="skeleton h-40 rounded-2xl" />;
@@ -78,6 +78,11 @@ export function LiveBoard({ leagues, priorFor }: { leagues: string[]; priorFor: 
       {analyzing && (
         <LiveAnalysisSheet match={analyzing} prior={priorFor(analyzing.home, analyzing.away)} onClose={() => setAnalyzing(null)} />
       )}
+      <p className={`rounded-xl p-3 text-xs ${fullCoverage ? "bg-success-soft text-success" : "bg-warn-bg text-warn-text"}`}>
+        {fullCoverage
+          ? "✓ Couverture mondiale : tous les matchs en cours dans le monde."
+          : "Couverture limitée : la source mondiale bloque le serveur, seuls les ~75 principaux championnats sont affichés."}
+      </p>
       <p className="text-xs text-muted">Mis à jour à {new Date(updatedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} · actualisation toutes les 30 secondes</p>
       {matches.length === 0 && worldMatches.length === 0 && <p className="rounded-2xl border border-dashed border-border p-8 text-center text-muted">Aucun match hier, aujourd&apos;hui ou demain dans ces championnats.</p>}
       {groups.map(([title, list]) =>

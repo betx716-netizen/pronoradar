@@ -213,14 +213,18 @@ export async function fetchLiveScores(competition: string): Promise<LiveMatch[]>
 }
 
 /** Tous les matchs en cours en ce moment, dans tous les championnats suivis. */
-export async function fetchWorldLive(): Promise<LiveMatch[]> {
+export async function fetchWorldLive(): Promise<{ matches: LiveMatch[]; sofaOk: boolean }> {
   // Source la plus complète d'abord ; ESPN complète (ou remplace si elle échoue).
-  const sofa = await fetchSofaLive().catch(() => [] as LiveMatch[]);
+  let sofaOk = true;
+  const sofa = await fetchSofaLive().catch(() => {
+    sofaOk = false;
+    return [] as LiveMatch[];
+  });
   const today = ymd(new Date());
   const espn = (await Promise.all(WORLD_SLUGS.map((s) => fetchSlug(s, today, 30).catch(() => [])))).flat().filter((m) => m.state === "in");
   // Un match présent dans les deux sources n'est gardé qu'une fois (version ESPN, qui a les statistiques détaillées).
   const extra = sofa.filter((s) => !espn.some((e) => sameTeam(e.home, s.home) && sameTeam(e.away, s.away)));
-  return [...espn, ...extra];
+  return { matches: [...espn, ...extra], sofaOk };
 }
 
 type Stat = { name?: string; label?: string; displayValue?: string };
