@@ -205,7 +205,10 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
         </Card>
       </div>
 
-      {result.picks && result.picks.length > 0 && <MarketsPanel picks={result.picks} />}
+      {result.picks && result.picks.length > 0 && <MarketsPanel
+          picks={result.picks}
+          match={{ name: `${result.analysis.match.home} – ${result.analysis.match.away}`, competition: result.analysis.match.competition, date: result.analysis.match.date }}
+        />}
 
       <Card title="Comparaison des probabilités">
         <ProbBar label="Bookmakers" hint={`marge retirée · ${plural(consensus.counts.bookmaker + consensus.counts.exchange, "source")}`} dist={consensus.market} outcomes={consensus.outcomes} name={name} />

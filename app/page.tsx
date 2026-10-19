@@ -5,6 +5,9 @@ import { AnalysisView } from "@/components/AnalysisView";
 import { CouponBuilder } from "@/components/CouponBuilder";
 import { BetTracker } from "@/components/BetTracker";
 import { ResultsGrid } from "@/components/ResultsGrid";
+import { BetSlip } from "@/components/BetSlip";
+import { OddsButton } from "@/components/OddsButton";
+import { TopPicks } from "@/components/TopPicks";
 import {
   QuotaError,
   UnauthorizedError,
@@ -55,23 +58,23 @@ function dayLabel(date: string) {
   return diff === 0 ? `Aujourd'hui · ${name}` : diff === 1 ? `Demain · ${name}` : name.charAt(0).toUpperCase() + name.slice(1);
 }
 
-function OddsPill({ label, odd, pct }: { label: string; odd: number | null | undefined; pct?: number }) {
-  return (
-    <span className="flex min-w-0 flex-1 flex-col items-center rounded-lg bg-surface-3 px-2 py-1.5">
-      <span className="text-[10px] uppercase tracking-wide text-muted">{label}</span>
-      <span className="text-sm font-bold tabular-nums">{odd ? odd.toFixed(2) : "—"}</span>
-      {pct !== undefined && <span className="text-[10px] text-muted tabular-nums">{pct} %</span>}
-    </span>
-  );
+// Pari « résultat » prêt pour le panier, à partir des cotes réelles du match.
+function resultLeg(f: Fixture, selection: string, odds: number, pct: number) {
+  return {
+    match: `${f.home} – ${f.away}`,
+    competition: f.competition,
+    date: f.date,
+    pick: { category: "resultat" as const, selection, probability: pct, odds, oddsSource: "bookmaker" as const, basis: "cotes" as const, reasoning: "" },
+  };
 }
 
 function MatchCard({ f, checked, onToggle }: { f: Fixture; checked: boolean; onToggle: () => void }) {
   const pct = impliedPercents(f);
   const tennis = f.odds ? f.odds.draw === null : false;
   return (
-    <li>
-      <label
-        className={`block cursor-pointer rounded-2xl border p-3.5 transition ${
+    <li className="fade-in">
+      <div
+        className={`rounded-2xl border p-3.5 transition ${
           checked ? "border-accent bg-accent-soft/40" : "border-border bg-surface hover:border-muted"
         }`}
       >
@@ -84,13 +87,22 @@ function MatchCard({ f, checked, onToggle }: { f: Fixture; checked: boolean; onT
             <p className="mt-0.5 truncate font-semibold">{f.home}</p>
             <p className="truncate font-semibold">{f.away}</p>
           </div>
-          <input type="checkbox" checked={checked} onChange={onToggle} className="mt-1 h-5 w-5 shrink-0 accent-[var(--accent)]" />
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-pressed={checked}
+            className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold transition active:scale-95 ${
+              checked ? "border-accent bg-accent text-black" : "border-border text-muted hover:text-text"
+            }`}
+          >
+            {checked ? "✓ À analyser" : "＋ Analyser"}
+          </button>
         </div>
-        {f.odds ? (
+        {f.odds && pct ? (
           <div className="mt-3 flex gap-1.5">
-            <OddsPill label="1" odd={f.odds.home} pct={pct?.[0]} />
-            {!tennis && <OddsPill label="N" odd={f.odds.draw} pct={pct?.[1]} />}
-            <OddsPill label="2" odd={f.odds.away} pct={pct?.[2]} />
+            <OddsButton leg={resultLeg(f, `Victoire ${f.home}`, f.odds.home, pct[0])} label="1" sub={`${pct[0]} %`} />
+            {!tennis && f.odds.draw && <OddsButton leg={resultLeg(f, "Match nul", f.odds.draw, pct[1])} label="N" sub={`${pct[1]} %`} />}
+            <OddsButton leg={resultLeg(f, `Victoire ${f.away}`, f.odds.away, pct[2])} label="2" sub={`${pct[2]} %`} />
           </div>
         ) : (
           <p className="mt-3 text-xs text-muted">Cotes indisponibles</p>
@@ -101,7 +113,7 @@ function MatchCard({ f, checked, onToggle }: { f: Fixture; checked: boolean; onT
             {f.odds.totals.under.toFixed(2)}
           </p>
         )}
-      </label>
+      </div>
     </li>
   );
 }
@@ -313,15 +325,21 @@ export default function Home() {
     runJobs(toRun);
   }
 
-  const tabs: { id: Tab; label: string; count?: number }[] = [
-    { id: "matchs", label: "Matchs", count: allFixtures.length || undefined },
-    { id: "analyses", label: "Analyses", count: jobs.length || undefined },
-    { id: "coupon", label: "Coupon", count: couponResults.length || undefined },
-    { id: "suivi", label: "Suivi" },
+  const tabs: { id: Tab; label: string; icon: string; count?: number }[] = [
+    { id: "matchs", label: "Matchs", icon: "🏟️", count: allFixtures.length || undefined },
+    { id: "analyses", label: "Analyses", icon: "📊", count: jobs.length || undefined },
+    { id: "coupon", label: "Coupon", icon: "🎟️", count: couponResults.length || undefined },
+    { id: "suivi", label: "Suivi", icon: "📈" },
   ];
+  const selectionBar = tab === "matchs" && selectedFixtures.length > 0;
+
+  function goTo(t: Tab) {
+    setTab(t);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   return (
-    <div className="min-h-screen pb-32">
+    <div className="min-h-screen pb-44 lg:pb-32">
       <header className="sticky top-0 z-30 border-b border-border bg-bg/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-2.5">
@@ -333,13 +351,13 @@ export default function Home() {
               <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gold">Premium</p>
             </div>
           </div>
-          <nav className="flex rounded-xl border border-border bg-surface p-1" role="tablist">
+          <nav className="hidden rounded-xl border border-border bg-surface p-1 lg:flex" role="tablist">
             {tabs.map((t) => (
               <button
                 key={t.id}
                 role="tab"
                 aria-selected={tab === t.id}
-                onClick={() => setTab(t.id)}
+                onClick={() => goTo(t.id)}
                 className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold transition ${
                   tab === t.id ? "bg-surface-3 text-text" : "text-muted hover:text-text"
                 }`}
@@ -401,7 +419,8 @@ export default function Home() {
         )}
 
         {tab === "matchs" && (
-          <section>
+          <section className="fade-in">
+            <TopPicks results={couponResults} onOpen={setDetail} />
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">Matchs de la semaine</h1>
@@ -523,7 +542,7 @@ export default function Home() {
         )}
 
         {tab === "analyses" && (
-          <section>
+          <section className="fade-in">
             <h1 className="mb-4 text-2xl font-bold tracking-tight">Analyses</h1>
             <ResultsGrid
               jobs={jobs}
@@ -554,7 +573,7 @@ export default function Home() {
         )}
 
         {tab === "coupon" && (
-          <section>
+          <section className="fade-in">
             <h1 className="text-2xl font-bold tracking-tight">Générateur de coupon</h1>
             <p className="mb-4 text-sm text-muted">Construit à partir de vos analyses des dernières {COUPON_HISTORY_HOURS} heures ({couponResults.length} matchs).</p>
             <CouponBuilder results={couponResults} />
@@ -562,7 +581,7 @@ export default function Home() {
         )}
 
         {tab === "suivi" && (
-          <section>
+          <section className="fade-in">
             <h1 className="text-2xl font-bold tracking-tight">Suivi des paris</h1>
             <p className="mb-4 text-sm text-muted">Vos coupons joués et leurs résultats, pour savoir si les analyses rapportent vraiment.</p>
             <BetTracker />
@@ -570,8 +589,38 @@ export default function Home() {
         )}
       </main>
 
-      {tab === "matchs" && selectedFixtures.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg/90 backdrop-blur-xl">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-border bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
+        role="tablist"
+      >
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={tab === t.id}
+            onClick={() => goTo(t.id)}
+            className={`relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition active:scale-95 ${tab === t.id ? "text-accent" : "text-muted"}`}
+          >
+            {tab === t.id && <span className="absolute inset-x-6 top-0 h-0.5 rounded-full bg-accent" />}
+            <span className={`text-xl transition ${tab === t.id ? "scale-110" : "opacity-70 grayscale"}`}>{t.icon}</span>
+            {t.label}
+            {t.count !== undefined && (
+              <span className="absolute right-[18%] top-1 min-w-4 rounded-full bg-accent px-1 text-[10px] leading-4 text-black">{t.count > 99 ? "99+" : t.count}</span>
+            )}
+          </button>
+        ))}
+      </nav>
+
+      <BetSlip
+        bottomClass={
+          selectionBar
+            ? "bottom-[calc(9.5rem+env(safe-area-inset-bottom))] lg:bottom-24"
+            : "bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-6"
+        }
+      />
+
+      {selectionBar && (
+        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-border bg-bg/90 backdrop-blur-xl lg:bottom-0">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
             <p className="text-sm">
               <strong className="text-accent">{selectedFixtures.length}</strong> match{selectedFixtures.length > 1 ? "s" : ""} sélectionné

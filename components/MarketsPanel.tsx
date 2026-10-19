@@ -3,6 +3,7 @@
 import { CATEGORY_LABELS } from "@/lib/coupon";
 import type { MarketCategory, MarketPick } from "@/lib/schemas";
 import { edge, isValueBet } from "@/lib/value";
+import { isInSlip, toggleLeg, useSlip } from "@/lib/slip";
 
 const ORDER: MarketCategory[] = [
   "resultat", "double_chance", "rembourse", "mi_temps", "mi_temps_fin", "handicap", "buts", "buts_equipe", "les_deux_marquent",
@@ -15,7 +16,8 @@ function probColor(p: number) {
 }
 
 /** Tous les paris d'un match, regroupés par marché, avec probabilité, cote et origine de la donnée. */
-export function MarketsPanel({ picks }: { picks: MarketPick[] }) {
+export function MarketsPanel({ picks, match }: { picks: MarketPick[]; match?: { name: string; competition: string; date: string | null } }) {
+  const slip = useSlip();
   const groups = ORDER.map((c) => [c, picks.filter((p) => p.category === c)] as const).filter(([, list]) => list.length);
   if (groups.length === 0) return null;
   return (
@@ -44,9 +46,25 @@ export function MarketsPanel({ picks }: { picks: MarketPick[] }) {
                       </span>
                       <span className="shrink-0 tabular-nums">
                         <strong>{p.probability.toFixed(0)} %</strong>
-                        <span className={`ml-2 rounded-md px-1.5 py-0.5 text-xs ${p.oddsSource === "bookmaker" ? "bg-accent-soft text-accent" : "bg-gold-soft text-gold"}`}>
-                          {p.oddsSource === "bookmaker" ? "●" : "◆"} {p.odds.toFixed(2)}
-                        </span>
+                        {match ? (
+                          <button
+                            onClick={() => toggleLeg({ match: match.name, competition: match.competition, date: match.date, pick: p })}
+                            aria-pressed={isInSlip(slip, match.name, p.selection)}
+                            className={`ml-2 rounded-lg border px-2 py-1 text-xs font-bold transition active:scale-95 ${
+                              isInSlip(slip, match.name, p.selection)
+                                ? "border-accent bg-accent text-black"
+                                : p.oddsSource === "bookmaker"
+                                  ? "border-accent/30 bg-accent-soft text-accent"
+                                  : "border-gold/30 bg-gold-soft text-gold"
+                            }`}
+                          >
+                            {p.oddsSource === "bookmaker" ? "●" : "◆"} {p.odds.toFixed(2)}
+                          </button>
+                        ) : (
+                          <span className={`ml-2 rounded-md px-1.5 py-0.5 text-xs ${p.oddsSource === "bookmaker" ? "bg-accent-soft text-accent" : "bg-gold-soft text-gold"}`}>
+                            {p.oddsSource === "bookmaker" ? "●" : "◆"} {p.odds.toFixed(2)}
+                          </span>
+                        )}
                       </span>
                     </div>
                     <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-3">
