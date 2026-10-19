@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 // Cache partagé : chaque logo n'est demandé qu'une fois, puis gardé dans le navigateur.
-const KEY = "pronoradar.logos.v1";
+const KEY = "pronoradar.logos.v2";
 const memory = new Map<string, Promise<string | null>>();
 
 function stored(): Record<string, string | null> {
@@ -16,7 +16,8 @@ function stored(): Record<string, string | null> {
 
 function fetchLogo(name: string): Promise<string | null> {
   const cached = stored();
-  if (name in cached) return Promise.resolve(cached[name]);
+  // Seuls les logos trouvés sont gardés : un échec est retenté à la visite suivante.
+  if (cached[name]) return Promise.resolve(cached[name]);
   if (!memory.has(name)) {
     memory.set(
       name,
@@ -24,7 +25,7 @@ function fetchLogo(name: string): Promise<string | null> {
         .then((r) => r.json())
         .then((d: { url: string | null }) => {
           try {
-            localStorage.setItem(KEY, JSON.stringify({ ...stored(), [name]: d.url }));
+            if (d.url) localStorage.setItem(KEY, JSON.stringify({ ...stored(), [name]: d.url }));
           } catch {}
           return d.url;
         })
