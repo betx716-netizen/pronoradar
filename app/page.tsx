@@ -564,6 +564,7 @@ function App() {
 
   // Analyses visibles : celles en cours et celles terminées depuis moins de 2 heures.
   const visibleJobs = jobs.filter((j) => j.status !== "done" || !j.result || isRecent(j.result));
+  const visibleResults = visibleJobs.flatMap((j) => (j.status === "done" && j.result ? [j.result] : []));
 
   const tabs: { id: Tab; label: string; icon: IconName; count?: number }[] = [
     {
@@ -670,13 +671,11 @@ function App() {
           <section className="fade-in">
             <HeroBanner
               matches={allFixtures.length}
-              analyses={couponResults.length}
-              values={
-                couponResults.filter((r) => r.picks?.some(isValueBet)).length
-              }
+              analyses={visibleResults.length}
+              values={visibleResults.filter((r) => r.picks?.some(isValueBet)).length}
               loading={searching}
             />
-            <TopPicks results={couponResults} onOpen={setDetail} />
+            <TopPicks results={visibleResults} onOpen={setDetail} />
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">
