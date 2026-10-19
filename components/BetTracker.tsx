@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CATEGORY_LABELS } from "@/lib/coupon";
-import { loadHistory, profit, saveHistory, type BetStatus, type SavedBet } from "@/lib/history";
+import { loadHistory, profit, removeBet, syncHistory, updateBet, type BetStatus, type SavedBet, type SyncState } from "@/lib/history";
 
 const STATUS_LABELS: Record<BetStatus, string> = { en_cours: "En cours", gagne: "Gagné", perdu: "Perdu", rembourse: "Remboursé" };
 const STATUS_STYLES: Record<BetStatus, string> = {
@@ -17,23 +17,31 @@ const euros = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)} €`;
 /** Historique des coupons joués : statut à renseigner, bilan global et réussite par marché. */
 export function BetTracker() {
   const [bets, setBets] = useState<SavedBet[]>([]);
+  const [sync, setSync] = useState<SyncState | "loading">("loading");
 
   useEffect(() => {
     const refresh = () => setBets(loadHistory());
     refresh();
+    syncHistory().then(setSync);
     window.addEventListener("pronoradar-history", refresh);
     return () => window.removeEventListener("pronoradar-history", refresh);
   }, []);
 
-  const update = (id: string, status: BetStatus) => saveHistory(bets.map((b) => (b.id === id ? { ...b, status } : b)));
+  const update = (id: string, status: BetStatus) => updateBet(id, { status });
   const remove = (id: string) => {
-    if (confirm("Supprimer ce coupon du suivi ?")) saveHistory(bets.filter((b) => b.id !== id));
+    if (confirm("Supprimer ce coupon du suivi ?")) removeBet(id);
   };
+  const syncNote = {
+    loading: "Synchronisation…",
+    synced: "Historique sauvegardé dans Supabase, disponible sur tous vos appareils.",
+    local: "Supabase n'est pas configuré : l'historique est gardé dans ce navigateur uniquement.",
+    error: "Supabase injoignable : l'historique local est affiché, il sera envoyé à la prochaine synchronisation.",
+  }[sync];
 
   if (bets.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted">
-        Aucun coupon enregistré. Dans l&apos;onglet Coupon, touchez « J&apos;ai joué ce coupon » pour commencer le suivi.
+        {sync === "loading" ? "Chargement de l'historique…" : "Aucun coupon enregistré. Dans l'onglet Coupon, touchez « J'ai joué ce coupon » pour commencer le suivi."}
       </div>
     );
   }
@@ -125,7 +133,7 @@ export function BetTracker() {
           </li>
         ))}
       </ul>
-      <p className="text-xs text-muted">L&apos;historique est gardé dans ce navigateur uniquement.</p>
+      <p className="text-xs text-muted">{syncNote}</p>
     </div>
   );
 }

@@ -31,3 +31,5 @@ Pour tester l'interface sans clé : `DEMO_MODE=1 npm run dev`.
 ## Mise en ligne (Vercel)
 
 Ajoutez `GEMINI_API_KEY`, `ODDS_API_KEY`, `API_FOOTBALL_KEY` et `APP_PASSWORD` dans les variables d'environnement du projet, puis redéployez.
+
+Pour sauvegarder le suivi des paris dans Supabase : `SUPABASE_URL`, `SUPABASE_KEY` (clé publishable) et `HISTORY_SECRET` (le secret enregistré dans la table `private.settings` de la base). Sans elles, l'historique reste dans le navigateur.

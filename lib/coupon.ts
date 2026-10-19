@@ -3,13 +3,19 @@
 import type { AnalysisResult, MarketCategory, MarketPick } from "./schemas";
 import { edge, isValueBet } from "./value";
 
-export type RiskProfile = "value" | "sur" | "equilibre" | "audacieux";
+export type RiskProfile = "value" | "sur" | "equilibre" | "audacieux" | "jackpot";
 
-export const PROFILES: Record<RiskProfile, { label: string; description: string; minProbability: number }> = {
+export const PROFILES: Record<RiskProfile, { label: string; description: string; minProbability: number; minOdds?: number }> = {
   value: { label: "Value", description: "Uniquement les paris où notre probabilité bat la cote du bookmaker (avantage ≥ 3 %)", minProbability: 35 },
   sur: { label: "Sûr", description: "Sélections très probables, petite cote", minProbability: 70 },
   equilibre: { label: "Équilibré", description: "Bon compromis entre chance de gain et cote", minProbability: 58 },
   audacieux: { label: "Audacieux", description: "Cotes plus élevées, risque assumé", minProbability: 42 },
+  jackpot: {
+    label: "Grosse cote",
+    description: "Paris à forte cote (≥ 2,50) : score exact, mi-temps/fin, combinés… Très peu de chances de passer, petite mise uniquement",
+    minProbability: 12,
+    minOdds: 2.5,
+  },
 };
 
 export const CATEGORY_LABELS: Record<MarketCategory, string> = {
@@ -56,19 +62,21 @@ function score(pick: MarketPick, profile: RiskProfile) {
   if (profile === "value") return edge(pick) ?? -1;
   if (profile === "sur") return p * trust;
   if (profile === "equilibre") return p * Math.log(odds + 0.5) * trust;
-  return p * odds * trust;
+  if (profile === "audacieux") return p * odds * trust;
+  // Grosse cote : on vise la cote, tout en écartant les paris presque impossibles.
+  return p * odds ** 1.3 * trust;
 }
 
 export function buildCoupon(
   results: AnalysisResult[],
   options: { profile: RiskProfile; size: number; categories: MarketCategory[] },
 ): Coupon {
-  const { minProbability } = PROFILES[options.profile];
+  const { minProbability, minOdds = 1.05 } = PROFILES[options.profile];
   const candidates: (CouponLeg & { score: number })[] = [];
 
   for (const r of results) {
     const allowed = (r.picks ?? []).filter(
-      (p) => options.categories.includes(p.category) && p.probability >= minProbability && p.odds > 1.05 && (options.profile !== "value" || isValueBet(p)),
+      (p) => options.categories.includes(p.category) && p.probability >= minProbability && p.odds >= minOdds && (options.profile !== "value" || isValueBet(p)),
     );
     if (allowed.length === 0) continue;
     const best = allowed.reduce((a, b) => (score(b, options.profile) > score(a, options.profile) ? b : a));

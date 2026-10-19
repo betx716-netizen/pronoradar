@@ -11,6 +11,7 @@ const FOOTBALL_CATEGORIES: MarketCategory[] = [
   "resultat_buts", "resultat_btts", "score_exact", "corners", "tirs_cadres", "fautes", "cartons", "hors_jeu",
 ];
 const TENNIS_CATEGORIES: MarketCategory[] = ["resultat", "sets", "jeux", "premier_set", "handicap_jeux", "score_sets", "tie_break"];
+const JACKPOT_CATEGORIES: MarketCategory[] = ["score_exact", "mi_temps_fin", "resultat_btts", "resultat_buts", "handicap", "mi_temps", "score_sets", "handicap_jeux"];
 const DEFAULT_CATEGORIES: MarketCategory[] = ["resultat", "double_chance", "rembourse", "buts", "buts_equipe", "les_deux_marquent", "sets", "jeux", "premier_set"];
 
 export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
@@ -32,10 +33,17 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
     : FOOTBALL_CATEGORIES;
   const coupon = useMemo(() => buildCoupon(results, { profile, size, categories }), [results, profile, size, categories]);
 
+  // Le profil Grosse cote a besoin des marchés à forte cote : on les active d'office.
+  function chooseProfile(p: RiskProfile) {
+    setProfile(p);
+    if (p === "jackpot") setCategories((prev) => [...new Set([...prev, ...JACKPOT_CATEGORIES])]);
+  }
+
   const toggle = (c: MarketCategory) =>
     setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
 
-  const suggestedStake = kellyStake(bankroll, coupon.probability, coupon.totalOdds);
+  const kelly = kellyStake(bankroll, coupon.probability, coupon.totalOdds);
+  const suggestedStake = profile === "jackpot" ? Math.min(kelly, Math.round(bankroll) / 100) : kelly;
   const [stakeInput, setStakeInput] = useState("");
   const stake = stakeInput === "" ? suggestedStake : Number(stakeInput.replace(",", ".")) || 0;
 
@@ -78,11 +86,11 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
       <section className="space-y-5 rounded-2xl border border-border bg-surface p-5">
         <div>
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Profil de risque</h3>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {(Object.keys(PROFILES) as RiskProfile[]).map((p) => (
               <button
                 key={p}
-                onClick={() => setProfile(p)}
+                onClick={() => chooseProfile(p)}
                 className={`rounded-xl border px-3 py-2.5 text-left transition ${
                   profile === p ? "border-accent bg-accent-soft" : "border-border hover:border-muted"
                 }`}
@@ -201,6 +209,11 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
         )}
         {coupon.legs.length > 0 && (
           <div className="mt-4 space-y-3 border-t border-dashed border-border pt-4">
+            {profile === "jackpot" && (
+              <p className="rounded-lg bg-warn-bg p-2 text-xs text-warn-text">
+                Coupon loterie : il perdra la grande majorité du temps. Ne misez que ce que vous acceptez de perdre (1 % de la bankroll au plus).
+              </p>
+            )}
             {coupon.legs.length > 3 && (
               <p className="rounded-lg bg-warn-bg p-2 text-xs text-warn-text">
                 Au-delà de 3 sélections, la probabilité de gain chute vite : chaque match ajouté multiplie le risque.
