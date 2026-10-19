@@ -78,6 +78,17 @@ export const MarketEstimateSchema = z.object({
 });
 export type MarketEstimate = z.infer<typeof MarketEstimateSchema>;
 
+// Composition probable d'une équipe : formation et joueurs ligne par ligne.
+export const LineupSchema = z.object({
+  formation: z.string().describe("Système de jeu, ex : '4-3-3', '4-4-2', '3-5-2'"),
+  goalkeeper: z.string().describe("Gardien titulaire probable"),
+  lines: z
+    .array(z.array(z.string()))
+    .describe("Joueurs de champ ligne par ligne, de la défense à l'attaque, de gauche à droite (ex. 4-3-3 : [[4 défenseurs], [3 milieux], [3 attaquants]])"),
+  doubts: z.array(z.string()).describe("Joueurs incertains ou absents notables"),
+});
+export type Lineup = z.infer<typeof LineupSchema>;
+
 export const AnalysisSchema = z.object({
   match: z.object({
     sport: SportSchema,
@@ -118,6 +129,10 @@ export const AnalysisSchema = z.object({
       .describe("Ce qui ressort des pronostics recensés et où l'IA est d'accord ou non avec eux"),
     summary: z.string().describe("Synthèse finale en un paragraphe"),
   }),
+  lineups: z
+    .object({ home: LineupSchema, away: LineupSchema })
+    .nullable()
+    .describe("Compositions probables des deux équipes (football), null si introuvables ou au tennis"),
   markets: z
     .array(MarketEstimateSchema)
     .describe(

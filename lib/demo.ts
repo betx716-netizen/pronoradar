@@ -61,6 +61,22 @@ export async function demoAnalysis(req: AnalyzeRequest, onProgress: (m: string) 
       src({ name: "Média H", type: "media", pick: "home", other_tips: [tennis ? "Victoire en 3 sets" : "Plus de 2,5 buts"], reasoning: "Le favori reste sur cinq victoires consécutives." }),
       src({ name: "Média I", type: "media", pick: "away", reasoning: "Pari sur l'outsider, en grande forme à l'extérieur." }),
     ],
+    lineups: tennis
+      ? null
+      : {
+          home: {
+            formation: "4-3-3",
+            goalkeeper: "Gardien A",
+            lines: [["Latéral G", "Central 1", "Central 2", "Latéral D"], ["Milieu 1", "Milieu 2", "Milieu 3"], ["Ailier G", "Avant-centre", "Ailier D"]],
+            doubts: ["Milieu 2 (incertain, démo)"],
+          },
+          away: {
+            formation: "4-4-2",
+            goalkeeper: "Gardien B",
+            lines: [["Latéral G", "Central 1", "Central 2", "Latéral D"], ["Milieu G", "Milieu 1", "Milieu 2", "Milieu D"], ["Attaquant 1", "Attaquant 2"]],
+            doubts: [],
+          },
+        },
     markets: tennis
       ? [{ category: "jeux", selection: "Plus de 22,5 jeux", probability: 61, expected_value: 23.4, reasoning: "Deux serveurs solides (démo).", reliability: "moyenne" as const }]
       : [

@@ -1016,7 +1016,7 @@ export default function Home() {
             >
               ← Fermer
             </button>
-            <AnalysisView result={detail} />
+            <AnalysisView key={detail.createdAt + detail.analysis.match.home} result={detail} />
           </div>
         </div>
       )}
