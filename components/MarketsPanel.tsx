@@ -6,7 +6,7 @@ import { edge, isValueBet } from "@/lib/value";
 
 const ORDER: MarketCategory[] = [
   "resultat", "double_chance", "rembourse", "mi_temps", "mi_temps_fin", "handicap", "buts", "buts_equipe", "les_deux_marquent",
-  "resultat_buts", "resultat_btts", "score_exact", "corners", "tirs_cadres", "fautes", "cartons", "hors_jeu",
+  "resultat_buts", "resultat_btts", "score_exact", "corners", "tirs_cadres", "fautes", "cartons", "hors_jeu", "buteur",
   "sets", "jeux", "premier_set", "handicap_jeux", "score_sets", "tie_break",
 ];
 

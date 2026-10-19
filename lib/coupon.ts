@@ -40,6 +40,7 @@ export const CATEGORY_LABELS: Record<MarketCategory, string> = {
   handicap_jeux: "Handicap jeux",
   score_sets: "Score en sets",
   tie_break: "Tie-break",
+  buteur: "Buteur",
 };
 
 export type CouponLeg = { match: string; competition: string; date: string | null; pick: MarketPick };

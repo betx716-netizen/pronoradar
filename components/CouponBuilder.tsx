@@ -30,6 +30,7 @@ const FOOTBALL_CATEGORIES: MarketCategory[] = [
   "fautes",
   "cartons",
   "hors_jeu",
+  "buteur",
 ];
 const TENNIS_CATEGORIES: MarketCategory[] = [
   "resultat",

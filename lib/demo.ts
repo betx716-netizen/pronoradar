@@ -90,6 +90,7 @@ export async function demoAnalysis(req: AnalyzeRequest, onProgress: (m: string) 
           { category: "les_deux_marquent", selection: "Les deux équipes marquent : oui", probability: 62, expected_value: null, reasoning: "Défenses perméables (démo).", reliability: "moyenne" as const },
           { category: "corners", selection: "Plus de 9,5 corners", probability: 57, expected_value: 10.4, reasoning: "Jeu sur les ailes (démo).", reliability: "fragile" as const },
           { category: "fautes", selection: "Moins de 24,5 fautes", probability: 64, expected_value: 22.1, reasoning: "Arbitre qui laisse jouer (démo).", reliability: "fragile" as const },
+          { category: "buteur", selection: "Attaquant vedette buteur", probability: 46, expected_value: null, reasoning: "Meilleur buteur de son équipe (démo).", reliability: "moyenne" as const },
           { category: "cartons", selection: "Plus de 3,5 cartons", probability: 55, expected_value: 4.1, reasoning: "Rivalité tendue (démo).", reliability: "fragile" as const },
         ],
     secondary_trends: tennis
