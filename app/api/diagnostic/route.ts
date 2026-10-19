@@ -23,6 +23,11 @@ export async function GET(req: Request) {
   const tavily = readKey("TAVILY_API_KEY");
   const groq = readKey("GROQ_API_KEY");
   return Response.json({
+    "Direct mondial (Sofascore)": {
+      test: await probe("https://api.sofascore.com/api/v1/sport/football/events/live", {
+        headers: { "User-Agent": "Mozilla/5.0 (PronoRadar)", Accept: "application/json" },
+      }),
+    },
     "Recherche web de secours (Tavily)": {
       cle: describeKey("TAVILY_API_KEY"),
       test: tavily

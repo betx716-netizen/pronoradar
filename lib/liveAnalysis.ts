@@ -1,7 +1,7 @@
 // Analyse d'un match EN COURS : à partir du score, de la minute, des statistiques et des faits marquants du match,
 // l'IA estime la suite (résultat final, prochain but) et propose des paris en direct.
 import { z } from "zod";
-import { fetchMatchDetail } from "./espn";
+import { fetchMatchDetail, fetchSofaDetail } from "./espn";
 import { AnalysisError, aiAvailable, emptyUsage, structure, todayInParis } from "./gemini";
 
 export const LiveAnalysisRequestSchema = z.object({
@@ -65,7 +65,10 @@ Réponds en français, phrases courtes. Ne promets jamais de gain.`;
 export async function analyzeLive(req: LiveAnalysisRequest, onProgress: (m: string) => void): Promise<LiveAnalysis> {
   if (!aiAvailable()) throw new AnalysisError("L'IA est indisponible pour le moment (quota atteint). Réessayez plus tard.", "quota");
   onProgress("Récupération des statistiques du match…");
-  const detail = await fetchMatchDetail(req.slug, req.id).catch(() => ({ stats: [], events: [] }));
+  const detail = await (req.slug === "sofa" ? fetchSofaDetail(req.id) : fetchMatchDetail(req.slug, req.id)).catch(() => ({
+    stats: [] as string[],
+    events: [] as string[],
+  }));
   const text = [
     `Nous sommes le ${todayInParis()}. Match EN COURS (${req.competition}) : ${req.home} (domicile) contre ${req.away} (extérieur).`,
     `Score : ${req.home} ${req.homeScore ?? 0} - ${req.awayScore ?? 0} ${req.away}. Minute : ${req.clock}.`,

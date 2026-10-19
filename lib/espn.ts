@@ -214,9 +214,13 @@ export async function fetchLiveScores(competition: string): Promise<LiveMatch[]>
 
 /** Tous les matchs en cours en ce moment, dans tous les championnats suivis. */
 export async function fetchWorldLive(): Promise<LiveMatch[]> {
+  // Source la plus complète d'abord ; ESPN complète (ou remplace si elle échoue).
+  const sofa = await fetchSofaLive().catch(() => [] as LiveMatch[]);
   const today = ymd(new Date());
-  const all = await Promise.all(WORLD_SLUGS.map((s) => fetchSlug(s, today, 30).catch(() => [])));
-  return all.flat().filter((m) => m.state === "in");
+  const espn = (await Promise.all(WORLD_SLUGS.map((s) => fetchSlug(s, today, 30).catch(() => [])))).flat().filter((m) => m.state === "in");
+  // Un match présent dans les deux sources n'est gardé qu'une fois (version ESPN, qui a les statistiques détaillées).
+  const extra = sofa.filter((s) => !espn.some((e) => sameTeam(e.home, s.home) && sameTeam(e.away, s.away)));
+  return [...espn, ...extra];
 }
 
 type Stat = { name?: string; label?: string; displayValue?: string };
@@ -244,3 +248,69 @@ export async function fetchMatchDetail(slug: string, id: string) {
 }
 
 export { sameTeam };
+
+// ——— Direct mondial complet (Sofascore) ———
+// Sofascore liste en une seule requête tous les matchs de football en cours dans le monde (des centaines de
+// championnats). Service public sans clé, non officiel : en cas d'échec, on garde la liste d'ESPN.
+
+type SofaEvent = {
+  id?: number;
+  tournament?: { name?: string; category?: { name?: string } };
+  homeTeam?: { name?: string };
+  awayTeam?: { name?: string };
+  homeScore?: { current?: number };
+  awayScore?: { current?: number };
+  status?: { type?: string; description?: string };
+  time?: { currentPeriodStartTimestamp?: number };
+  startTimestamp?: number;
+};
+
+const SOFA_HEADERS = { "User-Agent": "Mozilla/5.0 (PronoRadar)", Accept: "application/json" };
+
+function sofaClock(e: SofaEvent) {
+  const desc = (e.status?.description ?? "").toLowerCase();
+  if (/half ?time|pause/.test(desc)) return "MT";
+  const start = e.time?.currentPeriodStartTimestamp;
+  if (!start) return e.status?.description ?? "En cours";
+  const base = /2nd/.test(desc) ? 45 : /1st extra/.test(desc) ? 90 : /2nd extra/.test(desc) ? 105 : 0;
+  const cap = /2nd/.test(desc) ? 90 : /extra/.test(desc) ? base + 15 : 45;
+  const minute = base + Math.floor((Date.now() / 1000 - start) / 60) + 1;
+  return minute > cap ? `${cap}+${minute - cap}'` : `${minute}'`;
+}
+
+export async function fetchSofaLive(): Promise<LiveMatch[]> {
+  const res = await fetch("https://api.sofascore.com/api/v1/sport/football/events/live", { headers: SOFA_HEADERS, next: { revalidate: 30 } });
+  if (!res.ok) throw new Error(`Sofascore ${res.status}`);
+  const events: SofaEvent[] = (await res.json())?.events ?? [];
+  return events.flatMap((e) => {
+    if (!e.id || !e.homeTeam?.name || !e.awayTeam?.name || e.status?.type !== "inprogress") return [];
+    const country = e.tournament?.category?.name;
+    return [
+      {
+        id: String(e.id),
+        slug: "sofa",
+        competition: [country, e.tournament?.name].filter(Boolean).join(" · ") || "Football",
+        home: e.homeTeam.name,
+        away: e.awayTeam.name,
+        homeScore: e.homeScore?.current ?? 0,
+        awayScore: e.awayScore?.current ?? 0,
+        state: "in" as const,
+        clock: sofaClock(e),
+        date: new Date((e.startTimestamp ?? Date.now() / 1000) * 1000).toISOString(),
+      },
+    ];
+  });
+}
+
+type SofaStats = { statistics?: { period?: string; groups?: { statisticsItems?: { name?: string; home?: string; away?: string }[] }[] }[] };
+
+/** Statistiques d'un match Sofascore (possession, tirs…), pour l'analyse en direct. */
+export async function fetchSofaDetail(id: string) {
+  const res = await fetch(`https://api.sofascore.com/api/v1/event/${id}/statistics`, { headers: SOFA_HEADERS, cache: "no-store" });
+  if (!res.ok) return { stats: [] as string[], events: [] as string[] };
+  const d: SofaStats = await res.json();
+  const all = d.statistics?.find((p) => p.period === "ALL") ?? d.statistics?.[0];
+  const KEEP = /possession|shots|on target|corner|fouls|yellow|red|offsides|saves|expected goals|big chances/i;
+  const items = (all?.groups ?? []).flatMap((g) => g.statisticsItems ?? []).filter((i) => KEEP.test(i.name ?? ""));
+  return { stats: items.map((i) => `${i.name} : domicile ${i.home} / extérieur ${i.away}`), events: [] as string[] };
+}
