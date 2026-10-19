@@ -195,6 +195,8 @@ export default function Home() {
   const [running, setRunning] = useState(false);
   const [autoCoupons, setAutoCoupons] = useState(0);
   const stopRef = useRef(false);
+  // Annule les analyses en cours quand on appuie sur « Arrêter ».
+  const abortRef = useRef<AbortController | null>(null);
 
   const [manualOpen, setManualOpen] = useState(false);
   const [manual, setManual] = useState({
@@ -394,6 +396,8 @@ export default function Home() {
     let succeeded = 0;
     if (toRun.length === 0) return;
     stopRef.current = false;
+    abortRef.current = new AbortController();
+    const signal = abortRef.current.signal;
     setRunning(true);
     setError(null);
     await runPool(
@@ -416,6 +420,7 @@ export default function Home() {
               apiFootballId: job.fixture.apiFootballId ?? null,
             },
             (message) => updateJob(job.id, { message }),
+            signal,
           );
           trackQuotas(result.usage);
           updateJob(job.id, { status: "done", message: "Terminé", result });
@@ -432,6 +437,10 @@ export default function Home() {
             return next;
           });
         } catch (e) {
+          if (signal.aborted) {
+            updateJob(job.id, { status: "cancelled", message: "Arrêté" });
+            return;
+          }
           handleError(e);
           updateJob(job.id, {
             status: e instanceof UnauthorizedError ? "pending" : "error",
@@ -870,7 +879,10 @@ export default function Home() {
               jobs={jobs}
               running={running}
               onOpen={(j) => j.result && setDetail(j.result)}
-              onStop={() => (stopRef.current = true)}
+              onStop={() => {
+                stopRef.current = true;
+                abortRef.current?.abort();
+              }}
               onResume={resume}
               onClear={() => setJobs([])}
             />

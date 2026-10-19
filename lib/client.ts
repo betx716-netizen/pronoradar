@@ -60,8 +60,10 @@ export async function callStreaming<T>(
   url: string,
   body: unknown,
   onProgress: (message: string) => void,
+  signal?: AbortSignal,
 ): Promise<T> {
   const res = await fetch(url, {
+    signal,
     method: "POST",
     headers: { "Content-Type": "application/json", "x-app-password": getPassword() },
     body: JSON.stringify(body),
