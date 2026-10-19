@@ -388,7 +388,7 @@ export function AiCoupons({
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
-                                  <p className="truncate text-xs text-muted">
+                                  <p className="break-words text-xs text-muted">
                                     {l.match}
                                   </p>
                                   <p className="font-semibold">

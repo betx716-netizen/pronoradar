@@ -79,6 +79,8 @@ export function buildCoupon(
   const { minProbability, target } = PROFILES[options.profile];
   const forcedLegs: CouponLeg[] = [];
   const candidates: (CouponLeg & { cost: number })[] = [];
+  // Tous les paris retenus de chaque match, pour chercher la combinaison la plus courte vers la cote visée.
+  const pools: { leg: Omit<CouponLeg, "pick">; picks: MarketPick[] }[] = [];
 
   for (const r of results) {
     const match = `${r.analysis.match.home} – ${r.analysis.match.away}`;
@@ -94,6 +96,7 @@ export function buildCoupon(
       (p) => options.categories.includes(p.category) && reliable(p, minProbability) && (options.profile !== "value" || isValueBet(p)),
     );
     if (allowed.length === 0) continue;
+    pools.push({ leg, picks: allowed });
     // Value : le plus gros avantage. Sinon : le pari qui fait monter la cote au moindre risque.
     const best =
       options.profile === "value"
@@ -102,10 +105,38 @@ export function buildCoupon(
     candidates.push({ ...leg, pick: best, cost: options.profile === "value" ? -(edge(best) ?? 0) : cost(best) });
   }
 
-  // On ajoute les meilleures sélections jusqu'à atteindre la cote visée, sans dépasser le nombre maximum.
   const legs = [...forcedLegs];
+
+  // Cote visée : on essaie 1, 2, 3… sélections et on garde la combinaison qui a le plus de chances de passer.
+  // Pour k sélections, chacune doit valoir environ cible^(1/k) : on prend sur chaque match le pari le plus
+  // probable à cette cote, puis les k meilleurs matchs. Peu de matchs bien cotés battent souvent une pile de favoris.
+  if (target && options.profile !== "value") {
+    const forcedOdds = legs.reduce((t, l) => t * l.pick.odds, 1);
+    const rest = target / forcedOdds;
+    let best: { legs: CouponLeg[]; prob: number } | null = null;
+    for (let k = 1; k <= Math.min(options.size - legs.length, 8, pools.length); k++) {
+      const per = rest ** (1 / k);
+      const choice = pools
+        .map(({ leg, picks }) => {
+          const fit = picks.filter((p) => p.odds >= per * 0.85 && p.odds <= per * 1.6);
+          const pick = fit.length ? fit.reduce((x, y) => (y.probability > x.probability ? y : x)) : null;
+          return pick ? { ...leg, pick } : null;
+        })
+        .filter((x): x is CouponLeg => x !== null)
+        .sort((x, y) => y.pick.probability - x.pick.probability)
+        .slice(0, k);
+      if (choice.length < k) continue;
+      const odds = choice.reduce((t, l) => t * l.pick.odds, 1);
+      const prob = choice.reduce((t, l) => t * (l.pick.probability / 100), 1);
+      if (odds >= rest * 0.9 && (!best || prob > best.prob)) best = { legs: choice, prob };
+    }
+    if (best) legs.push(...best.legs);
+  }
+
+  // Sinon (ou pour Value) : on ajoute les meilleures sélections jusqu'à la cote visée, sans dépasser le maximum.
   let odds = legs.reduce((t, l) => t * l.pick.odds, 1);
   for (const c of candidates.sort((x, y) => x.cost - y.cost)) {
+    if (legs.some((l) => l.match === c.match)) continue;
     if (legs.length >= options.size || (target && odds >= target * 0.92)) break;
     const { cost: _cost, ...leg } = c;
     legs.push(leg);

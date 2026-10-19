@@ -201,6 +201,7 @@ function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [running, setRunning] = useState(false);
   const [autoCoupons, setAutoCoupons] = useState(0);
+  const [couponTab, setCouponTab] = useState<"ia" | "manuel">("ia");
   const stopRef = useRef(false);
   // Annule les analyses en cours quand on appuie sur « Arrêter ».
   const abortRef = useRef<AbortController | null>(null);
@@ -957,14 +958,34 @@ function App() {
 
         {tab === "coupon" && (
           <section className="fade-in">
-            <AiCoupons results={couponResults} autoKey={autoCoupons} clearedAt={couponClearedAt} onClearAll={clearCoupon} />
-            <h2 className="font-display text-3xl leading-none">
-              Générateur manuel
-            </h2>
-            <p className="mb-4 text-sm text-muted">
-              Construit à partir de vos analyses de matchs pas encore joués ({couponResults.length} match{couponResults.length > 1 ? "s" : ""}).
-            </p>
-            <CouponBuilder results={couponResults} onClear={clearCoupon} />
+            {/* Deux espaces séparés : les coupons faits par l'IA, et le générateur où l'on règle tout soi-même. */}
+            <div className="mb-5 grid grid-cols-2 gap-1 rounded-2xl border border-border bg-surface p-1">
+              {(
+                [
+                  ["ia", "Coupons de l'IA"],
+                  ["manuel", "Générateur manuel"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  onClick={() => setCouponTab(id)}
+                  className={`rounded-xl py-2.5 text-sm font-semibold transition ${couponTab === id ? "bg-accent text-on-accent" : "text-muted"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {/* Les deux restent montés pour que la génération automatique de l'IA se fasse même sur l'autre onglet. */}
+            <div className={couponTab === "ia" ? "" : "hidden"}>
+              <AiCoupons results={couponResults} autoKey={autoCoupons} clearedAt={couponClearedAt} onClearAll={clearCoupon} />
+            </div>
+            <div className={couponTab === "manuel" ? "" : "hidden"}>
+              <p className="mb-4 text-sm text-muted">
+                Vous choisissez l&apos;objectif, le nombre maximum de sélections et les marchés : le coupon se construit à partir de vos analyses de
+                matchs pas encore joués ({couponResults.length} match{couponResults.length > 1 ? "s" : ""}).
+              </p>
+              <CouponBuilder results={couponResults} onClear={clearCoupon} />
+            </div>
           </section>
         )}
 

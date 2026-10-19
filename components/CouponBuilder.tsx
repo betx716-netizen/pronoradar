@@ -171,7 +171,7 @@ export function CouponBuilder({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <section className="space-y-5 rounded-2xl border border-border bg-surface p-5">
         <div>
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">
@@ -218,11 +218,13 @@ export function CouponBuilder({
           />
         </div>
 
-        <div>
-          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">
-            Marchés autorisés
-          </h3>
-          <div className="flex flex-wrap gap-2">
+        {/* Repliée par défaut : la liste des marchés est longue et sert rarement. */}
+        <details className="group rounded-xl border border-border p-3">
+          <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold uppercase tracking-wide text-muted">
+            Marchés autorisés ({categories.filter((c) => available.includes(c)).length})
+            <span className="transition group-open:rotate-180">▾</span>
+          </summary>
+          <div className="mt-3 flex flex-wrap gap-2">
             {available.map((c) => {
               const on = categories.includes(c);
               return (
@@ -247,7 +249,7 @@ export function CouponBuilder({
             marchés reposent sur des estimations de l&apos;IA : vérifiez la cote
             chez votre bookmaker.
           </p>
-        </div>
+        </details>
       </section>
 
       <section className="relative overflow-hidden rounded-2xl border border-gold/40 bg-gradient-to-b from-surface-2 to-surface p-5">
@@ -306,10 +308,10 @@ export function CouponBuilder({
                   {i + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs text-muted">
+                  <p className="break-words text-xs text-muted">
                     {l.match} · {l.competition}
                   </p>
-                  <p className="truncate font-semibold">{l.pick.selection}</p>
+                  <p className="break-words font-semibold leading-snug">{l.pick.selection}</p>
                   <p className="text-xs text-muted">
                     {CATEGORY_LABELS[l.pick.category]} ·{" "}
                     {l.pick.probability.toFixed(0)} % · {l.pick.basis}
