@@ -17,7 +17,10 @@ import { SettingsPanel } from "@/components/SettingsPanel";
 import { ScrollRow } from "@/components/ScrollRow";
 import { Landing } from "@/components/Landing";
 import { LiveBoard, LiveDot } from "@/components/LiveBoard";
-import { findLive, useLiveScores, type LiveMatch } from "@/lib/live";
+import { findLive, sameTeam, useLiveScores, type LiveMatch } from "@/lib/live";
+
+const findPriorAnalysis = (history: AnalysisResult[], home: string, away: string) =>
+  history.find((r) => sameTeam(r.analysis.match.home, home) && sameTeam(r.analysis.match.away, away)) ?? null;
 import { isValueBet } from "@/lib/value";
 import {
   QuotaError,
@@ -963,7 +966,13 @@ function App() {
             <p className="mb-5 text-sm text-muted">
               Les matchs de vos championnats de football, en direct.
             </p>
-            <LiveBoard leagues={sport === "football" ? leagues : []} />
+            <LiveBoard
+              leagues={sport === "football" ? leagues : []}
+              priorFor={(home, away) => {
+                const r = findPriorAnalysis(history, home, away);
+                return r ? r.analysis.ai_analysis.summary.slice(0, 1500) : null;
+              }}
+            />
           </section>
         )}
 

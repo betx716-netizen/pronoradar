@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useLiveScores, type LiveMatch } from "@/lib/live";
+import { LiveAnalysisSheet } from "./LiveAnalysisSheet";
 import { LeagueLogo } from "./LeagueLogo";
 import { TeamLogo } from "./TeamLogo";
 
@@ -13,7 +15,7 @@ export function LiveDot() {
   );
 }
 
-function Row({ m }: { m: LiveMatch }) {
+function Row({ m, onAnalyze }: { m: LiveMatch; onAnalyze: (m: LiveMatch) => void }) {
   const live = m.state === "in";
   const score = (n: number | null) => (n == null ? "–" : n);
   const winner = m.state === "post" && m.homeScore != null && m.awayScore != null ? Math.sign(m.homeScore - m.awayScore) : 0;
@@ -42,18 +44,24 @@ function Row({ m }: { m: LiveMatch }) {
             </div>
           );
         })}
+        {live && (
+          <button
+            onClick={() => onAnalyze(m)}
+            className="mt-1 w-full rounded-xl bg-accent py-1.5 text-xs font-bold text-on-accent transition active:scale-95"
+          >
+            Analyser en direct
+          </button>
+        )}
       </div>
     </li>
   );
 }
 
 /** Onglet Direct : matchs en cours, terminés et à venir des championnats choisis, rafraîchis toutes les 30 secondes. */
-export function LiveBoard({ leagues }: { leagues: string[] }) {
-  const { matches, updatedAt } = useLiveScores(leagues);
+export function LiveBoard({ leagues, priorFor }: { leagues: string[]; priorFor: (home: string, away: string) => string | null }) {
+  const { matches, worldMatches, updatedAt } = useLiveScores(leagues, true);
+  const [analyzing, setAnalyzing] = useState<LiveMatch | null>(null);
 
-  if (leagues.length === 0) {
-    return <p className="rounded-2xl border border-dashed border-border p-8 text-center text-muted">Choisissez des championnats de football dans l&apos;onglet Matchs.</p>;
-  }
   if (!updatedAt) return <div className="skeleton h-40 rounded-2xl" />;
 
   const groups: [string, LiveMatch[]][] = [
@@ -62,10 +70,16 @@ export function LiveBoard({ leagues }: { leagues: string[] }) {
     ["Terminés", matches.filter((m) => m.state === "post").sort((a, b) => b.date.localeCompare(a.date))],
   ];
 
+  // Autres championnats en cours dans le monde, regroupés par compétition.
+  const worldLeagues = [...new Set(worldMatches.map((m) => m.competition))];
+
   return (
     <div className="space-y-8">
+      {analyzing && (
+        <LiveAnalysisSheet match={analyzing} prior={priorFor(analyzing.home, analyzing.away)} onClose={() => setAnalyzing(null)} />
+      )}
       <p className="text-xs text-muted">Mis à jour à {new Date(updatedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} · actualisation toutes les 30 secondes</p>
-      {matches.length === 0 && <p className="rounded-2xl border border-dashed border-border p-8 text-center text-muted">Aucun match hier, aujourd&apos;hui ou demain dans ces championnats.</p>}
+      {matches.length === 0 && worldMatches.length === 0 && <p className="rounded-2xl border border-dashed border-border p-8 text-center text-muted">Aucun match hier, aujourd&apos;hui ou demain dans ces championnats.</p>}
       {groups.map(([title, list]) =>
         list.length === 0 ? null : (
           <section key={title}>
@@ -85,13 +99,36 @@ export function LiveBoard({ leagues }: { leagues: string[] }) {
                     {list
                       .filter((m) => m.competition === l)
                       .map((m) => (
-                        <Row key={m.home + m.away + m.date} m={m} />
+                        <Row key={m.id} m={m} onAnalyze={setAnalyzing} />
                       ))}
                   </ul>
                 </div>
               ))}
           </section>
         ),
+      )}
+      {worldMatches.length > 0 && (
+        <section>
+          <h2 className="mb-1 flex items-center gap-2 font-display text-3xl leading-none">
+            <LiveDot /> En direct dans le monde <span className="text-base text-muted">({worldMatches.length})</span>
+          </h2>
+          <p className="mb-3 text-xs text-muted">Les autres championnats qui se jouent en ce moment.</p>
+          {worldLeagues.map((l) => (
+            <div key={l} className="mb-4">
+              <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-muted">
+                <LeagueLogo name={l} size={18} />
+                {l}
+              </p>
+              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {worldMatches
+                  .filter((m) => m.competition === l)
+                  .map((m) => (
+                    <Row key={m.id} m={m} onAnalyze={setAnalyzing} />
+                  ))}
+              </ul>
+            </div>
+          ))}
+        </section>
       )}
     </div>
   );

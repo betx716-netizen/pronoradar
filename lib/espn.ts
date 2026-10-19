@@ -130,6 +130,8 @@ export async function fetchOfficialLineups(competition: string, home: string, aw
 // ——— Scores en direct ———
 
 export type LiveMatch = {
+  id: string;
+  slug: string;
   competition: string;
   home: string;
   away: string;
@@ -141,12 +143,24 @@ export type LiveMatch = {
 };
 
 type LiveEvent = {
+  id?: string;
   date?: string;
   competitions?: {
     competitors?: { homeAway?: string; score?: string; team?: { displayName?: string } }[];
     status?: { displayClock?: string; type?: { state?: string; shortDetail?: string; completed?: boolean } };
   }[];
 };
+
+// Championnats et coupes suivis pour le direct « dans le monde » (les adresses inconnues renvoient simplement rien).
+export const WORLD_SLUGS = [
+  "uefa.champions", "uefa.europa", "uefa.europa.conf", "uefa.nations", "fifa.world", "fifa.worldq.uefa", "fifa.worldq.caf",
+  "fifa.worldq.conmebol", "caf.nations", "caf.champions", "conmebol.libertadores", "conmebol.sudamericana", "concacaf.champions",
+  "fra.1", "fra.2", "fra.coupe_de_france", "eng.1", "eng.2", "eng.3", "eng.fa", "eng.league_cup", "esp.1", "esp.2", "esp.copa_del_rey",
+  "ita.1", "ita.2", "ita.coppa_italia", "ger.1", "ger.2", "ger.dfb_pokal", "por.1", "ned.1", "bel.1", "tur.1", "sco.1",
+  "gre.1", "cze.1", "aut.1", "sui.1", "den.1", "nor.1", "swe.1", "pol.1", "cro.1", "srb.1", "rus.1", "ukr.1", "cyp.1", "isr.1",
+  "rou.1", "bul.1", "hun.1", "irl.1", "usa.1", "mex.1", "bra.1", "arg.1", "col.1", "chi.1", "uru.1", "per.1", "ecu.1",
+  "ksa.1", "qat.1", "uae.1", "egy.1", "mar.1", "rsa.1", "jpn.1", "kor.1", "chn.1", "aus.1", "ind.1",
+];
 
 function clockLabel(state: string, detail: string, displayClock: string, date: string) {
   if (state === "post") return "Terminé";
@@ -155,27 +169,29 @@ function clockLabel(state: string, detail: string, displayClock: string, date: s
   return displayClock && displayClock !== "0'" ? displayClock : detail;
 }
 
-/** Matchs d'hier, d'aujourd'hui et de demain d'un championnat, avec leur score et leur état. */
-export async function fetchLiveScores(competition: string): Promise<LiveMatch[]> {
-  const slug = SLUGS[competition];
-  if (!slug) return [];
-  const now = Date.now();
-  const range = `${ymd(new Date(now - 86400000))}-${ymd(new Date(now + 86400000))}`;
+// Nom du championnat pour l'affichage : celui de l'application si on le connaît, sinon celui d'ESPN.
+const APP_NAME = Object.fromEntries(Object.entries(SLUGS).map(([name, slug]) => [slug, name]));
+
+async function fetchSlug(slug: string, range: string, revalidate: number): Promise<LiveMatch[]> {
   const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard?dates=${range}&limit=200`, {
-    next: { revalidate: 30 },
+    next: { revalidate },
   });
   if (!res.ok) return [];
-  const events: LiveEvent[] = (await res.json())?.events ?? [];
+  const data = await res.json();
+  const label: string = APP_NAME[slug] ?? data?.leagues?.[0]?.name ?? slug;
+  const events: LiveEvent[] = data?.events ?? [];
   return events.flatMap((e) => {
     const c = e.competitions?.[0];
     const h = c?.competitors?.find((x) => x.homeAway === "home");
     const a = c?.competitors?.find((x) => x.homeAway === "away");
-    if (!e.date || !h?.team?.displayName || !a?.team?.displayName) return [];
+    if (!e.id || !e.date || !h?.team?.displayName || !a?.team?.displayName) return [];
     const state = (c?.status?.type?.state ?? "pre") as LiveMatch["state"];
     const score = (s?: string) => (state === "pre" || s == null || s === "" ? null : Number(s));
     return [
       {
-        competition,
+        id: e.id,
+        slug,
+        competition: label,
         home: h.team.displayName,
         away: a.team.displayName,
         homeScore: score(h.score),
@@ -186,6 +202,45 @@ export async function fetchLiveScores(competition: string): Promise<LiveMatch[]>
       },
     ];
   });
+}
+
+/** Matchs d'hier, d'aujourd'hui et de demain d'un championnat de l'application, avec leur score et leur état. */
+export async function fetchLiveScores(competition: string): Promise<LiveMatch[]> {
+  const slug = SLUGS[competition];
+  if (!slug) return [];
+  const now = Date.now();
+  return fetchSlug(slug, `${ymd(new Date(now - 86400000))}-${ymd(new Date(now + 86400000))}`, 30).catch(() => []);
+}
+
+/** Tous les matchs en cours en ce moment, dans tous les championnats suivis. */
+export async function fetchWorldLive(): Promise<LiveMatch[]> {
+  const today = ymd(new Date());
+  const all = await Promise.all(WORLD_SLUGS.map((s) => fetchSlug(s, today, 30).catch(() => [])));
+  return all.flat().filter((m) => m.state === "in");
+}
+
+type Stat = { name?: string; label?: string; displayValue?: string };
+type Summary = {
+  boxscore?: { teams?: { team?: { displayName?: string }; statistics?: Stat[] }[] };
+  keyEvents?: { text?: string; clock?: { displayValue?: string }; type?: { text?: string } }[];
+  commentary?: { text?: string; time?: { displayValue?: string } }[];
+};
+
+/** Statistiques et faits marquants d'un match en cours (possession, tirs, buts, cartons…), pour l'analyse en direct. */
+export async function fetchMatchDetail(slug: string, id: string) {
+  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/summary?event=${id}`, { cache: "no-store" });
+  if (!res.ok) return { stats: [] as string[], events: [] as string[] };
+  const d: Summary = await res.json();
+  const KEEP = /possession|shots|on target|corner|foul|yellow|red|offside|saves/i;
+  const stats = (d.boxscore?.teams ?? []).map((t) => {
+    const list = (t.statistics ?? []).filter((x) => KEEP.test(`${x.name} ${x.label}`)).map((x) => `${x.label ?? x.name} ${x.displayValue}`);
+    return `${t.team?.displayName ?? "?"} : ${list.join(", ")}`;
+  });
+  const events = (d.keyEvents ?? [])
+    .map((e) => `${e.clock?.displayValue ?? ""} ${e.type?.text ?? ""} ${e.text ?? ""}`.trim())
+    .filter(Boolean)
+    .slice(-15);
+  return { stats, events };
 }
 
 export { sameTeam };

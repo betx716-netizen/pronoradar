@@ -6,24 +6,26 @@ import type { MarketPick } from "./schemas";
 
 export type { LiveMatch };
 
-export function useLiveScores(leagues: string[]) {
+export function useLiveScores(leagues: string[], world = false) {
   const key = [...new Set(leagues)].sort().join(",");
   const [matches, setMatches] = useState<LiveMatch[]>([]);
+  const [worldMatches, setWorld] = useState<LiveMatch[]>([]);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!key) {
+    if (!key && !world) {
       setMatches([]);
       return;
     }
     let alive = true;
     const load = () => {
       if (document.hidden) return;
-      fetch(`/api/live?leagues=${encodeURIComponent(key)}`)
+      fetch(`/api/live?leagues=${encodeURIComponent(key)}${world ? "&world=1" : ""}`)
         .then((r) => r.json())
-        .then((d: { matches: LiveMatch[] }) => {
+        .then((d: { matches: LiveMatch[]; world?: LiveMatch[] }) => {
           if (!alive) return;
           setMatches(d.matches ?? []);
+          setWorld(d.world ?? []);
           setUpdatedAt(Date.now());
         })
         .catch(() => {});
@@ -36,9 +38,9 @@ export function useLiveScores(leagues: string[]) {
       clearInterval(t);
       document.removeEventListener("visibilitychange", load);
     };
-  }, [key]);
+  }, [key, world]);
 
-  return { matches, updatedAt };
+  return { matches, worldMatches, updatedAt };
 }
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "");
