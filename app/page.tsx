@@ -9,6 +9,7 @@ import { ResultsGrid } from "@/components/ResultsGrid";
 import { OddsButton } from "@/components/OddsButton";
 import { TopPicks } from "@/components/TopPicks";
 import { TeamLogo } from "@/components/TeamLogo";
+import { LeagueLogo } from "@/components/LeagueLogo";
 import { Icon, type IconName } from "@/components/Icon";
 import { HeroBanner } from "@/components/HeroBanner";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -256,15 +257,22 @@ export default function Home() {
   const gemini = services?.gemini ?? true;
   const doneJobs = jobs.filter((j) => j.status === "done" && j.result);
 
-  const byDay = useMemo(() => {
-    const groups = new Map<string, Fixture[]>();
-    for (const f of [...allFixtures].sort((a, b) =>
-      (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")),
-    )) {
-      groups.set(f.date, [...(groups.get(f.date) ?? []), f]);
-    }
-    return [...groups.entries()];
-  }, [allFixtures]);
+  // Matchs regroupés par championnat (dans l'ordre choisi), puis par jour.
+  const byLeagueDay = useMemo(
+    () =>
+      leagues
+        .map((l) => {
+          const days = new Map<string, Fixture[]>();
+          for (const f of [...(byLeague[l]?.fixtures ?? [])].sort((a, b) =>
+            (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")),
+          )) {
+            days.set(f.date, [...(days.get(f.date) ?? []), f]);
+          }
+          return [l, [...days.entries()]] as const;
+        })
+        .filter(([, days]) => days.length > 0),
+    [leagues, byLeague],
+  );
 
   // Le coupon puise dans les analyses de la session et dans celles des dernières 48 heures.
   const couponResults = useMemo(() => {
@@ -677,12 +685,13 @@ export default function Home() {
                         (!on && leagues.length >= MAX_LEAGUES) || running
                       }
                       aria-pressed={on}
-                      className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition disabled:opacity-40 ${
+                      className={`flex shrink-0 items-center gap-2 rounded-full border py-1 pl-1.5 pr-3.5 text-sm font-medium transition disabled:opacity-40 ${
                         on
                           ? "border-accent bg-accent-soft text-accent"
                           : "border-border bg-surface text-muted hover:text-text"
                       }`}
                     >
+                      <LeagueLogo name={l} size={20} />
                       {l}
                       {on && lf?.status === "done" && (
                         <span className="ml-1.5 text-xs opacity-80">
@@ -721,22 +730,26 @@ export default function Home() {
                   <li key={i} className="skeleton h-36 rounded-2xl" />
                 ))}
               </ul>
-            ) : byDay.length === 0 ? (
+            ) : byLeagueDay.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted">
                 Aucun match trouvé pour ces championnats dans les 7 prochains
                 jours.
               </div>
             ) : (
-              <div className="space-y-6">
-                {byDay.map(([day, fixtures]) => {
-                  const ids = fixtures.map(fixtureId);
+              <div className="space-y-10">
+                {byLeagueDay.map(([league, days]) => {
+                  const ids = days.flatMap(([, fx]) => fx.map(fixtureId));
                   const allOn = ids.every((id) => selected.has(id));
                   return (
-                    <div key={day}>
-                      <div className="mb-2 flex items-center justify-between">
-                        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
-                          {dayLabel(day)}
-                        </h2>
+                    <section key={league} className="fade-in">
+                      <div className="sticky top-[4.25rem] z-20 -mx-4 mb-3 flex items-center gap-3 border-b-2 border-accent bg-bg/95 px-4 py-2.5 backdrop-blur">
+                        <LeagueLogo name={league} size={32} />
+                        <div className="min-w-0 flex-1">
+                          <h2 className="font-display text-[1.65rem] leading-none sm:text-3xl">{league}</h2>
+                          <p className="text-xs text-muted">
+                            {ids.length} match{ids.length > 1 ? "s" : ""}
+                          </p>
+                        </div>
                         <button
                           onClick={() =>
                             setSelected((prev) => {
@@ -748,22 +761,29 @@ export default function Home() {
                               return next;
                             })
                           }
-                          className="text-xs font-semibold text-accent"
+                          className="shrink-0 text-xs font-semibold text-accent"
                         >
                           {allOn ? "Tout désélectionner" : "Tout sélectionner"}
                         </button>
                       </div>
-                      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {fixtures.map((f) => (
-                          <MatchCard
-                            key={fixtureId(f)}
-                            f={f}
-                            checked={selected.has(fixtureId(f))}
-                            onToggle={() => toggleFixture(fixtureId(f))}
-                          />
+                      <div className="space-y-5">
+                        {days.map(([day, fixtures]) => (
+                          <div key={day}>
+                            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">{dayLabel(day)}</h3>
+                            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                              {fixtures.map((f) => (
+                                <MatchCard
+                                  key={fixtureId(f)}
+                                  f={f}
+                                  checked={selected.has(fixtureId(f))}
+                                  onToggle={() => toggleFixture(fixtureId(f))}
+                                />
+                              ))}
+                            </ul>
+                          </div>
                         ))}
-                      </ul>
-                    </div>
+                      </div>
+                    </section>
                   );
                 })}
               </div>

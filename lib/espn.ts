@@ -2,7 +2,7 @@
 // secours quand les cotes et les statistiques ne sont plus disponibles. Pas de cotes.
 import type { Fixture } from "./schemas";
 
-const SLUGS: Record<string, string> = {
+export const SLUGS: Record<string, string> = {
   "Ligue des Champions": "uefa.champions",
   "Ligue Europa": "uefa.europa",
   "Ligue Conférence": "uefa.europa.conf",
