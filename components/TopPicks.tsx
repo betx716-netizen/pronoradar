@@ -23,7 +23,7 @@ export function TopPicks({ results, onOpen }: { results: AnalysisResult[]; onOpe
     <section className="mb-6">
       <div className="mb-2 flex items-baseline justify-between">
         <h2 className="text-sm font-bold uppercase tracking-wide">🔥 Les meilleurs paris du moment</h2>
-        <span className="text-xs text-muted">Touchez une cote pour l&apos;ajouter</span>
+        <span className="text-xs text-muted">Touchez un match pour voir l&apos;analyse</span>
       </div>
       <div className="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
         {items.map(({ r, p }) => {

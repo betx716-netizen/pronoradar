@@ -82,7 +82,7 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <section className="space-y-5 rounded-2xl border border-border bg-surface p-5">
         <div>
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Profil de risque</h3>

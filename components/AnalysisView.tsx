@@ -3,6 +3,7 @@
 import { SOURCE_WEIGHTS, sourceDistribution, sourcePick, type Consensus, type Distribution } from "@/lib/consensus";
 import type { AnalysisResult, Outcome, Source, SourceType } from "@/lib/schemas";
 import { MarketsPanel } from "./MarketsPanel";
+import { TeamLogo } from "./TeamLogo";
 
 const TYPE_LABELS: Record<SourceType, string> = {
   bookmaker: "Bookmaker",
@@ -170,13 +171,19 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
           {match.venue_or_surface ? ` · ${match.venue_or_surface}` : ""}
         </p>
         <h2 className="mt-1 flex flex-wrap items-center gap-x-3 text-2xl font-bold">
-          <span className="text-home">{match.home}</span>
+          <span className="flex items-center gap-2 text-home">
+            <TeamLogo name={match.home} sport={match.sport} size={36} />
+            {match.home}
+          </span>
           <span className="text-base font-normal text-muted">contre</span>
-          <span className="text-away">{match.away}</span>
+          <span className="flex items-center gap-2 text-away">
+            <TeamLogo name={match.away} sport={match.sport} size={36} />
+            {match.away}
+          </span>
         </h2>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card title="Ce que disent les pronostics">
           {consensus.pick ? (
             <>
@@ -205,10 +212,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
         </Card>
       </div>
 
-      {result.picks && result.picks.length > 0 && <MarketsPanel
-          picks={result.picks}
-          match={{ name: `${result.analysis.match.home} – ${result.analysis.match.away}`, competition: result.analysis.match.competition, date: result.analysis.match.date }}
-        />}
+      {result.picks && result.picks.length > 0 && <MarketsPanel picks={result.picks} />}
 
       <Card title="Comparaison des probabilités">
         <ProbBar label="Bookmakers" hint={`marge retirée · ${plural(consensus.counts.bookmaker + consensus.counts.exchange, "source")}`} dist={consensus.market} outcomes={consensus.outcomes} name={name} />
@@ -277,7 +281,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
       </Card>
 
       <Card title="Contexte du match">
-        <dl className="grid gap-3 text-sm sm:grid-cols-2">
+        <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="font-semibold">Forme de {match.home}</dt>
             <dd className="text-muted">{context.form_home}</dd>
@@ -305,7 +309,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
       </Card>
 
       <Card title={`Les ${totalSources} pronostics recensés`}>
-        <ul className="grid gap-3 md:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {analysis.sources.map((s, i) => (
             <SourceCard key={`${s.url}-${i}`} s={s} name={name} sport={sport} />
           ))}

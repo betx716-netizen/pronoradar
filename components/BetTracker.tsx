@@ -82,7 +82,7 @@ export function BetTracker() {
       {byMarket.size > 0 && (
         <section className="rounded-2xl border border-border bg-surface p-4">
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Réussite par marché (paris simples)</h3>
-          <ul className="grid gap-1.5 text-sm sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-1.5 text-sm sm:grid-cols-2">
             {[...byMarket].map(([k, m]) => (
               <li key={k} className="flex justify-between">
                 <span>{k}</span>

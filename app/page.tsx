@@ -5,9 +5,9 @@ import { AnalysisView } from "@/components/AnalysisView";
 import { CouponBuilder } from "@/components/CouponBuilder";
 import { BetTracker } from "@/components/BetTracker";
 import { ResultsGrid } from "@/components/ResultsGrid";
-import { BetSlip } from "@/components/BetSlip";
 import { OddsButton } from "@/components/OddsButton";
 import { TopPicks } from "@/components/TopPicks";
+import { TeamLogo } from "@/components/TeamLogo";
 import {
   QuotaError,
   UnauthorizedError,
@@ -84,8 +84,14 @@ function MatchCard({ f, checked, onToggle }: { f: Fixture; checked: boolean; onT
               {f.competition}
               {f.time ? ` · ${f.time}` : ""}
             </p>
-            <p className="mt-0.5 truncate font-semibold">{f.home}</p>
-            <p className="truncate font-semibold">{f.away}</p>
+            <p className="mt-1 flex items-center gap-2 font-semibold">
+              <TeamLogo name={f.home} sport={tennis ? "tennis" : "football"} />
+              <span className="truncate">{f.home}</span>
+            </p>
+            <p className="mt-1 flex items-center gap-2 font-semibold">
+              <TeamLogo name={f.away} sport={tennis ? "tennis" : "football"} />
+              <span className="truncate">{f.away}</span>
+            </p>
           </div>
           <button
             type="button"
@@ -475,7 +481,7 @@ export default function Home() {
             )}
 
             {searching && allFixtures.length === 0 ? (
-              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 6 }, (_, i) => (
                   <li key={i} className="skeleton h-36 rounded-2xl" />
                 ))}
@@ -509,7 +515,7 @@ export default function Home() {
                           {allOn ? "Tout désélectionner" : "Tout sélectionner"}
                         </button>
                       </div>
-                      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {fixtures.map((f) => (
                           <MatchCard key={fixtureId(f)} f={f} checked={selected.has(fixtureId(f))} onToggle={() => toggleFixture(fixtureId(f))} />
                         ))}
@@ -526,7 +532,7 @@ export default function Home() {
                 <span className="text-muted">{manualOpen ? "−" : "+"}</span>
               </button>
               {manualOpen && (
-                <form className="grid gap-2 border-t border-border p-4 sm:grid-cols-2" onSubmit={launchManual}>
+                <form className="grid grid-cols-1 gap-2 border-t border-border p-4 sm:grid-cols-2" onSubmit={launchManual}>
                   <input className={inputClass} value={manual.home} onChange={(e) => setManual({ ...manual, home: e.target.value })} placeholder={sport === "tennis" ? "Joueur 1" : "Équipe à domicile"} aria-label="Équipe ou joueur 1" />
                   <input className={inputClass} value={manual.away} onChange={(e) => setManual({ ...manual, away: e.target.value })} placeholder={sport === "tennis" ? "Joueur 2" : "Équipe à l'extérieur"} aria-label="Équipe ou joueur 2" />
                   <input className={inputClass} value={manual.competition} onChange={(e) => setManual({ ...manual, competition: e.target.value })} placeholder="Compétition (facultatif)" aria-label="Compétition" />
@@ -555,7 +561,7 @@ export default function Home() {
             {history.length > 0 && (
               <div className="mt-10">
                 <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">Historique</h2>
-                <ul className="grid gap-2 sm:grid-cols-2">
+                <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {history.map((r) => (
                     <li key={r.createdAt + r.analysis.match.home}>
                       <button onClick={() => setDetail(r)} className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-surface px-3 py-2.5 text-left hover:border-accent/60">
@@ -611,13 +617,6 @@ export default function Home() {
         ))}
       </nav>
 
-      <BetSlip
-        bottomClass={
-          selectionBar
-            ? "bottom-[calc(9.5rem+env(safe-area-inset-bottom))] lg:bottom-24"
-            : "bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-6"
-        }
-      />
 
       {selectionBar && (
         <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-border bg-bg/90 backdrop-blur-xl lg:bottom-0">

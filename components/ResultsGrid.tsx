@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CATEGORY_LABELS } from "@/lib/coupon";
 import type { Job } from "@/lib/jobs";
+import { TeamLogo } from "./TeamLogo";
 import type { Outcome } from "@/lib/schemas";
 
 const LEVEL_STYLES: Record<string, string> = {
@@ -35,7 +36,7 @@ function ResultCard({ job, onOpen }: { job: Job; onOpen: () => void }) {
   const { fixture: f, result } = job;
   if (job.status !== "done" || !result) {
     return (
-      <li className="rounded-2xl border border-border bg-surface p-4">
+      <li className="min-w-0 rounded-2xl border border-border bg-surface p-4">
         <p className="text-xs text-muted">{f.competition}</p>
         <p className="font-semibold">
           {f.home} – {f.away}
@@ -46,7 +47,7 @@ function ResultCard({ job, onOpen }: { job: Job; onOpen: () => void }) {
             <p className="mt-2 truncate text-xs text-muted">{job.message}</p>
           </>
         ) : (
-          <p className={`mt-3 text-sm ${job.status === "error" ? "text-danger" : "text-muted"}`}>{job.message}</p>
+          <p className={`mt-3 break-words text-sm ${job.status === "error" ? "text-danger" : "text-muted"}`}>{job.message}</p>
         )}
       </li>
     );
@@ -71,8 +72,12 @@ function ResultCard({ job, onOpen }: { job: Job; onOpen: () => void }) {
               {f.competition} · {f.date}
               {f.time ? ` · ${f.time}` : ""}
             </p>
-            <p className="truncate font-semibold">
-              {f.home} <span className="text-muted">–</span> {f.away}
+            <p className="flex min-w-0 items-center gap-1.5 font-semibold">
+              <TeamLogo name={f.home} sport={result.analysis.match.sport} size={20} />
+              <span className="truncate">
+                {f.home} <span className="text-muted">–</span> {f.away}
+              </span>
+              <TeamLogo name={f.away} sport={result.analysis.match.sport} size={20} />
             </p>
           </div>
           <Ring value={c.agreement} />
@@ -178,7 +183,7 @@ export function ResultsGrid({
           )}
         </div>
       </div>
-      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {sorted.map((j) => (
           <ResultCard key={j.id} job={j} onOpen={() => onOpen(j)} />
         ))}
