@@ -35,7 +35,7 @@ export default function RootLayout({
         {/* Applique le thème choisi avant l'affichage, pour éviter un flash de la mauvaise couleur. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem("pronoradar.theme");if(t)document.documentElement.dataset.theme=t}catch(e){}`,
+            __html: `try{var d=document.documentElement,t=localStorage.getItem("pronoradar.theme"),p=localStorage.getItem("pronoradar.palette");if(t)d.dataset.theme=t;if(p)d.dataset.palette=p}catch(e){}`,
           }}
         />
       </head>

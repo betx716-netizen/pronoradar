@@ -592,7 +592,7 @@ function App() {
 
   return (
     <div className="min-h-screen pb-44 lg:pb-32">
-      <header className="sticky top-0 z-30 bg-gradient-to-r from-accent-strong via-accent to-accent text-on-accent shadow-lg shadow-accent/20">
+      <header className="sticky top-0 z-30 bg-gradient-to-r from-header-from to-header-to text-on-accent shadow-lg shadow-black/10">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-10 w-10 -skew-x-6 items-center justify-center rounded-lg bg-white font-display text-2xl text-accent shadow">

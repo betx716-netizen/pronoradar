@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { setPassword } from "@/lib/client";
 import type { ServicesStatus } from "@/lib/schemas";
+import { PalettePicker } from "./PalettePicker";
 
 type Quotas = { odds: number | null; apiFootball: number | null };
 
@@ -82,6 +83,11 @@ export function SettingsPanel({
                   ✕
                 </button>
               </div>
+
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                Couleurs du site
+              </h3>
+              <PalettePicker />
 
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
                 Services
