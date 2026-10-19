@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { callStreaming } from "@/lib/client";
 import type { CoachRequest, CoachReview, CoachStyle } from "@/lib/coach";
-import { CATEGORY_LABELS, type Coupon } from "@/lib/coupon";
+import { CATEGORY_LABELS, sameSelection, type Coupon } from "@/lib/coupon";
 import type { AnalysisResult } from "@/lib/schemas";
 
 const VERDICTS: Record<CoachReview["verdict"], { label: string; className: string }> = {
@@ -20,20 +20,22 @@ export function CouponCoach({
   results,
   profileLabel,
   onExclude,
+  onReplace,
 }: {
   coupon: Coupon;
   results: AnalysisResult[];
   profileLabel: string;
   onExclude: (matches: string[]) => void;
+  onReplace: (match: string, selection: string) => void;
 }) {
   const [style, setStyle] = useState<CoachStyle>("prudent");
   const [review, setReview] = useState<CoachReview | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Un avis ne vaut que pour le coupon qu'il a relu.
-  const signature = coupon.legs.map((l) => l.match + l.pick.selection).join("|");
-  useEffect(() => setReview(null), [signature, style]);
+  // L'avis reste affiché pendant qu'on applique ses conseils ; changer de style demande un nouvel avis.
+  useEffect(() => setReview(null), [style]);
+  const inCoupon = (match: string) => coupon.legs.find((l) => l.match === match);
 
   async function ask() {
     setLoading("Le coach relit votre coupon…");
@@ -73,7 +75,7 @@ export function CouponCoach({
   }
 
   if (coupon.legs.length === 0) return null;
-  const toRemove = review?.legs.filter((l) => !l.keep).map((l) => l.match) ?? [];
+  const toRemove = review?.legs.filter((l) => !l.keep && inCoupon(l.match)).map((l) => l.match) ?? [];
 
   return (
     <section className="mt-4 rounded-2xl border border-border bg-surface-2 p-4">
@@ -126,6 +128,32 @@ export function CouponCoach({
                 </p>
                 <p className="text-muted">{l.reason}</p>
                 {l.replacement && <p className="text-accent">↪ Plutôt : {l.replacement}</p>}
+                {(() => {
+                  const leg = inCoupon(l.match);
+                  if (!leg) return <p className="mt-2 text-xs font-semibold text-muted">Retiré du coupon</p>;
+                  const replaced = l.replacement && sameSelection(leg.pick.selection, l.replacement);
+                  return (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {l.replacement &&
+                        (replaced ? (
+                          <span className="rounded-lg bg-success-soft px-2.5 py-1.5 text-xs font-semibold text-success">✓ Remplacé</span>
+                        ) : (
+                          <button
+                            onClick={() => onReplace(l.match, l.replacement!)}
+                            className="rounded-lg bg-accent px-2.5 py-1.5 text-xs font-semibold text-on-accent active:scale-95"
+                          >
+                            Remplacer par la proposition
+                          </button>
+                        ))}
+                      <button
+                        onClick={() => onExclude([l.match])}
+                        className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-muted hover:border-danger hover:text-danger active:scale-95"
+                      >
+                        Enlever ce match
+                      </button>
+                    </div>
+                  );
+                })()}
               </li>
             ))}
           </ul>

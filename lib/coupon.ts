@@ -68,21 +68,37 @@ function score(pick: MarketPick, profile: RiskProfile) {
   return p * odds ** 1.3 * trust;
 }
 
+// Le coach recopie une alternative sous la forme « sélection @ cote (probabilité %) » : on compare la sélection seule.
+export const sameSelection = (a: string, b: string) => {
+  const clean = (s: string) => s.split(" @ ")[0].trim().toLowerCase();
+  const x = clean(a);
+  const y = clean(b);
+  return x === y || (Math.min(x.length, y.length) >= 6 && (x.includes(y) || y.includes(x)));
+};
+
 export function buildCoupon(
   results: AnalysisResult[],
-  options: { profile: RiskProfile; size: number; categories: MarketCategory[] },
+  options: { profile: RiskProfile; size: number; categories: MarketCategory[]; forced?: Record<string, string> },
 ): Coupon {
   const { minProbability, minOdds = 1.05 } = PROFILES[options.profile];
   const candidates: (CouponLeg & { score: number })[] = [];
 
   for (const r of results) {
+    const match = `${r.analysis.match.home} – ${r.analysis.match.away}`;
+    // Pari imposé (remplacement proposé par le coach) : gardé tel quel, en tête du coupon.
+    const forcedSelection = options.forced?.[match];
+    const forced = forcedSelection && r.picks?.find((p) => sameSelection(p.selection, forcedSelection));
+    if (forced) {
+      candidates.push({ match, competition: r.analysis.match.competition, date: r.analysis.match.date, pick: forced, score: Infinity });
+      continue;
+    }
     const allowed = (r.picks ?? []).filter(
       (p) => options.categories.includes(p.category) && p.probability >= minProbability && p.odds >= minOdds && (options.profile !== "value" || isValueBet(p)),
     );
     if (allowed.length === 0) continue;
     const best = allowed.reduce((a, b) => (score(b, options.profile) > score(a, options.profile) ? b : a));
     candidates.push({
-      match: `${r.analysis.match.home} – ${r.analysis.match.away}`,
+      match,
       competition: r.analysis.match.competition,
       date: r.analysis.match.date,
       pick: best,

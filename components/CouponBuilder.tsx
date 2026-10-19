@@ -34,11 +34,12 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
     : FOOTBALL_CATEGORIES;
   // Matchs retirés sur conseil du coach : exclus du coupon jusqu'à ce qu'on les rétablisse.
   const [excluded, setExcluded] = useState<string[]>([]);
+  const [forced, setForced] = useState<Record<string, string>>({});
   const pool = useMemo(
     () => results.filter((r) => !excluded.includes(`${r.analysis.match.home} – ${r.analysis.match.away}`)),
     [results, excluded],
   );
-  const coupon = useMemo(() => buildCoupon(pool, { profile, size, categories }), [pool, profile, size, categories]);
+  const coupon = useMemo(() => buildCoupon(pool, { profile, size, categories, forced }), [pool, profile, size, categories, forced]);
 
   // Le profil Grosse cote a besoin des marchés à forte cote : on les active d'office.
   function chooseProfile(p: RiskProfile) {
@@ -261,10 +262,17 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
             </button>
           </div>
         )}
-        {excluded.length > 0 && (
+        {(excluded.length > 0 || Object.keys(forced).length > 0) && (
           <p className="mt-3 text-xs text-muted">
-            {excluded.length} match{excluded.length > 1 ? "s" : ""} écarté{excluded.length > 1 ? "s" : ""} par le coach.{" "}
-            <button onClick={() => setExcluded([])} className="font-semibold text-accent">
+            Conseils du coach appliqués : {excluded.length} match{excluded.length > 1 ? "s" : ""} enlevé{excluded.length > 1 ? "s" : ""},{" "}
+            {Object.keys(forced).length} remplacement{Object.keys(forced).length > 1 ? "s" : ""}.{" "}
+            <button
+              onClick={() => {
+                setExcluded([]);
+                setForced({});
+              }}
+              className="font-semibold text-accent"
+            >
               Rétablir
             </button>
           </p>
@@ -274,6 +282,7 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
           results={pool}
           profileLabel={PROFILES[profile].label}
           onExclude={(m) => setExcluded((prev) => [...new Set([...prev, ...m])])}
+          onReplace={(match, selection) => setForced((prev) => ({ ...prev, [match]: selection }))}
         />
         <p className="mt-4 text-xs text-muted">Aide à la décision, aucun gain garanti. Jouez de façon responsable.</p>
       </section>
