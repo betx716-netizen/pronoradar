@@ -69,8 +69,8 @@ export function CouponBuilder({
   results: AnalysisResult[];
   onClear: () => void;
 }) {
-  const [profile, setProfile] = useState<RiskProfile>("equilibre");
-  const [size, setSize] = useState(4);
+  const [profile, setProfile] = useState<RiskProfile>("x5");
+  const [size, setSize] = useState(10);
   const [categories, setCategories] =
     useState<MarketCategory[]>(DEFAULT_CATEGORIES);
   const [copied, setCopied] = useState(false);
@@ -104,10 +104,10 @@ export function CouponBuilder({
     [pool, profile, size, categories, forced],
   );
 
-  // Le profil Grosse cote a besoin des marchés à forte cote : on les active d'office.
+  // Pour les grosses cotes, on ouvre d'office les marchés mieux cotés (seuls leurs paris fiables seront retenus).
   function chooseProfile(p: RiskProfile) {
     setProfile(p);
-    if (p === "jackpot")
+    if (p === "x20" || p === "x50")
       setCategories((prev) => [...new Set([...prev, ...JACKPOT_CATEGORIES])]);
   }
 
@@ -118,7 +118,7 @@ export function CouponBuilder({
 
   const kelly = kellyStake(bankroll, coupon.probability, coupon.totalOdds);
   const suggestedStake =
-    profile === "jackpot" ? Math.min(kelly, Math.round(bankroll) / 100) : kelly;
+    profile === "x50" ? Math.min(kelly, Math.round(bankroll) / 100) : kelly;
   const [stakeInput, setStakeInput] = useState("");
   const stake =
     stakeInput === ""
@@ -189,7 +189,7 @@ export function CouponBuilder({
               >
                 <span className="block font-semibold">{PROFILES[p].label}</span>
                 <span className="text-xs text-muted">
-                  ≥ {PROFILES[p].minProbability} % par sélection
+                  {PROFILES[p].target ? `cote ≈ ${PROFILES[p].target} · ` : ""}≥ {PROFILES[p].minProbability} % par sélection
                 </span>
               </button>
             ))}
@@ -202,14 +202,14 @@ export function CouponBuilder({
         <div>
           <div className="mb-2 flex items-baseline justify-between">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
-              Nombre de sélections
+              Nombre maximum de sélections
             </h3>
             <span className="text-lg font-bold tabular-nums">{size}</span>
           </div>
           <input
             type="range"
             min={1}
-            max={10}
+            max={30}
             value={size}
             onChange={(e) => setSize(Number(e.target.value))}
             className="w-full accent-[var(--accent)]"
@@ -358,10 +358,10 @@ export function CouponBuilder({
         )}
         {coupon.legs.length > 0 && (
           <div className="mt-4 space-y-3 border-t border-dashed border-border pt-4">
-            {profile === "jackpot" && (
+            {coupon.probability < 15 && (
               <p className="rounded-lg bg-warn-bg p-2 text-xs text-warn-text">
-                Coupon loterie : il perdra la grande majorité du temps. Ne misez
-                que ce que vous acceptez de perdre (1 % de la bankroll au plus).
+                Chaque sélection est fiable, mais toutes doivent passer : ce coupon n&apos;a que{" "}
+                {coupon.probability.toFixed(1)} % de chances. Petite mise conseillée.
               </p>
             )}
             {coupon.legs.length > 3 && (

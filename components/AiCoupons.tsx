@@ -12,11 +12,11 @@ import { addBet } from "@/lib/history";
 import type { AnalysisResult, MarketPick } from "@/lib/schemas";
 
 const LABELS: Record<AiProfile, { label: string; tone: string }> = {
-  value: { label: "Coupon Value", tone: "border-success/50" },
-  sur: { label: "Coupon Sûr", tone: "border-home/40" },
-  equilibre: { label: "Coupon Équilibré", tone: "border-gold/50" },
-  audacieux: { label: "Coupon Audacieux", tone: "border-away/50" },
-  jackpot: { label: "Coupon Grosse cote", tone: "border-accent/60" },
+  x2: { label: "Fiable · cote 2", tone: "border-success/50" },
+  x5: { label: "Fiable · cote 5", tone: "border-home/40" },
+  x10: { label: "Fiable · cote 10", tone: "border-gold/50" },
+  x20: { label: "Fiable · cote 20", tone: "border-away/50" },
+  x50: { label: "Fiable · cote 50", tone: "border-accent/60" },
 };
 
 type Built = {
@@ -27,7 +27,7 @@ type Built = {
 };
 type Saved = { createdAt: string; size: number | null; coupons: Built[] };
 
-const STORE = "pronoradar.aiCoupons.v1";
+const STORE = "pronoradar.aiCoupons.v2";
 const SIZE_KEY = "pronoradar.aiCouponsSize";
 const matchName = (r: AnalysisResult) =>
   `${r.analysis.match.home} – ${r.analysis.match.away}`;
@@ -62,7 +62,7 @@ export function AiCoupons({
   autoKey: number;
 }) {
   const [saved, setSaved] = useState<Saved | null>(null);
-  const [size, setSize] = useState<number | null>(3);
+  const [size, setSize] = useState<number | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
@@ -83,7 +83,7 @@ export function AiCoupons({
     const index = new Map<string, CouponLeg>();
     const body: AiCouponsRequest = {
       size: n,
-      matches: results.slice(0, 40).map((r, i) => {
+      matches: results.slice(0, 60).map((r, i) => {
         const ai = r.analysis.ai_analysis;
         return {
           match: matchName(r),
@@ -122,7 +122,7 @@ export function AiCoupons({
         setLoading,
       );
       const coupons: Built[] = (
-        ["value", "sur", "equilibre", "audacieux", "jackpot"] as AiProfile[]
+        ["x2", "x5", "x10", "x20", "x50"] as AiProfile[]
       ).map((profile) => {
         const c = res.coupons.find((x) => x.profile === profile);
         const seen = new Set<string>();
@@ -207,7 +207,7 @@ export function AiCoupons({
     const stake =
       Math.round(bankroll() * (c.stakePercent / 100) * 100) / 100 || 1;
     addBet({
-      profile: `IA · ${LABELS[c.profile].label.replace("Coupon ", "")}`,
+      profile: `IA · ${LABELS[c.profile].label.replace("Fiable · ", "")}`,
       legs: c.legs,
       totalOdds: odds,
       probability: Math.round(prob * 10) / 10,
@@ -231,14 +231,14 @@ export function AiCoupons({
         </div>
         <div className="flex items-center gap-2">
           <label className="text-sm text-muted">
-            Sélections{" "}
+            Sélections max{" "}
             <select
               value={size === null ? "auto" : String(size)}
               onChange={(e) => changeSize(e.target.value)}
               className="ml-1 rounded-lg border border-border bg-surface px-2 py-1.5 text-text"
             >
               <option value="auto">Au choix de l&apos;IA</option>
-              {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => (
+              {Array.from({ length: 30 }, (_, i) => i + 1).map((n) => (
                 <option key={n} value={n}>
                   {n}
                 </option>

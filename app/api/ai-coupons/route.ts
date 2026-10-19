@@ -8,11 +8,11 @@ export const maxDuration = 120;
 function demo(size: number | null, ids: string[][]): AiCoupons {
   const n = size ?? 3;
   return {
-    coupons: (["value", "sur", "equilibre", "audacieux", "jackpot"] as const).map((profile, k) => ({
+    coupons: (["x2", "x5", "x10", "x20", "x50"] as const).map((profile, k) => ({
       profile,
       legs: ids.slice(0, n).map((list) => ({ pick_id: list[k % list.length], reason: "Choix de l'IA (démo)." })),
       comment: "Coupon composé par l'IA (démo).",
-      stake_percent: profile === "jackpot" ? 0.5 : 2,
+      stake_percent: profile === "x50" ? 0.5 : 2,
     })),
   };
 }

@@ -3,19 +3,17 @@
 import type { AnalysisResult, MarketCategory, MarketPick } from "./schemas";
 import { edge, isValueBet } from "./value";
 
-export type RiskProfile = "value" | "sur" | "equilibre" | "audacieux" | "jackpot";
+// Tous les coupons restent fiables : chaque sélection doit être probable. Ce qui change d'un profil à l'autre,
+// c'est la cote visée, atteinte en ajoutant des matchs ou en prenant des paris mieux cotés mais toujours solides.
+export type RiskProfile = "x2" | "x5" | "x10" | "x20" | "x50" | "value";
 
-export const PROFILES: Record<RiskProfile, { label: string; description: string; minProbability: number; minOdds?: number }> = {
-  value: { label: "Value", description: "Uniquement les paris où notre probabilité bat la cote du bookmaker (avantage ≥ 3 %)", minProbability: 35 },
-  sur: { label: "Sûr", description: "Sélections très probables, petite cote", minProbability: 70 },
-  equilibre: { label: "Équilibré", description: "Bon compromis entre chance de gain et cote", minProbability: 58 },
-  audacieux: { label: "Audacieux", description: "Cotes plus élevées, risque assumé", minProbability: 42 },
-  jackpot: {
-    label: "Grosse cote",
-    description: "Paris à forte cote (≥ 2,50) : score exact, mi-temps/fin, combinés… Très peu de chances de passer, petite mise uniquement",
-    minProbability: 12,
-    minOdds: 2.5,
-  },
+export const PROFILES: Record<RiskProfile, { label: string; description: string; minProbability: number; target?: number }> = {
+  x2: { label: "Fiable", description: "Les sélections les plus sûres, cote totale autour de 2", minProbability: 68, target: 2 },
+  x5: { label: "Fiable · cote 5", description: "Sélections fiables, cote totale autour de 5", minProbability: 65, target: 5 },
+  x10: { label: "Fiable · cote 10", description: "Sélections fiables, cote totale autour de 10", minProbability: 63, target: 10 },
+  x20: { label: "Fiable · cote 20", description: "Sélections fiables, cote totale autour de 20 : plus de matchs ou de meilleures cotes", minProbability: 62, target: 20 },
+  x50: { label: "Fiable · cote 50", description: "Sélections fiables, cote totale autour de 50 : beaucoup de matchs, donc plus de risque global", minProbability: 60, target: 50 },
+  value: { label: "Value", description: "Uniquement les paris où notre probabilité bat la cote du bookmaker (avantage ≥ 3 %)", minProbability: 40 },
 };
 
 export const CATEGORY_LABELS: Record<MarketCategory, string> = {
@@ -53,19 +51,14 @@ export type Coupon = {
   estimatedOddsCount: number; // sélections dont la cote est estimée faute de cote bookmaker
 };
 
-// Score d'une sélection selon le profil : sûreté pure, compromis, ou valeur attendue.
-function score(pick: MarketPick, profile: RiskProfile) {
-  const p = pick.probability / 100;
-  // Une cote estimée n'est pas garantie chez le bookmaker : on la décote pour préférer les cotes réelles.
-  const odds = pick.oddsSource === "bookmaker" ? pick.odds : 1 + (pick.odds - 1) * 0.85;
-  const reliability = pick.reliability === "fragile" ? 0.8 : pick.reliability === "moyenne" ? 0.92 : 1;
-  const trust = (pick.oddsSource === "bookmaker" ? 1.05 : 1) * reliability;
-  if (profile === "value") return (edge(pick) ?? -1) * reliability;
-  if (profile === "sur") return p * trust;
-  if (profile === "equilibre") return p * Math.log(odds + 0.5) * trust;
-  if (profile === "audacieux") return p * odds * trust;
-  // Grosse cote : on vise la cote, tout en écartant les paris presque impossibles.
-  return p * odds ** 1.3 * trust;
+// Un pari « fiable » : assez probable, sur un marché qui n'est pas fragile, et à une cote qui rapporte quelque chose.
+const reliable = (p: MarketPick, minProbability: number) => p.probability >= minProbability && p.reliability !== "fragile" && p.odds >= 1.12;
+
+// Coût d'une sélection : la chance perdue pour chaque point de cote gagné. Plus il est bas, mieux la sélection
+// fait monter la cote sans faire chuter la probabilité du coupon. Les cotes estimées sont un peu pénalisées.
+function cost(p: MarketPick) {
+  const odds = p.oddsSource === "bookmaker" ? p.odds : 1 + (p.odds - 1) * 0.85;
+  return -Math.log(p.probability / 100) / Math.log(odds);
 }
 
 // Le coach recopie une alternative sous la forme « sélection @ cote (probabilité %) » : on compare la sélection seule.
@@ -80,36 +73,41 @@ export function buildCoupon(
   results: AnalysisResult[],
   options: { profile: RiskProfile; size: number; categories: MarketCategory[]; forced?: Record<string, string> },
 ): Coupon {
-  const { minProbability, minOdds = 1.05 } = PROFILES[options.profile];
-  const candidates: (CouponLeg & { score: number })[] = [];
+  const { minProbability, target } = PROFILES[options.profile];
+  const forcedLegs: CouponLeg[] = [];
+  const candidates: (CouponLeg & { cost: number })[] = [];
 
   for (const r of results) {
     const match = `${r.analysis.match.home} – ${r.analysis.match.away}`;
-    // Pari imposé (remplacement proposé par le coach) : gardé tel quel, en tête du coupon.
+    const leg = { match, competition: r.analysis.match.competition, date: r.analysis.match.date };
+    // Pari imposé (remplacement proposé par le coach) : gardé tel quel.
     const forcedSelection = options.forced?.[match];
     const forced = forcedSelection && r.picks?.find((p) => sameSelection(p.selection, forcedSelection));
     if (forced) {
-      candidates.push({ match, competition: r.analysis.match.competition, date: r.analysis.match.date, pick: forced, score: Infinity });
+      forcedLegs.push({ ...leg, pick: forced });
       continue;
     }
     const allowed = (r.picks ?? []).filter(
-      (p) => options.categories.includes(p.category) && p.probability >= minProbability && p.odds >= minOdds && (options.profile !== "value" || isValueBet(p)),
+      (p) => options.categories.includes(p.category) && reliable(p, minProbability) && (options.profile !== "value" || isValueBet(p)),
     );
     if (allowed.length === 0) continue;
-    const best = allowed.reduce((a, b) => (score(b, options.profile) > score(a, options.profile) ? b : a));
-    candidates.push({
-      match,
-      competition: r.analysis.match.competition,
-      date: r.analysis.match.date,
-      pick: best,
-      score: score(best, options.profile),
-    });
+    // Value : le plus gros avantage. Sinon : le pari qui fait monter la cote au moindre risque.
+    const best =
+      options.profile === "value"
+        ? allowed.reduce((x, y) => ((edge(y) ?? -1) > (edge(x) ?? -1) ? y : x))
+        : allowed.reduce((x, y) => (cost(y) < cost(x) ? y : x));
+    candidates.push({ ...leg, pick: best, cost: options.profile === "value" ? -(edge(best) ?? 0) : cost(best) });
   }
 
-  const legs = candidates
-    .sort((a, b) => b.score - a.score)
-    .slice(0, options.size)
-    .map(({ score: _score, ...leg }) => leg);
+  // On ajoute les meilleures sélections jusqu'à atteindre la cote visée, sans dépasser le nombre maximum.
+  const legs = [...forcedLegs];
+  let odds = legs.reduce((t, l) => t * l.pick.odds, 1);
+  for (const c of candidates.sort((x, y) => x.cost - y.cost)) {
+    if (legs.length >= options.size || (target && odds >= target * 0.92)) break;
+    const { cost: _cost, ...leg } = c;
+    legs.push(leg);
+    odds *= leg.pick.odds;
+  }
 
   return {
     legs,

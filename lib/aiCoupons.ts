@@ -3,11 +3,11 @@
 import { z } from "zod";
 import { AnalysisError, aiAvailable, emptyUsage, structure, todayInParis } from "./gemini";
 
-export const AI_PROFILES = ["value", "sur", "equilibre", "audacieux", "jackpot"] as const;
+export const AI_PROFILES = ["x2", "x5", "x10", "x20", "x50"] as const;
 export type AiProfile = (typeof AI_PROFILES)[number];
 
 export const AiCouponsRequestSchema = z.object({
-  size: z.number().int().min(1).max(10).nullable().describe("Nombre de sélections par coupon, null = au choix de l'IA"),
+  size: z.number().int().min(1).max(30).nullable().describe("Nombre maximum de sélections par coupon, null = au choix de l'IA"),
   matches: z
     .array(
       z.object({
@@ -21,7 +21,7 @@ export const AiCouponsRequestSchema = z.object({
       }),
     )
     .min(1)
-    .max(40),
+    .max(60),
 });
 export type AiCouponsRequest = z.infer<typeof AiCouponsRequestSchema>;
 
@@ -37,21 +37,28 @@ export const AiCouponsSchema = z.object({
 });
 export type AiCoupons = z.infer<typeof AiCouponsSchema>;
 
-const SYSTEM = (size: number | null) => `Tu es un parieur professionnel. À partir des analyses de matchs fournies, compose CINQ coupons combinés, un par profil :
-- "value" : uniquement des paris dont la probabilité dépasse nettement celle de la cote du bookmaker (cote bookmaker de préférence). Mise 1 à 3 %.
-- "sur" : les sélections les plus probables (≥ 70 % si possible), petite cote totale. Mise 2 à 5 %.
-- "equilibre" : bon compromis probabilité / cote (environ 55 à 70 % par sélection). Mise 1 à 3 %.
-- "audacieux" : cotes plus élevées, probabilité 40 à 60 % par sélection. Mise 0,5 à 2 %.
-- "jackpot" (grosse cote) : paris à forte cote (≥ 2,5) comme score exact, mi-temps/fin, combinés résultat + buts. Mise 0,5 à 1 %.
+const SYSTEM = (size: number | null) => `Tu es un parieur professionnel prudent. À partir des analyses de matchs fournies, compose CINQ coupons combinés.
+TOUS les coupons doivent être FIABLES : chaque sélection doit être un pari solide, jamais un pari improbable choisi seulement pour sa cote.
+Ce qui change d'un coupon à l'autre, c'est uniquement la cote totale visée :
+- "x2" : cote totale autour de 2. Les sélections les plus sûres (75 % ou plus si possible). Mise 3 à 5 %.
+- "x5" : cote totale autour de 5. Mise 2 à 3 %.
+- "x10" : cote totale autour de 10. Mise 1 à 2 %.
+- "x20" : cote totale autour de 20. Mise 0,5 à 1,5 %.
+- "x50" : cote totale autour de 50. Mise 0,5 à 1 %.
+
+Pour faire monter la cote sans perdre en fiabilité, tu as deux leviers, à combiner :
+1. Ajouter des matchs, chacun avec un pari solide.
+2. Sur un match, prendre un pari mieux coté mais toujours très probable (par exemple « victoire » plutôt que « double chance », ou « plus de 1,5 buts » combiné au résultat) quand l'analyse le justifie clairement.
 
 Règles :
-- ${size ? `Exactement ${size} sélection(s) par coupon (moins seulement s'il n'y a pas assez de matchs ou de paris valables).` : "Choisis toi-même le nombre de sélections de chaque coupon, entre 2 et 6, en restant raisonnable : plus il y a de sélections, plus le risque grimpe."}
-- Au plus UNE sélection par match dans un même coupon.
+- Chaque sélection doit avoir au moins 60 % de probabilité (au moins 68 % pour "x2"). Jamais de score exact, de marché « fragile » ni de pari sous 60 %.
+- ${size ? `Au plus ${size} sélection(s) par coupon. Si la cote visée ne peut pas être atteinte avec des paris fiables dans cette limite, arrête-toi avant et dis-le.` : "Choisis le nombre de sélections nécessaire pour approcher la cote visée, sans dépasser 30."}
+- Au plus UNE sélection par match dans un même coupon. Un même match peut figurer dans plusieurs coupons.
 - Utilise UNIQUEMENT les identifiants de paris fournis (pick_id exact), n'invente rien.
-- Évite les matchs dont l'analyse signale des risques forts ou une confiance faible, sauf pour la grosse cote.
-- Préfère les cotes de bookmaker aux cotes estimées, et méfie-toi des marchés « fragile ».
-- Évite de mettre dans un même coupon des sélections exposées au même risque.
-- Si aucun pari ne convient à un profil (souvent "value"), renvoie ce coupon avec une liste vide et explique pourquoi dans le commentaire.
+- Écarte les matchs dont l'analyse signale une confiance faible ou des risques forts.
+- Préfère les cotes de bookmaker aux cotes estimées.
+- Si la cote visée ne peut pas être atteinte avec des paris fiables, propose le coupon le plus proche possible et explique-le dans le commentaire ; ne baisse jamais l'exigence de fiabilité.
+- Dans le commentaire, rappelle la probabilité réelle du coupon : plus il y a de sélections, plus elle baisse.
 Réponds en français, phrases courtes. Ne promets jamais de gain.`;
 
 export async function buildAiCoupons(req: AiCouponsRequest, onProgress: (m: string) => void): Promise<AiCoupons> {
