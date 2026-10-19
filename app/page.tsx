@@ -11,6 +11,7 @@ import { TeamLogo } from "@/components/TeamLogo";
 import { Icon, type IconName } from "@/components/Icon";
 import { HeroBanner } from "@/components/HeroBanner";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SettingsPanel } from "@/components/SettingsPanel";
 import { isValueBet } from "@/lib/value";
 import {
   QuotaError,
@@ -384,27 +385,12 @@ export default function Home() {
             ))}
           </nav>
           <ThemeToggle />
+          <SettingsPanel services={services} quotas={quotas} />
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-4 pt-6">
-        {services && !services.demo && (
-          <div className="mb-4 flex flex-wrap gap-2 text-xs">
-            {(
-              [
-                ["Analyse IA", services.gemini],
-                ["Cotes en direct", services.odds],
-                ["Statistiques", services.apiFootball],
-              ] as const
-            ).map(([label, on]) => (
-              <span key={label} className={`rounded-full border px-2.5 py-1 ${on ? "border-accent/40 text-accent" : "border-border text-muted line-through"}`}>
-                {on ? "●" : "○"} {label}
-              </span>
-            ))}
-            {quotas.odds !== null && <span className="rounded-full border border-border px-2.5 py-1 text-muted">Cotes : {quotas.odds} requêtes restantes ce mois-ci</span>}
-          </div>
-        )}
 
         {needPassword && (
           <form
