@@ -62,13 +62,13 @@ export async function demoAnalysis(req: AnalyzeRequest, onProgress: (m: string) 
       src({ name: "Média I", type: "media", pick: "away", reasoning: "Pari sur l'outsider, en grande forme à l'extérieur." }),
     ],
     markets: tennis
-      ? [{ category: "jeux", selection: "Plus de 22,5 jeux", probability: 61, expected_value: 23.4, reasoning: "Deux serveurs solides (démo)." }]
+      ? [{ category: "jeux", selection: "Plus de 22,5 jeux", probability: 61, expected_value: 23.4, reasoning: "Deux serveurs solides (démo).", reliability: "moyenne" as const }]
       : [
-          { category: "buts", selection: "Plus de 1,5 buts", probability: 78, expected_value: 2.9, reasoning: "Deux attaques efficaces (démo)." },
-          { category: "les_deux_marquent", selection: "Les deux équipes marquent : oui", probability: 62, expected_value: null, reasoning: "Défenses perméables (démo)." },
-          { category: "corners", selection: "Plus de 9,5 corners", probability: 57, expected_value: 10.4, reasoning: "Jeu sur les ailes (démo)." },
-          { category: "fautes", selection: "Moins de 24,5 fautes", probability: 64, expected_value: 22.1, reasoning: "Arbitre qui laisse jouer (démo)." },
-          { category: "cartons", selection: "Plus de 3,5 cartons", probability: 55, expected_value: 4.1, reasoning: "Rivalité tendue (démo)." },
+          { category: "buts", selection: "Plus de 1,5 buts", probability: 78, expected_value: 2.9, reasoning: "Deux attaques efficaces (démo).", reliability: "fiable" as const },
+          { category: "les_deux_marquent", selection: "Les deux équipes marquent : oui", probability: 62, expected_value: null, reasoning: "Défenses perméables (démo).", reliability: "moyenne" as const },
+          { category: "corners", selection: "Plus de 9,5 corners", probability: 57, expected_value: 10.4, reasoning: "Jeu sur les ailes (démo).", reliability: "fragile" as const },
+          { category: "fautes", selection: "Moins de 24,5 fautes", probability: 64, expected_value: 22.1, reasoning: "Arbitre qui laisse jouer (démo).", reliability: "fragile" as const },
+          { category: "cartons", selection: "Plus de 3,5 cartons", probability: 55, expected_value: 4.1, reasoning: "Rivalité tendue (démo).", reliability: "fragile" as const },
         ],
     secondary_trends: tennis
       ? [{ market: "Plus de 22,5 jeux", verdict: "Oui pour 2 sources sur 2", sources_count: 2 }]

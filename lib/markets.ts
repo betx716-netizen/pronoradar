@@ -9,20 +9,30 @@ const fairOdds = (probability: number) => Math.max(1.01, Math.round((100 / Math.
 const round = (n: number) => Math.round(n * 10) / 10;
 
 // Probabilités finales du résultat : celles de l'IA (déjà nourries des cotes) ou du calcul automatique.
-function outcomeProbabilities(analysis: Analysis, tennis: boolean): Record<Outcome, number> {
+// L'IA ne peut s'écarter des cotes que de MAX_DRIFT points : au-delà, c'est presque toujours un excès de confiance.
+const MAX_DRIFT = 8;
+
+function outcomeProbabilities(analysis: Analysis, tennis: boolean, odds: OddsSummary | null | undefined): Record<Outcome, number> {
   const ai = analysis.ai_analysis;
   const total = ai.prob_home + (tennis ? 0 : ai.prob_draw) + ai.prob_away || 1;
-  return {
+  const p = {
     home: (ai.prob_home / total) * 100,
     draw: tennis ? 0 : (ai.prob_draw / total) * 100,
     away: (ai.prob_away / total) * 100,
   };
+  if (!odds?.home || !odds.away || (!tennis && !odds.draw)) return p;
+  const inv = { home: 1 / odds.home, draw: tennis ? 0 : 1 / odds.draw!, away: 1 / odds.away };
+  const sum = inv.home + inv.draw + inv.away;
+  const clamp = (o: Outcome) => Math.min((inv[o] / sum) * 100 + MAX_DRIFT, Math.max((inv[o] / sum) * 100 - MAX_DRIFT, p[o]));
+  const c = { home: clamp("home"), draw: tennis ? 0 : clamp("draw"), away: clamp("away") };
+  const t = c.home + c.draw + c.away;
+  return { home: (c.home / t) * 100, draw: (c.draw / t) * 100, away: (c.away / t) * 100 };
 }
 
 export function buildPicks(analysis: Analysis, odds: OddsSummary | null | undefined, engine: "ia" | "calcul"): MarketPick[] {
   const tennis = analysis.match.sport === "tennis";
   const { home, away } = analysis.match;
-  const p = outcomeProbabilities(analysis, tennis);
+  const p = outcomeProbabilities(analysis, tennis, odds);
   const picks: MarketPick[] = [];
   const basis = (hasOdds: boolean): MarketPick["basis"] =>
     engine === "calcul" ? "calcul" : hasOdds ? "cotes + IA" : "estimation IA";
@@ -131,6 +141,7 @@ export function buildPicks(analysis: Analysis, odds: OddsSummary | null | undefi
       oddsSource: "estimée",
       basis: "estimation IA",
       reasoning: [m.expected_value !== null ? `Moyenne attendue : ${m.expected_value}.` : "", m.reasoning].filter(Boolean).join(" "),
+      reliability: m.reliability,
     });
   }
 

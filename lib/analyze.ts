@@ -16,6 +16,15 @@ import {
 } from "./gemini";
 import { AnalysisSchema, type AnalysisResult, type AnalyzeRequest } from "./schemas";
 
+// Façon de raisonner imposée à Gemini : partir du marché, ne s'en écarter qu'avec une raison précise, chercher les pièges.
+const PHILOSOPHY = `Méthode de raisonnement (obligatoire) :
+- Pars des cotes des bookmakers : c'est l'avis de milliers de parieurs et le meilleur point de départ. Convertis-les en probabilités.
+- Ne t'en écarte que pour une raison précise et vérifiable (blessé ou suspendu important confirmé, rotation annoncée, match sans enjeu, fatigue, météo) et de 8 points au plus. Justifie chaque écart.
+- Un favori n'est pas une certitude : un favori à 1,40 perd environ une fois sur quatre.
+- Cherche les signaux d'alerte et liste-les dans les risques : match sans enjeu ou retour déjà joué, derby, entraîneur menacé, calendrier chargé (coupe d'Europe juste avant ou après), changement d'entraîneur récent, terrain ou météo difficile, équipe qui fait tourner.
+- Pour chaque marché secondaire, indique sa fiabilité : "fiable" (données solides et cohérentes), "moyenne", ou "fragile" (peu de données, forte variance comme les corners, cartons ou scores exacts).
+- Sois honnête : si le match est imprévisible, dis-le et mets une confiance faible.`;
+
 const researchSystem = (sourcesTarget: string) => `Tu es un analyste sportif rigoureux. Ton travail : recenser sur le web les pronostics publiés par d'autres pour un match précis, puis donner ta propre analyse.
 
 Règles de recherche :
@@ -25,6 +34,8 @@ Règles de recherche :
 - Ne retiens que des pronostics qui concernent bien CE match à CETTE date.
 - N'invente jamais un pronostic ou une source. Si une information manque, dis-le.
 - Les cotes des bookmakers et les statistiques fournies dans la demande sont fiables : sers-t'en, inutile de les rechercher.
+
+${PHILOSOPHY}
 
 Rédige ensuite un dossier en français avec :
 1. Les sources trouvées sur le web, une par ligne (nom, type : tipster / media / stats_model, issue pronostiquée, probabilités, autres pronostics, argument, date).
@@ -38,16 +49,17 @@ const STRUCTURE_SYSTEM = `Tu convertis un dossier d'analyse sportive en JSON. Re
 - Au tennis, il n'y a pas de nul : mets prob_draw et odds_draw à null pour les sources, et ai_analysis.prob_draw à 0.
 - Les probabilités sont en pourcentage (0 à 100).
 - Dans "sources", mets uniquement les sources trouvées sur le web (pas les cotes ni API-Football, déjà comptées). Leurs cotes sont à null. Si l'URL d'une source n'est pas connue, mets une chaîne vide.
-- Dans "markets", recopie les marchés secondaires du dossier (buts, les deux marquent, corners, fautes, cartons, mi-temps, mi-temps/fin, handicap, score exact, buts par équipe, combinés résultat + buts ou + les deux marquent, tirs cadrés, hors-jeu, sets, jeux, 1er set, handicap jeux, score en sets, tie-break), un pari par ligne avec la catégorie correspondante avec sa probabilité.
+- Dans "markets", recopie les marchés secondaires du dossier (buts, les deux marquent, corners, fautes, cartons, mi-temps, mi-temps/fin, handicap, score exact, buts par équipe, combinés résultat + buts ou + les deux marquent, tirs cadrés, hors-jeu, sets, jeux, 1er set, handicap jeux, score en sets, tie-break), un pari par ligne avec la catégorie correspondante et sa fiabilité (fiable, moyenne ou fragile) avec sa probabilité.
 - Rédige tous les textes en français.`;
 
 // Utilisé quand la recherche Google n'est plus disponible : Gemini analyse sans pouvoir citer de pronostiqueurs.
-const NO_SEARCH_SYSTEM = `Tu es un analyste sportif rigoureux. Tu n'as PAS accès au web pour cette analyse.
+const NO_SEARCH_SYSTEM: string = `Tu es un analyste sportif rigoureux. Tu n'as PAS accès au web pour cette analyse.
 Appuie-toi sur les données fournies (cotes, statistiques) et sur tes connaissances générales des équipes ou des joueurs.
 N'invente aucune source, aucun pronostiqueur, aucune blessure récente : la liste des sources doit rester vide.
 Rédige en français : contexte connu, ce que disent les cotes, puis TA propre analyse (probabilités en % pour chaque issue,
 issue la plus probable, score ou sets probables, confiance faible / moyenne / élevée, facteurs clés, risques).
 Précise que l'actualité récente (blessures, compositions) n'a pas pu être vérifiée.
+${PHILOSOPHY}
 Donne aussi les marchés secondaires, chacun avec une probabilité en % et la moyenne attendue : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (ligne la plus pertinente entre 8,5 et 10,5), fautes (entre 20,5 et 24,5), cartons (3,5 ou 4,5). Ajoute aussi : résultat à la mi-temps, mi-temps/fin de match, handicap (-1 ou +1), les 2 ou 3 scores exacts les plus probables, le nombre de buts de chaque équipe, les combinés résultat + plus/moins 2,5 buts et résultat + les deux marquent, les tirs cadrés et les hors-jeu. Au tennis : nombre de sets et de jeux, vainqueur du 1er set, handicap jeux, score exact en sets et tie-break oui/non. Appuie-toi sur les moyennes de la saison des deux équipes (buts, corners, fautes, cartons), le style de jeu et l'arbitre si connu.`;
 
 const MODE_SETTINGS = {

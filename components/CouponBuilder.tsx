@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CATEGORY_LABELS, PROFILES, buildCoupon, type RiskProfile } from "@/lib/coupon";
 import type { AnalysisResult, MarketCategory } from "@/lib/schemas";
 import { addBet } from "@/lib/history";
+import { CouponCoach } from "./CouponCoach";
 import { kellyStake } from "@/lib/value";
 
 const FOOTBALL_CATEGORIES: MarketCategory[] = [
@@ -31,7 +32,13 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
   const available = results.some((r) => r.analysis.match.sport === "tennis")
     ? [...new Set([...FOOTBALL_CATEGORIES, ...TENNIS_CATEGORIES])]
     : FOOTBALL_CATEGORIES;
-  const coupon = useMemo(() => buildCoupon(results, { profile, size, categories }), [results, profile, size, categories]);
+  // Matchs retirés sur conseil du coach : exclus du coupon jusqu'à ce qu'on les rétablisse.
+  const [excluded, setExcluded] = useState<string[]>([]);
+  const pool = useMemo(
+    () => results.filter((r) => !excluded.includes(`${r.analysis.match.home} – ${r.analysis.match.away}`)),
+    [results, excluded],
+  );
+  const coupon = useMemo(() => buildCoupon(pool, { profile, size, categories }), [pool, profile, size, categories]);
 
   // Le profil Grosse cote a besoin des marchés à forte cote : on les active d'office.
   function chooseProfile(p: RiskProfile) {
@@ -254,6 +261,20 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
             </button>
           </div>
         )}
+        {excluded.length > 0 && (
+          <p className="mt-3 text-xs text-muted">
+            {excluded.length} match{excluded.length > 1 ? "s" : ""} écarté{excluded.length > 1 ? "s" : ""} par le coach.{" "}
+            <button onClick={() => setExcluded([])} className="font-semibold text-accent">
+              Rétablir
+            </button>
+          </p>
+        )}
+        <CouponCoach
+          coupon={coupon}
+          results={pool}
+          profileLabel={PROFILES[profile].label}
+          onExclude={(m) => setExcluded((prev) => [...new Set([...prev, ...m])])}
+        />
         <p className="mt-4 text-xs text-muted">Aide à la décision, aucun gain garanti. Jouez de façon responsable.</p>
       </section>
     </div>

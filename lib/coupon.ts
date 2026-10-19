@@ -58,8 +58,9 @@ function score(pick: MarketPick, profile: RiskProfile) {
   const p = pick.probability / 100;
   // Une cote estimée n'est pas garantie chez le bookmaker : on la décote pour préférer les cotes réelles.
   const odds = pick.oddsSource === "bookmaker" ? pick.odds : 1 + (pick.odds - 1) * 0.85;
-  const trust = pick.oddsSource === "bookmaker" ? 1.05 : 1;
-  if (profile === "value") return edge(pick) ?? -1;
+  const reliability = pick.reliability === "fragile" ? 0.8 : pick.reliability === "moyenne" ? 0.92 : 1;
+  const trust = (pick.oddsSource === "bookmaker" ? 1.05 : 1) * reliability;
+  if (profile === "value") return (edge(pick) ?? -1) * reliability;
   if (profile === "sur") return p * trust;
   if (profile === "equilibre") return p * Math.log(odds + 0.5) * trust;
   if (profile === "audacieux") return p * odds * trust;

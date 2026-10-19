@@ -72,6 +72,9 @@ export const MarketEstimateSchema = z.object({
   probability: z.number().describe("Probabilité estimée en % que ce pari soit gagnant"),
   expected_value: z.number().nullable().describe("Nombre moyen attendu (buts, corners, fautes, cartons…) si pertinent"),
   reasoning: z.string().describe("Justification courte : moyennes des équipes, style de jeu, arbitre…"),
+  reliability: z
+    .enum(["fiable", "moyenne", "fragile"])
+    .describe("Solidité de l'estimation : fiable (données solides), moyenne, fragile (peu de données ou forte variance)"),
 });
 export type MarketEstimate = z.infer<typeof MarketEstimateSchema>;
 
@@ -209,6 +212,7 @@ export type MarketPick = {
   oddsSource: "bookmaker" | "estimée";
   basis: "cotes" | "cotes + IA" | "estimation IA" | "calcul";
   reasoning: string;
+  reliability?: "fiable" | "moyenne" | "fragile";
 };
 
 // Services configurés sur le serveur (clés présentes).
