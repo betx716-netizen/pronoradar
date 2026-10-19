@@ -5,20 +5,119 @@ import { CATEGORY_LABELS } from "@/lib/coupon";
 import { fcfa } from "@/lib/value";
 import { loadHistory, profit, removeBet, syncHistory, updateBet, type BetStatus, type SavedBet, type SyncState } from "@/lib/history";
 
-const STATUS_LABELS: Record<BetStatus, string> = { en_cours: "En cours", gagne: "Gagné", perdu: "Perdu", rembourse: "Remboursé" };
-const STATUS_STYLES: Record<BetStatus, string> = {
-  en_cours: "border-border text-muted",
-  gagne: "border-success bg-success-soft text-success",
-  perdu: "border-danger/60 bg-danger/10 text-danger",
-  rembourse: "border-draw/60 text-draw",
+const STATUS: Record<BetStatus, { label: string; on: string; badge: string }> = {
+  en_cours: { label: "En cours", on: "bg-surface-3 text-text", badge: "bg-surface-3 text-muted" },
+  gagne: { label: "Gagné", on: "bg-success text-on-accent", badge: "bg-success-soft text-success" },
+  perdu: { label: "Perdu", on: "bg-danger text-on-accent", badge: "bg-accent-soft text-danger" },
+  rembourse: { label: "Remboursé", on: "bg-draw text-on-accent", badge: "bg-surface-3 text-draw" },
 };
 
-const euros = (n: number) => fcfa(n, true);
+type Filter = "tous" | BetStatus;
+const FILTERS: { id: Filter; label: string }[] = [
+  { id: "tous", label: "Tous" },
+  { id: "en_cours", label: "En cours" },
+  { id: "gagne", label: "Gagnés" },
+  { id: "perdu", label: "Perdus" },
+];
 
-/** Historique des coupons joués : statut à renseigner, bilan global et réussite par marché. */
+const dateLabel = (iso: string) =>
+  new Date(iso).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+function BetCard({ b }: { b: SavedBet }) {
+  const [open, setOpen] = useState(b.legs.length <= 3);
+  const gain = b.stake * b.totalOdds;
+  const settledProfit = profit(b);
+  const shown = open ? b.legs : b.legs.slice(0, 3);
+
+  return (
+    <li className="fade-in overflow-hidden rounded-2xl border border-border bg-surface">
+      {/* En-tête : profil, date, statut */}
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+        <div className="min-w-0">
+          <p className="break-words text-sm font-bold leading-tight">{b.profile}</p>
+          <p className="text-xs text-muted">
+            {dateLabel(b.createdAt)} · {b.legs.length} sélection{b.legs.length > 1 ? "s" : ""}
+          </p>
+        </div>
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${STATUS[b.status].badge}`}>{STATUS[b.status].label}</span>
+      </div>
+
+      {/* Chiffres clés */}
+      <div className="grid grid-cols-3 divide-x divide-border border-b border-border text-center">
+        <div className="px-2 py-3">
+          <p className="text-[11px] uppercase tracking-wide text-muted">Cote</p>
+          <p className="font-display text-2xl leading-none tabular-nums text-accent">{b.totalOdds.toFixed(2)}</p>
+        </div>
+        <div className="px-2 py-3">
+          <p className="text-[11px] uppercase tracking-wide text-muted">Mise</p>
+          <p className="mt-0.5 text-sm font-bold tabular-nums">{fcfa(b.stake)}</p>
+        </div>
+        <div className="px-2 py-3">
+          <p className="text-[11px] uppercase tracking-wide text-muted">{b.status === "gagne" || b.status === "perdu" ? "Résultat" : "Gain possible"}</p>
+          <p
+            className={`mt-0.5 text-sm font-bold tabular-nums ${
+              b.status === "gagne" ? "text-success" : b.status === "perdu" ? "text-danger" : ""
+            }`}
+          >
+            {b.status === "gagne" || b.status === "perdu" ? fcfa(settledProfit, true) : fcfa(gain)}
+          </p>
+        </div>
+      </div>
+
+      {/* Sélections : texte complet, sur plusieurs lignes si besoin */}
+      <ol className="divide-y divide-border">
+        {shown.map((l, i) => (
+          <li key={`${l.match}-${i}`} className="flex items-start gap-3 px-4 py-2.5">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-3 text-[10px] font-bold">{i + 1}</span>
+            <div className="min-w-0 flex-1">
+              <p className="break-words text-sm font-semibold leading-snug">{l.pick.selection}</p>
+              <p className="break-words text-xs text-muted">
+                {l.match}
+                {l.competition ? ` · ${l.competition}` : ""} · {CATEGORY_LABELS[l.pick.category]}
+              </p>
+            </div>
+            <span className="shrink-0 rounded-lg bg-accent-soft px-2 py-0.5 text-sm font-bold tabular-nums text-accent">{l.pick.odds.toFixed(2)}</span>
+          </li>
+        ))}
+      </ol>
+      {b.legs.length > 3 && (
+        <button onClick={() => setOpen((o) => !o)} className="w-full border-t border-border py-2 text-xs font-semibold text-accent">
+          {open ? "Réduire" : `Voir les ${b.legs.length - 3} autres sélections`}
+        </button>
+      )}
+
+      {/* Résultat à renseigner */}
+      <div className="flex items-center gap-2 border-t border-border bg-surface-2 p-2">
+        <div className="grid flex-1 grid-cols-4 gap-1 rounded-xl bg-surface p-1">
+          {(Object.keys(STATUS) as BetStatus[]).map((s) => (
+            <button
+              key={s}
+              onClick={() => updateBet(b.id, { status: s })}
+              className={`rounded-lg px-1 py-1.5 text-[11px] font-semibold transition active:scale-95 sm:text-xs ${b.status === s ? STATUS[s].on : "text-muted"}`}
+            >
+              {STATUS[s].label}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => confirm("Supprimer ce coupon du suivi ?") && removeBet(b.id)}
+          aria-label="Supprimer"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted hover:bg-accent-soft hover:text-danger"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden>
+            <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+          </svg>
+        </button>
+      </div>
+    </li>
+  );
+}
+
+/** Historique des coupons joués : bilan, réussite par marché, et chaque coupon avec son résultat à renseigner. */
 export function BetTracker() {
   const [bets, setBets] = useState<SavedBet[]>([]);
   const [sync, setSync] = useState<SyncState | "loading">("loading");
+  const [filter, setFilter] = useState<Filter>("tous");
 
   useEffect(() => {
     const refresh = () => setBets(loadHistory());
@@ -28,21 +127,17 @@ export function BetTracker() {
     return () => window.removeEventListener("pronoradar-history", refresh);
   }, []);
 
-  const update = (id: string, status: BetStatus) => updateBet(id, { status });
-  const remove = (id: string) => {
-    if (confirm("Supprimer ce coupon du suivi ?")) removeBet(id);
-  };
   const syncNote = {
     loading: "Synchronisation…",
-    synced: "Historique sauvegardé en ligne, disponible sur tous vos appareils.",
-    local: "Sauvegarde en ligne non configurée : l'historique est gardé dans ce navigateur uniquement.",
-    error: "Sauvegarde en ligne injoignable : l'historique local est affiché, il sera envoyé à la prochaine synchronisation.",
+    synced: "Sauvegardé en ligne, disponible sur tous vos appareils.",
+    local: "Sauvegarde en ligne non configurée : historique gardé sur cet appareil.",
+    error: "Sauvegarde en ligne injoignable : l'historique sera envoyé à la prochaine synchronisation.",
   }[sync];
 
   if (bets.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted">
-        {sync === "loading" ? "Chargement de l'historique…" : "Aucun coupon enregistré. Dans l'onglet Coupon, touchez « J'ai joué ce coupon » pour commencer le suivi."}
+        {sync === "loading" ? "Chargement de l'historique…" : "Aucun coupon enregistré. Dans l'onglet Coupon, touchez « J'ai joué » pour commencer le suivi."}
       </div>
     );
   }
@@ -52,8 +147,11 @@ export function BetTracker() {
   const net = settled.reduce((t, b) => t + profit(b), 0);
   const won = settled.filter((b) => b.status === "gagne").length;
   const expected = settled.reduce((t, b) => t + b.probability / 100, 0);
+  const pending = bets.filter((b) => b.status === "en_cours");
+  const atStake = pending.reduce((t, b) => t + b.stake, 0);
+  const rate = settled.length ? (won / settled.length) * 100 : 0;
 
-  // Réussite par marché : uniquement les coupons d'une seule sélection, où le résultat dit si ce pari précis est passé.
+  // Réussite par marché : uniquement les paris simples, où le résultat dit si ce pari précis est passé.
   const byMarket = new Map<string, { won: number; total: number }>();
   for (const b of settled.filter((x) => x.legs.length === 1)) {
     const key = CATEGORY_LABELS[b.legs[0].pick.category];
@@ -63,87 +161,109 @@ export function BetTracker() {
     byMarket.set(key, m);
   }
 
+  const list = filter === "tous" ? bets : bets.filter((b) => b.status === filter);
+
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Bénéfice" value={euros(net)} tone={net >= 0 ? "text-success" : "text-danger"} />
-        <Stat label="Rentabilité (ROI)" value={staked ? `${((net / staked) * 100).toFixed(1)} %` : "—"} tone={net >= 0 ? "text-success" : "text-danger"} />
-        <Stat label="Coupons gagnés" value={`${won} / ${settled.length}`} />
-        <Stat label="Gains attendus" value={settled.length ? `${expected.toFixed(1)}` : "—"} hint="Nombre de coupons qui auraient dû passer selon nos probabilités" />
-      </div>
+      {/* Bilan */}
+      <section className="overflow-hidden rounded-3xl bg-[#121216] p-5 text-white">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">Bénéfice net</p>
+        <p className={`font-display text-5xl leading-none tabular-nums ${net >= 0 ? "text-[#34d399]" : "text-[#f87171]"}`}>{fcfa(net, true)}</p>
+        <p className="mt-1 text-sm text-white/60">
+          sur {fcfa(staked)} misés · rentabilité {staked ? `${((net / staked) * 100).toFixed(1)} %` : "—"}
+        </p>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="rounded-2xl bg-white/10 p-3">
+            <p className="font-display text-3xl leading-none tabular-nums">
+              {won}/{settled.length}
+            </p>
+            <p className="mt-1 text-[11px] text-white/70">Coupons gagnés</p>
+          </div>
+          <div className="rounded-2xl bg-white/10 p-3">
+            <p className="font-display text-3xl leading-none tabular-nums">{settled.length ? `${rate.toFixed(0)} %` : "—"}</p>
+            <p className="mt-1 text-[11px] text-white/70">Taux de réussite</p>
+          </div>
+          <div className="rounded-2xl bg-white/10 p-3">
+            <p className="font-display text-3xl leading-none tabular-nums">{pending.length}</p>
+            <p className="mt-1 text-[11px] text-white/70">En cours · {fcfa(atStake)}</p>
+          </div>
+        </div>
+        {settled.length > 0 && (
+          <div className="mt-4">
+            <div className="flex h-2 overflow-hidden rounded-full bg-white/10">
+              <div className="bg-[#34d399]" style={{ width: `${rate}%` }} />
+              <div className="bg-[#f87171]" style={{ width: `${100 - rate}%` }} />
+            </div>
+            <p className="mt-1.5 text-[11px] text-white/60">
+              Attendu d&apos;après nos probabilités : {expected.toFixed(1)} coupon{expected >= 2 ? "s" : ""} gagné{expected >= 2 ? "s" : ""}
+            </p>
+          </div>
+        )}
+      </section>
+
       {settled.length > 0 && settled.length < 30 && (
-        <p className="text-xs text-muted">Moins de 30 coupons terminés : trop peu pour juger la fiabilité des analyses, la chance pèse encore beaucoup.</p>
+        <p className="rounded-xl bg-surface-2 p-3 text-xs text-muted">
+          Moins de 30 coupons terminés : trop peu pour juger la fiabilité des analyses, la chance pèse encore beaucoup.
+        </p>
       )}
       {settled.length >= 10 && won < expected * 0.8 && (
-        <p className="rounded-lg bg-warn-bg p-2 text-xs text-warn-text">
-          Vous gagnez nettement moins que prévu : nos probabilités semblent trop optimistes. Réduisez les mises ou préférez le profil Sûr.
+        <p className="rounded-xl bg-warn-bg p-3 text-sm text-warn-text">
+          Vous gagnez nettement moins que prévu : nos probabilités semblent trop optimistes. Réduisez les mises ou visez des cotes plus basses.
         </p>
       )}
 
       {byMarket.size > 0 && (
         <section className="rounded-2xl border border-border bg-surface p-4">
-          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Réussite par marché (paris simples)</h3>
-          <ul className="grid grid-cols-1 gap-1.5 text-sm sm:grid-cols-2">
-            {[...byMarket].map(([k, m]) => (
-              <li key={k} className="flex justify-between">
-                <span>{k}</span>
-                <span className="tabular-nums text-muted">
-                  {m.won}/{m.total} · {((m.won / m.total) * 100).toFixed(0)} %
-                </span>
-              </li>
-            ))}
+          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">Réussite par marché (paris simples)</h3>
+          <ul className="space-y-2.5">
+            {[...byMarket].map(([k, m]) => {
+              const pct = (m.won / m.total) * 100;
+              return (
+                <li key={k}>
+                  <div className="mb-1 flex justify-between text-sm">
+                    <span className="font-medium">{k}</span>
+                    <span className="tabular-nums text-muted">
+                      {m.won}/{m.total} · <strong className="text-text">{pct.toFixed(0)} %</strong>
+                    </span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-surface-3">
+                    <div className={pct >= 55 ? "h-full bg-success" : "h-full bg-gold"} style={{ width: `${pct}%` }} />
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
 
-      <ul className="space-y-3">
-        {bets.map((b) => (
-          <li key={b.id} className="rounded-2xl border border-border bg-surface p-4">
-            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2 text-sm">
-              <span className="text-muted">
-                {new Date(b.createdAt).toLocaleDateString("fr-FR")} · {b.profile} · mise {fcfa(b.stake)}
-              </span>
-              <span className="font-bold tabular-nums text-gold">
-                @ {b.totalOdds.toFixed(2)} · {b.probability.toFixed(1)} %
-              </span>
-            </div>
-            <ul className="mb-3 space-y-1 text-sm">
-              {b.legs.map((l) => (
-                <li key={l.match} className="truncate">
-                  <span className="text-muted">{l.match} :</span> {l.pick.selection} <span className="text-muted">@ {l.pick.odds.toFixed(2)}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="flex flex-wrap items-center gap-2">
-              {(Object.keys(STATUS_LABELS) as BetStatus[]).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => update(b.id, s)}
-                  className={`rounded-full border px-3 py-1 text-xs ${b.status === s ? STATUS_STYLES[s] : "border-border text-muted"}`}
-                >
-                  {STATUS_LABELS[s]}
-                </button>
-              ))}
-              {(b.status === "gagne" || b.status === "perdu") && (
-                <span className={`ml-auto text-sm font-semibold tabular-nums ${profit(b) >= 0 ? "text-success" : "text-danger"}`}>{euros(profit(b))}</span>
-              )}
-              <button onClick={() => remove(b.id)} className="text-xs text-muted hover:text-danger" aria-label="Supprimer">
-                Supprimer
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <p className="text-xs text-muted">{syncNote}</p>
-    </div>
-  );
-}
+      {/* Filtres */}
+      <div className="flex gap-1 rounded-2xl border border-border bg-surface p-1">
+        {FILTERS.map((f) => {
+          const n = f.id === "tous" ? bets.length : bets.filter((b) => b.status === f.id).length;
+          return (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`flex-1 rounded-xl px-2 py-2 text-sm font-semibold transition ${filter === f.id ? "bg-accent text-on-accent" : "text-muted"}`}
+            >
+              {f.label}
+              <span className="ml-1 text-xs opacity-75">{n}</span>
+            </button>
+          );
+        })}
+      </div>
 
-function Stat({ label, value, tone = "", hint }: { label: string; value: string; tone?: string; hint?: string }) {
-  return (
-    <div className="rounded-2xl border border-border bg-surface p-3" title={hint}>
-      <p className="text-xs uppercase tracking-wide text-muted">{label}</p>
-      <p className={`text-xl font-bold tabular-nums ${tone}`}>{value}</p>
+      {list.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted">Aucun coupon dans cette catégorie.</p>
+      ) : (
+        <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {list.map((b) => (
+            <BetCard key={b.id} b={b} />
+          ))}
+        </ul>
+      )}
+
+      <p className="text-center text-xs text-muted">{syncNote}</p>
     </div>
   );
 }
