@@ -3,6 +3,7 @@
 import type { AnalysisResult } from "@/lib/schemas";
 import { edge, isValueBet } from "@/lib/value";
 import { OddsButton } from "./OddsButton";
+import { ScrollRow } from "./ScrollRow";
 
 /** Bandeau défilant des meilleurs paris du moment : value bets d'abord, puis les plus probables à cote intéressante. */
 export function TopPicks({ results, onOpen }: { results: AnalysisResult[]; onOpen: (r: AnalysisResult) => void }) {
@@ -25,7 +26,7 @@ export function TopPicks({ results, onOpen }: { results: AnalysisResult[]; onOpe
         <h2 className="text-sm font-bold uppercase tracking-wide">🔥 Les meilleurs paris du moment</h2>
         <span className="text-xs text-muted">Touchez un match pour voir l&apos;analyse</span>
       </div>
-      <div className="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
+      <ScrollRow className="-mx-4 snap-x snap-mandatory gap-3 px-4 pb-2 sm:mx-0 sm:px-12">
         {items.map(({ r, p }) => {
           const match = `${r.analysis.match.home} – ${r.analysis.match.away}`;
           const value = isValueBet(p);
@@ -51,7 +52,7 @@ export function TopPicks({ results, onOpen }: { results: AnalysisResult[]; onOpe
             </article>
           );
         })}
-      </div>
+      </ScrollRow>
     </section>
   );
 }

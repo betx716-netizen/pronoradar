@@ -12,6 +12,7 @@ import { Icon, type IconName } from "@/components/Icon";
 import { HeroBanner } from "@/components/HeroBanner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SettingsPanel } from "@/components/SettingsPanel";
+import { ScrollRow } from "@/components/ScrollRow";
 import { isValueBet } from "@/lib/value";
 import {
   QuotaError,
@@ -445,7 +446,8 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="scrollbar-none -mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-1">
+            <div className="mb-5">
+            <ScrollRow className="-mx-4 gap-2 px-4 pb-1 sm:mx-0 sm:px-12">
               {LEAGUES[sport].map(({ name: l }) => {
                 const on = leagues.includes(l);
                 const lf = byLeague[l];
@@ -465,6 +467,7 @@ export default function Home() {
                   </button>
                 );
               })}
+            </ScrollRow>
             </div>
 
             {leagues.map((l) => byLeague[l]).some((lf) => lf?.notes?.length || lf?.error) && (
