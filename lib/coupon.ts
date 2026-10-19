@@ -41,6 +41,8 @@ export const CATEGORY_LABELS: Record<MarketCategory, string> = {
   score_sets: "Score en sets",
   tie_break: "Tie-break",
   buteur: "Buteur",
+  passeur: "Passeur décisif",
+  buteur_ou_passeur: "Buteur ou passeur",
 };
 
 export type CouponLeg = { match: string; competition: string; date: string | null; pick: MarketPick };
