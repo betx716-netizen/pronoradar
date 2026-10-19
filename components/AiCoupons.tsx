@@ -45,11 +45,25 @@ function candidates(r: AnalysisResult): MarketPick[] {
   return [...new Set([...byProb, ...byOdds])];
 }
 
+const DELETED = "pronoradar.aiCouponsDeletedAt";
+const KEEP_MS = 2 * 3600_000; // les coupons restent affichés 2 heures
+
+// Coupons enregistrés, s'ils ont moins de 2 heures.
 function load(): Saved | null {
   try {
-    return JSON.parse(localStorage.getItem(STORE) ?? "null");
+    const saved: Saved | null = JSON.parse(localStorage.getItem(STORE) ?? "null");
+    return saved && Date.now() - new Date(saved.createdAt).getTime() < KEEP_MS ? saved : null;
   } catch {
     return null;
+  }
+}
+
+// Date de la dernière suppression : les analyses plus anciennes ne relancent pas la génération automatique.
+function deletedAt(): string {
+  try {
+    return localStorage.getItem(DELETED) ?? "";
+  } catch {
+    return "";
   }
 }
 
@@ -160,7 +174,8 @@ export function AiCoupons({
       (m, r) => (r.createdAt > m ? r.createdAt : m),
       "",
     );
-    if (!current || current.createdAt < newest) generate();
+    const since = [current?.createdAt ?? "", deletedAt()].sort().pop() ?? "";
+    if (newest > since) generate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -264,6 +279,7 @@ export function AiCoupons({
                 setSaved(null);
                 try {
                   localStorage.removeItem(STORE);
+                  localStorage.setItem(DELETED, new Date().toISOString());
                 } catch {}
               }}
               className="rounded-xl border border-border px-3 py-2 text-sm font-semibold text-muted hover:border-danger hover:text-danger"

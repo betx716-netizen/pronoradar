@@ -228,7 +228,12 @@ export default function Home() {
   useEffect(() => {
     const saved = loadHistory<AnalysisResult>();
     setHistory(saved);
-    const cutoff = Date.now() - RECENT_MS;
+    // Une analyse retirée de la liste ne revient pas au rechargement : seules les plus récentes que l'effacement réapparaissent.
+    let cleared = 0;
+    try {
+      cleared = Number(localStorage.getItem("pronoradar.analysesClearedAt")) || 0;
+    } catch {}
+    const cutoff = Math.max(Date.now() - RECENT_MS, cleared);
     const recent = saved.filter((r) => new Date(r.createdAt).getTime() >= cutoff);
     setJobs((prev) =>
       prev.length
@@ -914,7 +919,12 @@ export default function Home() {
                 abortRef.current?.abort();
               }}
               onResume={resume}
-              onClear={() => setJobs([])}
+              onClear={() => {
+                setJobs([]);
+                try {
+                  localStorage.setItem("pronoradar.analysesClearedAt", String(Date.now()));
+                } catch {}
+              }}
             />
             {history.some((r) => !isRecent(r)) && (
               <div className="mt-10">
