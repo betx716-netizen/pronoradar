@@ -6,6 +6,7 @@ import { callStreaming } from "@/lib/client";
 import type { LiveMatch } from "@/lib/live";
 import type { LiveAnalysis } from "@/lib/liveAnalysis";
 import { LiveDot } from "./LiveBoard";
+import { parseSofaStats, sofaStatsUrl } from "@/lib/sofa";
 
 /** Fenêtre d'analyse en direct d'un match en cours. */
 export function LiveAnalysisSheet({ match, prior, onClose }: { match: LiveMatch; prior: string | null; onClose: () => void }) {
@@ -16,6 +17,15 @@ export function LiveAnalysisSheet({ match, prior, onClose }: { match: LiveMatch;
   async function run() {
     setResult(null);
     setError(null);
+    // Matchs de la source mondiale : le téléphone récupère lui-même les statistiques (le serveur est souvent bloqué).
+    let clientStats: string[] = [];
+    if (match.slug === "sofa") {
+      setProgress("Récupération des statistiques du match…");
+      clientStats = await fetch(sofaStatsUrl(match.id))
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => (d ? parseSofaStats(d).slice(0, 40).map((x) => x.slice(0, 200)) : []))
+        .catch(() => []);
+    }
     try {
       setResult(
         await callStreaming<LiveAnalysis>(
@@ -30,6 +40,7 @@ export function LiveAnalysisSheet({ match, prior, onClose }: { match: LiveMatch;
             awayScore: match.awayScore,
             clock: match.clock,
             prior,
+            clientStats,
           },
           setProgress,
         ),

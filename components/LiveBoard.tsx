@@ -81,7 +81,7 @@ export function LiveBoard({ leagues, priorFor }: { leagues: string[]; priorFor: 
       <p className={`rounded-xl p-3 text-xs ${fullCoverage ? "bg-success-soft text-success" : "bg-warn-bg text-warn-text"}`}>
         {fullCoverage
           ? "✓ Couverture mondiale : tous les matchs en cours dans le monde."
-          : "Couverture limitée : la source mondiale bloque le serveur, seuls les ~75 principaux championnats sont affichés."}
+          : "Couverture limitée : la source mondiale ne répond pas, seuls les ~75 principaux championnats sont affichés."}
       </p>
       <p className="text-xs text-muted">Mis à jour à {new Date(updatedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} · actualisation toutes les 30 secondes</p>
       {matches.length === 0 && worldMatches.length === 0 && <p className="rounded-2xl border border-dashed border-border p-8 text-center text-muted">Aucun match hier, aujourd&apos;hui ou demain dans ces championnats.</p>}

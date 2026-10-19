@@ -14,6 +14,7 @@ export const LiveAnalysisRequestSchema = z.object({
   awayScore: z.number().nullable(),
   clock: z.string().max(20),
   prior: z.string().max(1500).nullable().describe("Résumé de l'analyse d'avant-match, si elle existe"),
+  clientStats: z.array(z.string().max(200)).max(40).optional().describe("Statistiques récupérées par le téléphone quand le serveur est bloqué"),
 });
 export type LiveAnalysisRequest = z.infer<typeof LiveAnalysisRequestSchema>;
 
@@ -65,10 +66,11 @@ Réponds en français, phrases courtes. Ne promets jamais de gain.`;
 export async function analyzeLive(req: LiveAnalysisRequest, onProgress: (m: string) => void): Promise<LiveAnalysis> {
   if (!aiAvailable()) throw new AnalysisError("L'IA est indisponible pour le moment (quota atteint). Réessayez plus tard.", "quota");
   onProgress("Récupération des statistiques du match…");
-  const detail = await (req.slug === "sofa" ? fetchSofaDetail(req.id) : fetchMatchDetail(req.slug, req.id)).catch(() => ({
+  const fetched = await (req.slug === "sofa" ? fetchSofaDetail(req.id) : fetchMatchDetail(req.slug, req.id)).catch(() => ({
     stats: [] as string[],
     events: [] as string[],
   }));
+  const detail = fetched.stats.length ? fetched : { stats: req.clientStats ?? [], events: fetched.events };
   const text = [
     `Nous sommes le ${todayInParis()}. Match EN COURS (${req.competition}) : ${req.home} (domicile) contre ${req.away} (extérieur).`,
     `Score : ${req.home} ${req.homeScore ?? 0} - ${req.awayScore ?? 0} ${req.away}. Minute : ${req.clock}.`,

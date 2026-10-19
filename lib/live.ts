@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { LiveMatch } from "./espn";
 import type { MarketPick } from "./schemas";
+import { SOFA_LIVE_URL, parseSofaLive } from "./sofa";
 
 export type { LiveMatch };
 
@@ -26,8 +27,22 @@ export function useLiveScores(leagues: string[], world = false) {
         .then((d: { matches: LiveMatch[]; world?: LiveMatch[]; fullCoverage?: boolean }) => {
           if (!alive) return;
           setMatches(d.matches ?? []);
-          setWorld(d.world ?? []);
+          const server = d.world ?? [];
+          setWorld(server);
           setFull(d.fullCoverage !== false);
+          // Le serveur est bloqué par la source mondiale : le téléphone l'interroge lui-même.
+          if (world && d.fullCoverage === false) {
+            fetch(SOFA_LIVE_URL, { headers: { Accept: "application/json" } })
+              .then((r) => (r.ok ? r.json() : Promise.reject()))
+              .then((data) => {
+                if (!alive) return;
+                const own = [...(d.matches ?? []), ...server];
+                const extra = parseSofaLive(data).filter((s) => !own.some((m) => sameTeam(m.home, s.home) && sameTeam(m.away, s.away)));
+                setWorld([...server, ...extra]);
+                setFull(true);
+              })
+              .catch(() => {});
+          }
           setUpdatedAt(Date.now());
         })
         .catch(() => {});
