@@ -41,6 +41,7 @@ const MAX_HISTORY = 60;
 const CONCURRENCY = 2;
 const CONFIRM_ABOVE_MATCHES = 30;
 const COUPON_HISTORY_HOURS = 48;
+const RECENT_MS = 2 * 3600_000; // durée d'affichage d'une analyse avant de passer dans l'historique
 
 // Championnats chargés à la première visite, avant que l'utilisateur ait choisi les siens.
 const DEFAULT_FAVORITES: Record<Sport, string[]> = {
@@ -217,7 +218,36 @@ export default function Home() {
   const [detail, setDetail] = useState<AnalysisResult | null>(null);
   const [history, setHistory] = useState<AnalysisResult[]>([]);
 
-  useEffect(() => setHistory(loadHistory<AnalysisResult>()), []);
+  // Les analyses restent affichées 2 heures (même après rechargement), puis passent dans l'historique.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  const isRecent = (r: AnalysisResult) => now - new Date(r.createdAt).getTime() < RECENT_MS;
+  useEffect(() => {
+    const saved = loadHistory<AnalysisResult>();
+    setHistory(saved);
+    const cutoff = Date.now() - RECENT_MS;
+    const recent = saved.filter((r) => new Date(r.createdAt).getTime() >= cutoff);
+    setJobs((prev) =>
+      prev.length
+        ? prev
+        : recent.map((r) => {
+            const fixture: Fixture = {
+              home: r.analysis.match.home,
+              away: r.analysis.match.away,
+              competition: r.analysis.match.competition,
+              date: r.analysis.match.date ?? "",
+              time: null,
+              stage: null,
+              odds: null,
+              apiFootballId: null,
+            };
+            return { id: fixtureId(fixture), fixture, status: "done" as const, message: "Terminé", result: r };
+          }),
+    );
+  }, []);
   // Date à laquelle le coupon a été vidé : les analyses plus anciennes n'y entrent plus (elles restent dans l'historique).
   const [couponClearedAt, setCouponClearedAt] = useState(0);
   useEffect(() => {
@@ -876,7 +906,7 @@ export default function Home() {
           <section className="fade-in">
             <h1 className="mb-4 text-2xl font-bold tracking-tight">Analyses</h1>
             <ResultsGrid
-              jobs={jobs}
+              jobs={jobs.filter((j) => j.status !== "done" || !j.result || isRecent(j.result))}
               running={running}
               onOpen={(j) => j.result && setDetail(j.result)}
               onStop={() => {
@@ -886,13 +916,13 @@ export default function Home() {
               onResume={resume}
               onClear={() => setJobs([])}
             />
-            {history.length > 0 && (
+            {history.some((r) => !isRecent(r)) && (
               <div className="mt-10">
                 <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
                   Historique
                 </h2>
                 <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {history.map((r) => (
+                  {history.filter((r) => !isRecent(r)).map((r) => (
                     <li key={r.createdAt + r.analysis.match.home}>
                       <button
                         onClick={() => setDetail(r)}
