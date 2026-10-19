@@ -54,13 +54,12 @@ function impliedPercents(f: Fixture) {
   return inv.map((x) => Math.round((x / total) * 100));
 }
 
+// Toujours le jour et la date (« Lundi 19 octobre »), sans « aujourd'hui » ni « demain » qui peuvent tromper.
 function dayLabel(date: string) {
   const d = new Date(`${date}T12:00:00`);
   if (Number.isNaN(d.getTime())) return date;
-  const today = new Date();
-  const diff = Math.round((d.getTime() - new Date(today.toDateString()).getTime()) / 86400000);
   const name = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(d);
-  return diff === 0 ? `Aujourd'hui · ${name}` : diff === 1 ? `Demain · ${name}` : name.charAt(0).toUpperCase() + name.slice(1);
+  return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 // Pari « résultat » prêt pour le panier, à partir des cotes réelles du match.
