@@ -939,7 +939,7 @@ function App() {
 
         {tab === "coupon" && (
           <section className="fade-in">
-            <AiCoupons results={couponResults} autoKey={autoCoupons} />
+            <AiCoupons results={couponResults} autoKey={autoCoupons} clearedAt={couponClearedAt} onClearAll={clearCoupon} />
             <h2 className="font-display text-3xl leading-none">
               Générateur manuel
             </h2>

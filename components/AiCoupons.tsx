@@ -71,9 +71,13 @@ function deletedAt(): string {
 export function AiCoupons({
   results,
   autoKey,
+  clearedAt,
+  onClearAll,
 }: {
   results: AnalysisResult[];
   autoKey: number;
+  clearedAt: number;
+  onClearAll: () => void;
 }) {
   const [saved, setSaved] = useState<Saved | null>(null);
   const [size, setSize] = useState<number | null>(null);
@@ -164,6 +168,19 @@ export function AiCoupons({
     }
     setLoading(null);
   }
+
+  // Coupons vidés (ici ou depuis le générateur manuel) : on efface ceux de l'IA générés avant.
+  useEffect(() => {
+    if (!clearedAt) return;
+    const current = load();
+    if (current && new Date(current.createdAt).getTime() <= clearedAt) {
+      setSaved(null);
+      try {
+        localStorage.removeItem(STORE);
+        localStorage.setItem(DELETED, new Date(clearedAt).toISOString());
+      } catch {}
+    }
+  }, [clearedAt]);
 
   // Après chaque série d'analyses terminée, l'IA refait les coupons toute seule. Si la série s'est terminée
   // pendant qu'on était sur un autre onglet, on le fait à l'ouverture, quand une analyse est plus récente que les coupons.
@@ -274,13 +291,14 @@ export function AiCoupons({
           {saved && (
             <button
               onClick={() => {
-                if (!confirm("Supprimer tous les coupons de l'IA ? Ils ne seront refaits qu'après vos prochaines analyses, ou en touchant « Générer »."))
+                if (
+                  !confirm(
+                    "Supprimer tous les coupons (ceux de l'IA et celui du générateur manuel) ? Les analyses prises en compte n'y seront plus proposées : relancez des analyses pour en refaire.",
+                  )
+                )
                   return;
-                setSaved(null);
-                try {
-                  localStorage.removeItem(STORE);
-                  localStorage.setItem(DELETED, new Date().toISOString());
-                } catch {}
+                // Vide aussi le générateur manuel, qui à son tour efface les coupons de l'IA (voir plus bas).
+                onClearAll();
               }}
               className="rounded-xl border border-border px-3 py-2 text-sm font-semibold text-muted hover:border-danger hover:text-danger"
             >

@@ -267,7 +267,7 @@ export function CouponBuilder({
                 onClick={() => {
                   if (
                     confirm(
-                      "Supprimer ce coupon ? Les matchs analysés jusqu'ici n'y seront plus proposés : relancez des analyses pour en construire un nouveau.",
+                      "Supprimer tous les coupons (celui-ci et ceux de l'IA) ? Les analyses prises en compte n'y seront plus proposées : relancez des analyses pour en refaire.",
                     )
                   ) {
                     setExcluded([]);
