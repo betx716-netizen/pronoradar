@@ -40,8 +40,14 @@ import type {
 const MAX_HISTORY = 60;
 const CONCURRENCY = 2;
 const CONFIRM_ABOVE_MATCHES = 30;
-const COUPON_HISTORY_HOURS = 48;
-const RECENT_MS = 2 * 3600_000; // durée d'affichage d'une analyse avant de passer dans l'historique
+const COUPON_HISTORY_HOURS = 7 * 24;
+// Une analyse reste affichée tant que son match n'est pas passé : jusqu'à la fin du jour du match (heure de Paris).
+// Sans date connue, elle reste 2 jours.
+function matchOver(r: AnalysisResult, now: number) {
+  const date = r.analysis.match.date;
+  const end = date && /^\d{4}-\d{2}-\d{2}/.test(date) ? new Date(`${date.slice(0, 10)}T23:59:59+02:00`).getTime() : NaN;
+  return Number.isFinite(end) ? now > end : now - new Date(r.createdAt).getTime() > 2 * 86400_000;
+}
 
 // Championnats chargés à la première visite, avant que l'utilisateur ait choisi les siens.
 const DEFAULT_FAVORITES: Record<Sport, string[]> = {
@@ -223,7 +229,7 @@ function App() {
     const t = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(t);
   }, []);
-  const isRecent = (r: AnalysisResult) => now - new Date(r.createdAt).getTime() < RECENT_MS;
+  const isRecent = (r: AnalysisResult) => !matchOver(r, now);
   useEffect(() => {
     const saved = loadHistory<AnalysisResult>();
     setHistory(saved);
@@ -232,8 +238,7 @@ function App() {
     try {
       cleared = Number(localStorage.getItem("pronoradar.analysesClearedAt")) || 0;
     } catch {}
-    const cutoff = Math.max(Date.now() - RECENT_MS, cleared);
-    const recent = saved.filter((r) => new Date(r.createdAt).getTime() >= cutoff);
+    const recent = saved.filter((r) => new Date(r.createdAt).getTime() > cleared && !matchOver(r, Date.now()));
     setJobs((prev) =>
       prev.length
         ? prev
@@ -317,8 +322,9 @@ function App() {
       couponClearedAt,
     );
     const seen = new Set<string>();
+    // Les matchs déjà joués ne sont plus proposés dans les coupons.
     const recent = (r: AnalysisResult) =>
-      new Date(r.createdAt).getTime() >= limit;
+      new Date(r.createdAt).getTime() >= limit && !matchOver(r, Date.now());
     // Les plus récentes d'abord : une nouvelle analyse d'un match remplace l'ancienne.
     return [...doneJobs.map((j) => j.result!), ...history]
       .filter(recent)
@@ -956,8 +962,7 @@ function App() {
               Générateur manuel
             </h2>
             <p className="mb-4 text-sm text-muted">
-              Construit à partir de vos analyses des dernières{" "}
-              {COUPON_HISTORY_HOURS} heures ({couponResults.length} matchs).
+              Construit à partir de vos analyses de matchs pas encore joués ({couponResults.length} match{couponResults.length > 1 ? "s" : ""}).
             </p>
             <CouponBuilder results={couponResults} onClear={clearCoupon} />
           </section>
