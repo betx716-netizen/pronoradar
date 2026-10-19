@@ -32,17 +32,13 @@ const SIZE_KEY = "pronoradar.aiCouponsSize";
 const matchName = (r: AnalysisResult) =>
   `${r.analysis.match.home} – ${r.analysis.match.away}`;
 
-// Paris envoyés à l'IA pour chaque match : les plus probables et ceux à grosse cote, avec un identifiant court.
+// Paris envoyés à l'IA pour chaque match : ceux qui ont le plus de valeur (probabilité × cote), puis les plus
+// probables, pour qu'elle ne voie pas que les favoris. Chacun reçoit un identifiant court.
 function candidates(r: AnalysisResult): MarketPick[] {
-  const picks = r.picks ?? [];
-  const byProb = [...picks]
-    .sort((a, b) => b.probability - a.probability)
-    .slice(0, 9);
-  const byOdds = [...picks]
-    .filter((p) => p.odds >= 2.5 && p.probability >= 12)
-    .sort((a, b) => b.odds - a.odds)
-    .slice(0, 5);
-  return [...new Set([...byProb, ...byOdds])];
+  const ok = (r.picks ?? []).filter((p) => p.odds >= 1.3 && p.probability >= 45 && p.reliability !== "fragile");
+  const byValue = [...ok].sort((a, b) => b.probability * b.odds - a.probability * a.odds).slice(0, 8);
+  const byProb = [...ok].sort((a, b) => b.probability - a.probability).slice(0, 6);
+  return [...new Set([...byValue, ...byProb])];
 }
 
 const DELETED = "pronoradar.aiCouponsDeletedAt";

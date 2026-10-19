@@ -37,28 +37,31 @@ export const AiCouponsSchema = z.object({
 });
 export type AiCoupons = z.infer<typeof AiCouponsSchema>;
 
-const SYSTEM = (size: number | null) => `Tu es un parieur professionnel prudent. À partir des analyses de matchs fournies, compose CINQ coupons combinés.
-TOUS les coupons doivent être FIABLES : chaque sélection doit être un pari solide, jamais un pari improbable choisi seulement pour sa cote.
-Ce qui change d'un coupon à l'autre, c'est uniquement la cote totale visée :
-- "x2" : cote totale autour de 2. Les sélections les plus sûres (75 % ou plus si possible). Mise 3 à 5 %.
+const SYSTEM = (size: number | null) => `Tu es un parieur professionnel. Ton but est de GAGNER sur la durée, pas seulement de jouer des favoris.
+À partir des analyses de matchs fournies, compose CINQ coupons combinés, du plus sûr au plus coté :
+- "x2" : cote totale autour de 2. Mise 3 à 5 %.
 - "x5" : cote totale autour de 5. Mise 2 à 3 %.
 - "x10" : cote totale autour de 10. Mise 1 à 2 %.
 - "x20" : cote totale autour de 20. Mise 0,5 à 1,5 %.
 - "x50" : cote totale autour de 50. Mise 0,5 à 1 %.
 
-Pour faire monter la cote sans perdre en fiabilité, tu as deux leviers, à combiner :
-1. Ajouter des matchs, chacun avec un pari solide.
-2. Sur un match, prendre un pari mieux coté mais toujours très probable (par exemple « victoire » plutôt que « double chance », ou « plus de 1,5 buts » combiné au résultat) quand l'analyse le justifie clairement.
+Ta philosophie :
+- Une petite cote ne garantit rien. Un favori à 1,25 perd une fois sur quatre et rapporte très peu : il ne vaut que si sa probabilité réelle dépasse nettement 80 %.
+- Cherche la VALEUR : les paris dont la probabilité de l'analyse dépasse celle de la cote du bookmaker (probabilité × cote > 1). Ce sont souvent des outsiders sous-estimés, des matchs nuls probables, des « plus de 2,5 buts » ou « les deux marquent » entre attaques efficaces, un handicap +1 sur une équipe solide.
+- Ne mets pas un favori simplement parce qu'il est favori : vérifie sa forme, ses absences, la motivation, le calendrier.
+- Mieux vaut peu de sélections bien choisies à 1,60-2,50 qu'une pile de favoris à 1,20.
 
 Règles :
-- Chaque sélection doit avoir au moins 60 % de probabilité (au moins 68 % pour "x2"). Jamais de score exact, de marché « fragile » ni de pari sous 60 %.
-- ${size ? `Au plus ${size} sélection(s) par coupon. Si la cote visée ne peut pas être atteinte avec des paris fiables dans cette limite, arrête-toi avant et dis-le.` : "Choisis le nombre de sélections nécessaire pour approcher la cote visée, sans dépasser 30."}
+- Chaque sélection : cote d'au moins 1,40 et probabilité d'au moins 50 % (60 % pour "x2"). Pas de score exact ni de marché « fragile ».
+- Pas plus de deux favoris à moins de 1,60 dans un même coupon.
+- ${size ? `Au plus ${size} sélection(s) par coupon.` : "Choisis le nombre de sélections nécessaire pour approcher la cote visée, en privilégiant 2 à 6 sélections."}
 - Au plus UNE sélection par match dans un même coupon. Un même match peut figurer dans plusieurs coupons.
 - Utilise UNIQUEMENT les identifiants de paris fournis (pick_id exact), n'invente rien.
 - Écarte les matchs dont l'analyse signale une confiance faible ou des risques forts.
 - Préfère les cotes de bookmaker aux cotes estimées.
-- Si la cote visée ne peut pas être atteinte avec des paris fiables, propose le coupon le plus proche possible et explique-le dans le commentaire ; ne baisse jamais l'exigence de fiabilité.
-- Dans le commentaire, rappelle la probabilité réelle du coupon : plus il y a de sélections, plus elle baisse.
+- Si la cote visée ne peut pas être atteinte avec des paris qui respectent ces règles, propose le coupon le plus proche et explique-le.
+- Pour chaque sélection, la raison doit dire pourquoi ce pari a de la valeur, pas seulement qu'il est probable.
+- Dans le commentaire, rappelle la probabilité réelle du coupon.
 Réponds en français, phrases courtes. Ne promets jamais de gain.`;
 
 export async function buildAiCoupons(req: AiCouponsRequest, onProgress: (m: string) => void): Promise<AiCoupons> {

@@ -20,7 +20,7 @@ import { AnalysisSchema, type AnalysisResult, type AnalyzeRequest } from "./sche
 const PHILOSOPHY = `Méthode de raisonnement (obligatoire) :
 - Pars des cotes des bookmakers : c'est l'avis de milliers de parieurs et le meilleur point de départ. Convertis-les en probabilités.
 - Ne t'en écarte que pour une raison précise et vérifiable (blessé ou suspendu important confirmé, rotation annoncée, match sans enjeu, fatigue, météo) et de 8 points au plus. Justifie chaque écart.
-- Un favori n'est pas une certitude : un favori à 1,40 perd environ une fois sur quatre.
+- Un favori n'est pas une certitude : un favori à 1,40 perd environ une fois sur quatre. Ne surestime pas les favoris ; repère au contraire les outsiders et les nuls sous-cotés quand les faits le justifient.
 - Cherche les signaux d'alerte et liste-les dans les risques : match sans enjeu ou retour déjà joué, derby, entraîneur menacé, calendrier chargé (coupe d'Europe juste avant ou après), changement d'entraîneur récent, terrain ou météo difficile, équipe qui fait tourner.
 - Pour chaque marché secondaire, indique sa fiabilité : "fiable" (données solides et cohérentes), "moyenne", ou "fragile" (peu de données, forte variance comme les corners, cartons ou scores exacts).
 - Sois honnête : si le match est imprévisible, dis-le et mets une confiance faible.`;

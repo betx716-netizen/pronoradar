@@ -8,12 +8,12 @@ import { edge, isValueBet } from "./value";
 export type RiskProfile = "x2" | "x5" | "x10" | "x20" | "x50" | "value";
 
 export const PROFILES: Record<RiskProfile, { label: string; description: string; minProbability: number; target?: number }> = {
-  x2: { label: "Objectif cote 2", description: "Les sélections les plus sûres, cote totale autour de 2", minProbability: 68, target: 2 },
-  x5: { label: "Objectif cote 5", description: "Sélections fiables, cote totale autour de 5", minProbability: 65, target: 5 },
-  x10: { label: "Objectif cote 10", description: "Sélections fiables, cote totale autour de 10", minProbability: 63, target: 10 },
-  x20: { label: "Objectif cote 20", description: "Sélections fiables, cote totale autour de 20 : plus de matchs ou de meilleures cotes", minProbability: 62, target: 20 },
-  x50: { label: "Objectif cote 50", description: "Sélections fiables, cote totale autour de 50 : beaucoup de matchs, donc plus de risque global", minProbability: 60, target: 50 },
-  value: { label: "Value", description: "Uniquement les paris où notre probabilité bat la cote du bookmaker (avantage ≥ 3 %)", minProbability: 40 },
+  x2: { label: "Objectif cote 2", description: "Sélections solides qui ont de la valeur, cote totale autour de 2", minProbability: 60, target: 2 },
+  x5: { label: "Objectif cote 5", description: "Sélections solides qui ont de la valeur, cote totale autour de 5", minProbability: 56, target: 5 },
+  x10: { label: "Objectif cote 10", description: "Sélections solides qui ont de la valeur, cote totale autour de 10", minProbability: 54, target: 10 },
+  x20: { label: "Objectif cote 20", description: "Cote totale autour de 20 : des outsiders bien analysés plutôt qu'une pile de favoris", minProbability: 52, target: 20 },
+  x50: { label: "Objectif cote 50", description: "Cote totale autour de 50 : plus de matchs, donc plus de risque global", minProbability: 50, target: 50 },
+  value: { label: "Value", description: "Uniquement les paris où notre probabilité bat la cote du bookmaker (avantage ≥ 3 %), cote totale autour de 4", minProbability: 40, target: 4 },
 };
 
 export const CATEGORY_LABELS: Record<MarketCategory, string> = {
@@ -51,14 +51,17 @@ export type Coupon = {
   estimatedOddsCount: number; // sélections dont la cote est estimée faute de cote bookmaker
 };
 
-// Un pari « fiable » : assez probable, sur un marché qui n'est pas fragile, et à une cote qui rapporte quelque chose.
-const reliable = (p: MarketPick, minProbability: number) => p.probability >= minProbability && p.reliability !== "fragile" && p.odds >= 1.12;
+// Un pari retenu : assez probable, sur un marché qui n'est pas fragile, et à une cote d'au moins 1,40 :
+// empiler des favoris à 1,20 n'est pas plus sûr, ça multiplie juste les risques de tout perdre.
+const MIN_ODDS = 1.4;
+const reliable = (p: MarketPick, minProbability: number) => p.probability >= minProbability && p.reliability !== "fragile" && p.odds >= MIN_ODDS;
 
-// Coût d'une sélection : la chance perdue pour chaque point de cote gagné. Plus il est bas, mieux la sélection
-// fait monter la cote sans faire chuter la probabilité du coupon. Les cotes estimées sont un peu pénalisées.
+// Qualité d'une sélection : d'abord sa valeur (probabilité × cote), ce qui fait remonter les outsiders sous-cotés,
+// puis sa probabilité pour départager. Les cotes estimées sont un peu pénalisées. Plus le coût est bas, mieux c'est.
 function cost(p: MarketPick) {
   const odds = p.oddsSource === "bookmaker" ? p.odds : 1 + (p.odds - 1) * 0.85;
-  return -Math.log(p.probability / 100) / Math.log(odds);
+  const prob = p.probability / 100;
+  return -((prob * odds - 1) + 0.25 * prob);
 }
 
 // Le coach recopie une alternative sous la forme « sélection @ cote (probabilité %) » : on compare la sélection seule.
