@@ -386,7 +386,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
                 <p className="font-display text-3xl leading-none">{lineups[side].formation}</p>
                 <p className="text-xs text-muted">Composition probable, non officielle</p>
               </div>
-              <Pitch lineup={lineups[side]} color={side === "home" ? "var(--home)" : "var(--away)"} />
+              <Pitch lineup={lineups[side]} team={side === "home" ? match.home : match.away} fallback={side === "home" ? "#1d4ed8" : "#c2410c"} />
               {lineups[side].doubts.length > 0 && (
                 <p className="rounded-xl bg-warn-bg p-3 text-sm text-warn-text">
                   <strong>Incertains : </strong>

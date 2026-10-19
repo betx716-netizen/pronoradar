@@ -214,3 +214,17 @@ h1 {
 :root[data-theme="dark"] .bg-surface {
   box-shadow: none;
 }
+
+/* Terrain de la composition en perspective : le terrain bascule vers l'arrière, les joueurs restent debout. */
+.pitch-scene {
+  perspective: 900px;
+}
+.pitch-field {
+  transform: rotateX(24deg);
+  transform-origin: 50% 100%;
+  transform-style: preserve-3d;
+}
+.pitch-player {
+  transform: rotateX(-24deg);
+  transform-origin: 50% 100%;
+}

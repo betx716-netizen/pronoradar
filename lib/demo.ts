@@ -66,14 +66,16 @@ export async function demoAnalysis(req: AnalyzeRequest, onProgress: (m: string) 
       : {
           home: {
             formation: "4-3-3",
-            goalkeeper: "Gardien A",
-            lines: [["Latéral G", "Central 1", "Central 2", "Latéral D"], ["Milieu 1", "Milieu 2", "Milieu 3"], ["Ailier G", "Avant-centre", "Ailier D"]],
+            goalkeeper: "1 Gardien Alpha",
+            lines: [["3 Léo Martin", "4 Hugo Bernard", "5 Noah Petit", "2 Lucas Durand"], ["6 Adam Moreau", "8 Jules Simon", "10 Louis Michel"], ["11 Gabriel Laurent", "9 Arthur Lefebvre", "7 Raphaël Roux"]],
+            kit: { shirt: "#c8102e", detail: "#ffffff" },
             doubts: ["Milieu 2 (incertain, démo)"],
           },
           away: {
             formation: "4-4-2",
-            goalkeeper: "Gardien B",
-            lines: [["Latéral G", "Central 1", "Central 2", "Latéral D"], ["Milieu G", "Milieu 1", "Milieu 2", "Milieu D"], ["Attaquant 1", "Attaquant 2"]],
+            goalkeeper: "16 Gardien Bravo",
+            lines: [["3 Tom Garcia", "4 Enzo David", "5 Nathan Bertrand", "2 Théo Robert"], ["11 Paul Richard", "6 Sacha Dubois", "8 Mathis Thomas", "7 Liam Fournier"], ["9 Ethan Girard", "10 Nolan Bonnet"]],
+            kit: null,
             doubts: [],
           },
         },

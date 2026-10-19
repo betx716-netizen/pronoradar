@@ -39,7 +39,7 @@ ${PHILOSOPHY}
 
 Rédige ensuite un dossier en français avec :
 1. Les sources trouvées sur le web, une par ligne (nom, type : tipster / media / stats_model, issue pronostiquée, probabilités, autres pronostics, argument, date).
-2. Le contexte (forme, absences, confrontations directes, faits marquants) et, au football, la composition probable de chaque équipe : système (ex. 4-3-3), gardien, puis les joueurs de champ ligne par ligne, de la défense à l'attaque.
+2. Le contexte (forme, absences, confrontations directes, faits marquants) et, au football, la composition probable de chaque équipe : système (ex. 4-3-3), gardien, puis les joueurs de champ ligne par ligne, de la défense à l'attaque, avec le numéro de maillot de chaque joueur (« 10 Ousmane Dembélé »), et les couleurs habituelles du maillot de chaque équipe.
 3. Ce qui ressort de l'ensemble des pronostics, cotes comprises : où ils convergent, où ils divergent.
 4. TA propre analyse : probabilités en % pour chaque issue, issue la plus probable, score ou sets probables, niveau de confiance (faible / moyenne / élevée), facteurs clés, risques, et en quoi tu rejoins ou contredis le consensus. Sois honnête sur l'incertitude.
 5. Les marchés secondaires, chacun avec une probabilité en % et la moyenne attendue : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (ligne la plus pertinente entre 8,5 et 10,5), fautes (entre 20,5 et 24,5), cartons (3,5 ou 4,5). Ajoute aussi : résultat à la mi-temps, mi-temps/fin de match, handicap (-1 ou +1), les 2 ou 3 scores exacts les plus probables, le nombre de buts de chaque équipe, les combinés résultat + plus/moins 2,5 buts et résultat + les deux marquent, les tirs cadrés et les hors-jeu. Au tennis : nombre de sets et de jeux, vainqueur du 1er set, handicap jeux, score exact en sets et tie-break oui/non. Appuie-toi sur les moyennes de la saison des deux équipes (buts, corners, fautes, cartons), le style de jeu et l'arbitre si connu.`;
@@ -50,7 +50,7 @@ const STRUCTURE_SYSTEM = `Tu convertis un dossier d'analyse sportive en JSON. Re
 - Les probabilités sont en pourcentage (0 à 100).
 - Dans "sources", mets uniquement les sources trouvées sur le web (pas les cotes ni API-Football, déjà comptées). Leurs cotes sont à null. Si l'URL d'une source n'est pas connue, mets une chaîne vide.
 - Dans "markets", recopie les marchés secondaires du dossier (buts, les deux marquent, corners, fautes, cartons, mi-temps, mi-temps/fin, handicap, score exact, buts par équipe, combinés résultat + buts ou + les deux marquent, tirs cadrés, hors-jeu, sets, jeux, 1er set, handicap jeux, score en sets, tie-break), un pari par ligne avec la catégorie correspondante et sa fiabilité (fiable, moyenne ou fragile) avec sa probabilité.
-- Dans "lineups", recopie les compositions probables du dossier ; mets null si elles n'y sont pas ou au tennis. Le nombre de joueurs par ligne doit correspondre au système (4-3-3 : 4, 3, 3).
+- Dans "lineups", recopie les compositions probables du dossier ; mets null si elles n'y sont pas ou au tennis. Le nombre de joueurs par ligne doit correspondre au système (4-3-3 : 4, 3, 3). Chaque joueur au format « numéro nom ». Dans "kit", les couleurs du maillot en hexadécimal (null si inconnues).
 - Rédige tous les textes en français.`;
 
 // Utilisé quand la recherche Google n'est plus disponible : Gemini analyse sans pouvoir citer de pronostiqueurs.

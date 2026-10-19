@@ -31,11 +31,13 @@ function similarity(a: string, b: string) {
   return Math.max(common / Math.max(ta.length, tb.length), nameSimilarity(a, b));
 }
 
-type Entry = { names: string[]; logo: string };
+type Entry = { names: string[]; logo: string; color: string | null; alternate: string | null };
 let directory: Promise<Entry[]> | null = null;
 let builtAt = 0;
 
-type EspnTeam = { team?: { displayName?: string; shortDisplayName?: string; name?: string; location?: string; logos?: { href?: string }[] } };
+type EspnTeam = {
+  team?: { displayName?: string; shortDisplayName?: string; name?: string; location?: string; color?: string; alternateColor?: string; logos?: { href?: string }[] };
+};
 
 async function espnLeague(slug: string): Promise<Entry[]> {
   try {
@@ -46,7 +48,15 @@ async function espnLeague(slug: string): Promise<Entry[]> {
     return teams.flatMap(({ team }) => {
       const logo = team?.logos?.[0]?.href;
       if (!team || !logo) return [];
-      return [{ names: [team.displayName, team.shortDisplayName, team.name, team.location].filter((n): n is string => Boolean(n)), logo }];
+      const hex = (c?: string) => (c && /^[0-9a-f]{6}$/i.test(c) ? `#${c}` : null);
+      return [
+        {
+          names: [team.displayName, team.shortDisplayName, team.name, team.location].filter((n): n is string => Boolean(n)),
+          logo,
+          color: hex(team.color),
+          alternate: hex(team.alternateColor),
+        },
+      ];
     });
   } catch {
     return [];
@@ -61,16 +71,16 @@ function getDirectory() {
   return directory;
 }
 
-async function fromEspn(name: string): Promise<string | null> {
+async function fromEspn(name: string): Promise<Entry | null> {
   const wanted = key(name);
-  let best: { score: number; logo: string } | null = null;
+  let best: { score: number; entry: Entry } | null = null;
   for (const e of await getDirectory()) {
     for (const n of e.names) {
       const score = key(n) === wanted ? 2 : similarity(name, n);
-      if (!best || score > best.score) best = { score, logo: e.logo };
+      if (!best || score > best.score) best = { score, entry: e };
     }
   }
-  return best && best.score >= 0.6 ? best.logo : null;
+  return best && best.score >= 0.6 ? best.entry : null;
 }
 
 async function fromSportsDb(name: string): Promise<string | null> {
@@ -89,10 +99,10 @@ export async function GET(req: Request) {
   const name = (new URL(req.url).searchParams.get("name") ?? "").trim().slice(0, 80);
   if (name.length < 2) return Response.json({ url: null });
   const espn = await fromEspn(name);
-  const url = espn ?? (await fromSportsDb(name)) ?? (key(name) !== name.toLowerCase() ? await fromSportsDb(tokens(name).join(" ")) : null);
+  const url = espn?.logo ?? (await fromSportsDb(name)) ?? (key(name) !== name.toLowerCase() ? await fromSportsDb(tokens(name).join(" ")) : null);
   // Un échec n'est gardé qu'une heure, pour retenter vite si une source était momentanément indisponible.
   return Response.json(
-    { url, source: espn ? "espn" : url ? "thesportsdb" : null },
+    { url, source: espn ? "espn" : url ? "thesportsdb" : null, color: espn?.color ?? null, alternate: espn?.alternate ?? null },
     { headers: { "Cache-Control": url ? CACHE : "public, s-maxage=3600" } },
   );
 }

@@ -81,10 +81,16 @@ export type MarketEstimate = z.infer<typeof MarketEstimateSchema>;
 // Composition probable d'une équipe : formation et joueurs ligne par ligne.
 export const LineupSchema = z.object({
   formation: z.string().describe("Système de jeu, ex : '4-3-3', '4-4-2', '3-5-2'"),
-  goalkeeper: z.string().describe("Gardien titulaire probable"),
+  goalkeeper: z.string().describe("Gardien titulaire probable, au format « numéro nom », ex : '1 Gianluigi Donnarumma'"),
   lines: z
     .array(z.array(z.string()))
-    .describe("Joueurs de champ ligne par ligne, de la défense à l'attaque, de gauche à droite (ex. 4-3-3 : [[4 défenseurs], [3 milieux], [3 attaquants]])"),
+    .describe(
+      "Joueurs de champ ligne par ligne, de la défense à l'attaque, de gauche à droite (ex. 4-3-3 : [[4 défenseurs], [3 milieux], [3 attaquants]]), chacun au format « numéro nom », ex : '10 Ousmane Dembélé'",
+    ),
+  kit: z
+    .object({ shirt: z.string().describe("Couleur principale du maillot, en hexadécimal, ex : '#004170'"), detail: z.string().describe("Couleur secondaire (manches, bandes), en hexadécimal") })
+    .nullable()
+    .describe("Couleurs du maillot que l'équipe porte habituellement"),
   doubts: z.array(z.string()).describe("Joueurs incertains ou absents notables"),
 });
 export type Lineup = z.infer<typeof LineupSchema>;
