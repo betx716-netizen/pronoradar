@@ -18,7 +18,25 @@ export async function GET() {
   const football = readKey("API_FOOTBALL_KEY");
   const gemini = readKey("GEMINI_API_KEY");
   const model = process.env.GEMINI_MODEL?.trim() || "gemini-flash-latest";
+  const tavily = readKey("TAVILY_API_KEY");
+  const groq = readKey("GROQ_API_KEY");
   return Response.json({
+    "Recherche web de secours (Tavily)": {
+      cle: describeKey("TAVILY_API_KEY"),
+      test: tavily
+        ? await probe("https://api.tavily.com/search", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${tavily}`, "content-type": "application/json" },
+            body: JSON.stringify({ query: "Ligue 1 prochains matchs", max_results: 1 }),
+          })
+        : "pas de clé",
+    },
+    "IA de secours (Groq)": {
+      cle: describeKey("GROQ_API_KEY"),
+      test: groq
+        ? await probe("https://api.groq.com/openai/v1/models", { headers: { Authorization: `Bearer ${groq}` } })
+        : "pas de clé",
+    },
     "The Odds API": {
       cle: describeKey("ODDS_API_KEY"),
       test: odds ? await probe(`https://api.the-odds-api.com/v4/sports?apiKey=${encodeURIComponent(odds)}`) : "pas de clé",
