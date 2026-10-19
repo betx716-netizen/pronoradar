@@ -18,5 +18,10 @@ export function kellyStake(bankroll: number, probability: number, odds: number):
   const b = odds - 1;
   if (b <= 0 || bankroll <= 0) return 0;
   const fraction = Math.max(0, (p * b - (1 - p)) / b) / 4;
-  return Math.round(bankroll * Math.min(fraction, 0.05) * 100) / 100;
+  // Arrondi à 50 FCFA près.
+  return Math.round((bankroll * Math.min(fraction, 0.05)) / 50) * 50;
 }
+
+/** Montant en francs CFA, sans décimales : « 12 500 FCFA ». */
+export const fcfa = (n: number, signed = false) =>
+  `${signed && n >= 0 ? "+" : ""}${Math.round(n).toLocaleString("fr-FR").replace(/ /g, " ")} FCFA`;

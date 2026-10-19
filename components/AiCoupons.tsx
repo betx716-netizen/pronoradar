@@ -214,7 +214,8 @@ export function AiCoupons({
 
   function bankroll() {
     try {
-      return Number(localStorage.getItem("pronoradar.bankroll")) || 100;
+      const v = Number(localStorage.getItem("pronoradar.bankroll"));
+      return v >= 1000 ? v : 10000;
     } catch {
       return 100;
     }
@@ -241,7 +242,7 @@ export function AiCoupons({
 
   function play(c: Built, odds: number, prob: number) {
     const stake =
-      Math.round(bankroll() * (c.stakePercent / 100) * 100) / 100 || 1;
+      Math.round((bankroll() * (c.stakePercent / 100)) / 50) * 50 || 100;
     addBet({
       profile: `IA · ${title(odds, c.legs.length)}`,
       legs: c.legs,

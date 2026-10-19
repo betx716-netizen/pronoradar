@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CATEGORY_LABELS } from "@/lib/coupon";
+import { fcfa } from "@/lib/value";
 import { loadHistory, profit, removeBet, syncHistory, updateBet, type BetStatus, type SavedBet, type SyncState } from "@/lib/history";
 
 const STATUS_LABELS: Record<BetStatus, string> = { en_cours: "En cours", gagne: "Gagné", perdu: "Perdu", rembourse: "Remboursé" };
@@ -12,7 +13,7 @@ const STATUS_STYLES: Record<BetStatus, string> = {
   rembourse: "border-draw/60 text-draw",
 };
 
-const euros = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)} €`;
+const euros = (n: number) => fcfa(n, true);
 
 /** Historique des coupons joués : statut à renseigner, bilan global et réussite par marché. */
 export function BetTracker() {
@@ -100,7 +101,7 @@ export function BetTracker() {
           <li key={b.id} className="rounded-2xl border border-border bg-surface p-4">
             <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2 text-sm">
               <span className="text-muted">
-                {new Date(b.createdAt).toLocaleDateString("fr-FR")} · {b.profile} · mise {b.stake.toFixed(2)} €
+                {new Date(b.createdAt).toLocaleDateString("fr-FR")} · {b.profile} · mise {fcfa(b.stake)}
               </span>
               <span className="font-bold tabular-nums text-gold">
                 @ {b.totalOdds.toFixed(2)} · {b.probability.toFixed(1)} %

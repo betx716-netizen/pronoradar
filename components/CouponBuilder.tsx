@@ -10,7 +10,7 @@ import {
 import type { AnalysisResult, MarketCategory } from "@/lib/schemas";
 import { addBet } from "@/lib/history";
 import { CouponCoach } from "./CouponCoach";
-import { kellyStake } from "@/lib/value";
+import { fcfa, kellyStake } from "@/lib/value";
 
 const FOOTBALL_CATEGORIES: MarketCategory[] = [
   "resultat",
@@ -74,11 +74,12 @@ export function CouponBuilder({
   const [categories, setCategories] =
     useState<MarketCategory[]>(DEFAULT_CATEGORIES);
   const [copied, setCopied] = useState(false);
-  const [bankroll, setBankroll] = useState(100);
+  const [bankroll, setBankroll] = useState(10000);
   useEffect(() => {
     try {
       const stored = Number(localStorage.getItem("pronoradar.bankroll"));
-      if (stored) setBankroll(stored);
+      // Une bankroll sous 1 000 date de l'époque en euros : on repart sur la valeur par défaut en FCFA.
+      if (stored >= 1000) setBankroll(stored);
     } catch {}
   }, []);
   const [saved, setSaved] = useState(false);
@@ -118,7 +119,7 @@ export function CouponBuilder({
 
   const kelly = kellyStake(bankroll, coupon.probability, coupon.totalOdds);
   const suggestedStake =
-    profile === "x50" ? Math.min(kelly, Math.round(bankroll) / 100) : kelly;
+    profile === "x50" ? Math.min(kelly, Math.round(bankroll / 100 / 50) * 50) : kelly;
   const [stakeInput, setStakeInput] = useState("");
   const stake =
     stakeInput === ""
@@ -372,7 +373,7 @@ export function CouponBuilder({
             )}
             <div className="grid grid-cols-2 gap-3">
               <label className="text-xs text-muted">
-                Bankroll (€)
+                Bankroll (FCFA)
                 <input
                   type="number"
                   inputMode="decimal"
@@ -383,13 +384,13 @@ export function CouponBuilder({
                 />
               </label>
               <label className="text-xs text-muted">
-                Mise (€)
+                Mise (FCFA)
                 <input
                   type="number"
                   inputMode="decimal"
                   min={0}
                   value={stakeInput}
-                  placeholder={suggestedStake.toFixed(2)}
+                  placeholder={String(suggestedStake)}
                   onChange={(e) => setStakeInput(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-text"
                 />
@@ -397,8 +398,8 @@ export function CouponBuilder({
             </div>
             <p className="text-xs text-muted">
               {suggestedStake > 0
-                ? `Mise conseillée : ${suggestedStake.toFixed(2)} € (Kelly ¼, max 5 % de la bankroll).`
-                : "Mise conseillée : 0 € — d'après nos probabilités, ce coupon n'a pas d'avantage sur sa cote. Mieux vaut passer."}
+                ? `Mise conseillée : ${fcfa(suggestedStake)} (Kelly ¼, max 5 % de la bankroll).`
+                : "Mise conseillée : 0 FCFA — d'après nos probabilités, ce coupon n'a pas d'avantage sur sa cote. Mieux vaut passer."}
             </p>
             <button
               onClick={save}
