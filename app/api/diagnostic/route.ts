@@ -1,4 +1,5 @@
 import { describeKey, readKey } from "@/lib/env";
+import { isAuthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,8 @@ async function probe(url: string, init?: RequestInit) {
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!isAuthorized(req)) return Response.json({ error: "Connexion requise." }, { status: 401 });
   const odds = readKey("ODDS_API_KEY");
   const football = readKey("API_FOOTBALL_KEY");
   const gemini = readKey("GEMINI_API_KEY");

@@ -228,3 +228,32 @@ h1 {
   transform: rotateX(-24deg);
   transform-origin: 50% 100%;
 }
+
+/* Page d'accueil : scène 3D et cartes flottantes. */
+.landing-scene {
+  perspective: 1000px;
+}
+.landing-stage {
+  transform: rotateX(52deg) rotateZ(-18deg);
+  transform-style: preserve-3d;
+}
+@keyframes landing-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-12px) rotate(1deg); }
+}
+.landing-float {
+  animation: landing-float 6s ease-in-out infinite;
+}
+.landing-float.left-1\/2 {
+  animation: none;
+}
+.landing-tilt {
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.landing-tilt:hover {
+  transform: perspective(700px) rotateX(4deg) rotateY(-6deg) translateY(-4px);
+  box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.35);
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-float, .landing-tilt:hover { animation: none; transform: none; }
+}

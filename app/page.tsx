@@ -15,6 +15,7 @@ import { HeroBanner } from "@/components/HeroBanner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ScrollRow } from "@/components/ScrollRow";
+import { Landing } from "@/components/Landing";
 import { isValueBet } from "@/lib/value";
 import {
   QuotaError,
@@ -24,7 +25,6 @@ import {
   loadHistory,
   saveFavorites,
   saveHistory,
-  setPassword,
 } from "@/lib/client";
 import { fixtureId, runPool, type Job } from "@/lib/jobs";
 import { LEAGUES, MAX_LEAGUES, MODES } from "@/lib/leagues";
@@ -184,7 +184,7 @@ function MatchCard({
   );
 }
 
-export default function Home() {
+function App() {
   const [tab, setTab] = useState<Tab>("matchs");
   const [sport, setSport] = useState<Sport>("football");
   const [leagues, setLeagues] = useState<string[]>([]);
@@ -207,7 +207,6 @@ export default function Home() {
     date: "",
   });
   const [needPassword, setNeedPassword] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [quotas, setQuotas] = useState<Quotas>({
     odds: null,
@@ -645,31 +644,15 @@ export default function Home() {
 
       <main className="mx-auto max-w-6xl px-4 pt-6">
         {needPassword && (
-          <form
-            className="mb-6 rounded-2xl border border-accent bg-surface p-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setPassword(passwordInput);
-              setNeedPassword(false);
-              findFixtures();
-            }}
-          >
-            <label className="mb-2 block text-sm font-semibold" htmlFor="pw">
-              Application protégée : entrez le mot de passe.
-            </label>
-            <div className="flex gap-2">
-              <input
-                id="pw"
-                type="password"
-                className={inputClass}
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-              />
-              <button className="rounded-xl bg-accent px-4 font-semibold text-on-accent">
-                Valider
-              </button>
-            </div>
-          </form>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent bg-surface p-4">
+            <p className="text-sm font-semibold">Votre session a expiré : reconnectez-vous.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="rounded-xl bg-accent px-4 py-2 font-semibold text-on-accent"
+            >
+              Se reconnecter
+            </button>
+          </div>
         )}
 
         {error && (
@@ -1062,4 +1045,23 @@ export default function Home() {
       )}
     </div>
   );
+}
+
+// Écran d'accueil et connexion avant l'application, quand elle est protégée par un identifiant.
+export default function Home() {
+  const [state, setState] = useState<"loading" | "in" | "out">("loading");
+  useEffect(() => {
+    fetch("/api/auth")
+      .then((r) => r.json())
+      .then((d: { required: boolean; authenticated: boolean }) => setState(!d.required || d.authenticated ? "in" : "out"))
+      .catch(() => setState("in"));
+  }, []);
+  if (state === "loading")
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex h-14 w-14 -skew-x-6 animate-pulse items-center justify-center rounded-xl bg-accent font-display text-3xl text-white">P</div>
+      </div>
+    );
+  if (state === "out") return <Landing onLogin={() => setState("in")} />;
+  return <App />;
 }

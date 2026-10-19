@@ -1,4 +1,5 @@
 import { readKey } from "@/lib/env";
+import { isAuthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -7,8 +8,7 @@ export const dynamic = "force-dynamic";
 const config = () => ({ url: readKey("SUPABASE_URL"), key: readKey("SUPABASE_KEY"), secret: readKey("HISTORY_SECRET") });
 
 function denied(req: Request): Response | null {
-  const expected = process.env.APP_PASSWORD;
-  if (expected && req.headers.get("x-app-password") !== expected) return Response.json({ error: "Mot de passe incorrect." }, { status: 401 });
+  if (!isAuthorized(req)) return Response.json({ error: "Connexion requise." }, { status: 401 });
   const c = config();
   if (!c.url || !c.key || !c.secret) return Response.json({ error: "La sauvegarde en ligne n'est pas configurée." }, { status: 503 });
   return null;

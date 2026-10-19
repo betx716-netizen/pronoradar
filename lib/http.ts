@@ -5,6 +5,7 @@ import { hasGroq, hasTavily } from "./backup";
 import { OddsApiError, hasOddsApi } from "./odds";
 import type { ServicesStatus, StreamEvent } from "./schemas";
 import { maskProviders } from "./mask";
+import { isAuthorized } from "./auth";
 
 export const isDemo = () => process.env.DEMO_MODE === "1";
 
@@ -27,9 +28,8 @@ export function guard(req: Request): Response | null {
       { status: 500 },
     );
   }
-  const expected = process.env.APP_PASSWORD;
-  if (!expected || req.headers.get("x-app-password") === expected) return null;
-  return Response.json({ error: "Mot de passe incorrect." }, { status: 401 });
+  if (isAuthorized(req)) return null;
+  return Response.json({ error: "Connexion requise." }, { status: 401 });
 }
 
 function errorEvent(err: unknown): StreamEvent {

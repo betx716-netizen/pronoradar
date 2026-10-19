@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { getPassword, setPassword } from "@/lib/client";
+import { setPassword } from "@/lib/client";
 import type { ServicesStatus } from "@/lib/schemas";
 
 type Quotas = { odds: number | null; apiFootball: number | null };
@@ -16,11 +16,7 @@ export function SettingsPanel({
   quotas: Quotas;
 }) {
   const [open, setOpen] = useState(false);
-  const [pw, setPw] = useState("");
-  const [saved, setSaved] = useState(false);
-
   useEffect(() => {
-    if (open) setPw(getPassword());
     document.body.style.overflow = open ? "hidden" : "";
   }, [open]);
 
@@ -141,29 +137,17 @@ export function SettingsPanel({
                 encore connu).
               </p>
 
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-                Mot de passe du site
-              </h3>
-              <form
-                className="flex gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setPassword(pw);
-                  setSaved(true);
-                  setTimeout(() => setSaved(false), 1500);
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Compte</h3>
+              <button
+                onClick={async () => {
+                  await fetch("/api/auth", { method: "DELETE" }).catch(() => {});
+                  setPassword("");
+                  window.location.reload();
                 }}
+                className="w-full rounded-xl border border-border py-2.5 font-semibold text-danger hover:border-danger"
               >
-                <input
-                  type="password"
-                  value={pw}
-                  onChange={(e) => setPw(e.target.value)}
-                  aria-label="Mot de passe"
-                  className="w-full rounded-xl border border-border bg-surface-2 px-3 py-2.5 outline-none focus:border-accent"
-                />
-                <button className="shrink-0 rounded-xl bg-accent px-4 font-semibold text-on-accent">
-                  {saved ? "✓" : "Enregistrer"}
-                </button>
-              </form>
+                Se déconnecter
+              </button>
             </div>
           </div>,
           document.body,
