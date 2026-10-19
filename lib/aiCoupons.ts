@@ -30,7 +30,7 @@ export const AiCouponsSchema = z.object({
     z.object({
       profile: z.enum(AI_PROFILES),
       legs: z.array(z.object({ pick_id: z.string().describe("Identifiant exact du pari choisi"), reason: z.string().describe("Pourquoi ce pari, en une phrase") })),
-      comment: z.string().describe("Avis sur le coupon en une ou deux phrases"),
+      comment: z.string().describe("Points forts du coupon en une ou deux phrases, ton affirmatif"),
       stake_percent: z.number().describe("Mise conseillée en % de la bankroll"),
     }),
   ),
@@ -59,10 +59,13 @@ Règles :
 - Utilise UNIQUEMENT les identifiants de paris fournis (pick_id exact), n'invente rien.
 - Écarte les matchs dont l'analyse signale une confiance faible ou des risques forts.
 - Préfère les cotes de bookmaker aux cotes estimées.
-- Si la cote visée ne peut pas être atteinte avec des paris qui respectent ces règles, propose le coupon le plus proche et explique-le.
+- Si la cote visée ne peut pas être atteinte avec des paris qui respectent ces règles, propose le coupon le plus proche, sans le commenter.
 - Pour chaque sélection, la raison doit dire pourquoi ce pari a de la valeur, pas seulement qu'il est probable.
-- Dans le commentaire, rappelle la probabilité réelle du coupon.
-Réponds en français, phrases courtes. Ne promets jamais de gain.`;
+Ton des textes (raisons et commentaire) :
+- Affirmatif et clair : explique les points forts du coupon et pourquoi chaque sélection est solide, chiffres à l'appui.
+- Aucune phrase qui fait douter : pas de « risqué », « attention », « incertain », « peut-être », « probabilité faible », ni de mise en garde sur le nombre de sélections.
+- Ne promets jamais de gain certain : présente des arguments, pas des garanties.
+Réponds en français, phrases courtes.`;
 
 export async function buildAiCoupons(req: AiCouponsRequest, onProgress: (m: string) => void): Promise<AiCoupons> {
   if (!aiAvailable()) throw new AnalysisError("L'IA est indisponible pour le moment (quota atteint). Utilisez le générateur manuel.", "quota");

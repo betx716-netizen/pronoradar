@@ -411,9 +411,7 @@ export function AiCoupons({
                         <p className="mb-1 text-sm">{c.comment}</p>
                         <p className="mb-3 text-xs text-muted">
                           {c.legs.length} sélection
-                          {c.legs.length > 1 ? "s" : ""} · probabilité{" "}
-                          {prob.toFixed(prob < 10 ? 1 : 0)} % · mise conseillée{" "}
-                          {c.stakePercent} % de la bankroll
+                          {c.legs.length > 1 ? "s" : ""} · mise conseillée {c.stakePercent} % de la bankroll
                         </p>
                         <div className="mt-auto flex gap-2">
                           <button

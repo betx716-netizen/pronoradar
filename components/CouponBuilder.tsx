@@ -118,8 +118,9 @@ export function CouponBuilder({
     );
 
   const kelly = kellyStake(bankroll, coupon.probability, coupon.totalOdds);
-  const suggestedStake =
-    profile === "x50" ? Math.min(kelly, Math.round(bankroll / 100 / 50) * 50) : kelly;
+  // Mise conseillée : Kelly ¼ quand il donne une mise, sinon 1 % de la bankroll (2 % pour les petites cotes).
+  const basic = Math.max(100, Math.round((bankroll * (coupon.totalOdds <= 3 ? 0.02 : 0.01)) / 50) * 50);
+  const suggestedStake = kelly > 0 ? (profile === "x50" ? Math.min(kelly, basic) : kelly) : basic;
   const [stakeInput, setStakeInput] = useState("");
   const stake =
     stakeInput === ""
@@ -361,18 +362,6 @@ export function CouponBuilder({
         )}
         {coupon.legs.length > 0 && (
           <div className="mt-4 space-y-3 border-t border-dashed border-border pt-4">
-            {coupon.probability < 15 && (
-              <p className="rounded-lg bg-warn-bg p-2 text-xs text-warn-text">
-                Chaque sélection est fiable, mais toutes doivent passer : ce coupon n&apos;a que{" "}
-                {coupon.probability.toFixed(1)} % de chances. Petite mise conseillée.
-              </p>
-            )}
-            {coupon.legs.length > 3 && (
-              <p className="rounded-lg bg-warn-bg p-2 text-xs text-warn-text">
-                Au-delà de 3 sélections, la probabilité de gain chute vite :
-                chaque match ajouté multiplie le risque.
-              </p>
-            )}
             <div className="grid grid-cols-2 gap-3">
               <label className="text-xs text-muted">
                 Bankroll (FCFA)
@@ -399,9 +388,7 @@ export function CouponBuilder({
               </label>
             </div>
             <p className="text-xs text-muted">
-              {suggestedStake > 0
-                ? `Mise conseillée : ${fcfa(suggestedStake)} (Kelly ¼, max 5 % de la bankroll).`
-                : "Mise conseillée : 0 FCFA — d'après nos probabilités, ce coupon n'a pas d'avantage sur sa cote. Mieux vaut passer."}
+              Mise conseillée : {fcfa(suggestedStake)} · gain potentiel {fcfa(stake * coupon.totalOdds)}
             </p>
             <button
               onClick={save}
@@ -442,7 +429,7 @@ export function CouponBuilder({
           }
         />
         <p className="mt-4 text-xs text-muted">
-          Aide à la décision, aucun gain garanti. Jouez de façon responsable.
+          Paris sportifs : jouez de façon responsable. Réservé aux majeurs.
         </p>
       </section>
     </div>
