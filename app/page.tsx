@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnalysisView } from "@/components/AnalysisView";
 import { CouponBuilder } from "@/components/CouponBuilder";
+import { AiCoupons } from "@/components/AiCoupons";
 import { BetTracker } from "@/components/BetTracker";
 import { ResultsGrid } from "@/components/ResultsGrid";
 import { OddsButton } from "@/components/OddsButton";
@@ -191,6 +192,7 @@ export default function Home() {
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [running, setRunning] = useState(false);
+  const [autoCoupons, setAutoCoupons] = useState(0);
   const stopRef = useRef(false);
 
   const [manualOpen, setManualOpen] = useState(false);
@@ -381,6 +383,7 @@ export default function Home() {
     setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, ...patch } : j)));
 
   async function runJobs(toRun: Job[]) {
+    let succeeded = 0;
     if (toRun.length === 0) return;
     stopRef.current = false;
     setRunning(true);
@@ -408,6 +411,7 @@ export default function Home() {
           );
           trackQuotas(result.usage);
           updateJob(job.id, { status: "done", message: "Terminé", result });
+          succeeded++;
           setHistory((prev) => {
             // Une nouvelle analyse d'un match remplace l'ancienne dans l'historique.
             const key = (r: AnalysisResult) =>
@@ -441,6 +445,8 @@ export default function Home() {
       ),
     );
     setRunning(false);
+    // Série d'analyses terminée avec au moins un succès : l'IA refait les coupons.
+    if (succeeded > 0) setAutoCoupons((k) => k + 1);
   }
 
   function enqueue(fixtures: Fixture[]) {
@@ -878,9 +884,10 @@ export default function Home() {
 
         {tab === "coupon" && (
           <section className="fade-in">
-            <h1 className="text-2xl font-bold tracking-tight">
-              Générateur de coupon
-            </h1>
+            <AiCoupons results={couponResults} autoKey={autoCoupons} />
+            <h2 className="font-display text-3xl leading-none">
+              Générateur manuel
+            </h2>
             <p className="mb-4 text-sm text-muted">
               Construit à partir de vos analyses des dernières{" "}
               {COUPON_HISTORY_HOURS} heures ({couponResults.length} matchs).
