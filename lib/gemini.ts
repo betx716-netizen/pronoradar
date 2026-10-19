@@ -86,7 +86,8 @@ async function withRetry<T>(fn: () => Promise<T>, onProgress: (m: string) => voi
           await wait(delay);
           continue;
         }
-        pausedUntil[kind] = Date.now() + QUOTA_PAUSE_MS;
+        // Quota du jour (ou recherche non incluse dans l'offre gratuite) : inutile de réessayer avant demain.
+        pausedUntil[kind] = Date.now() + (hardLimit ? 12 * 3600_000 : QUOTA_PAUSE_MS);
         console.error("Quota Gemini :", err.message);
         throw new AnalysisError(
           kind === "search" ? `Gemini : quota gratuit de recherche Google atteint${detail}.` : `Gemini : quota gratuit atteint${detail}.`,
