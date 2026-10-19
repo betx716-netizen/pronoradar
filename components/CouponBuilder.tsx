@@ -146,7 +146,7 @@ export function CouponBuilder({
 
   async function copy() {
     const text = [
-      `Coupon PronoRadar — ${PROFILES[profile].label}`,
+      `Coupon PronoRadar — Fiable · cote ${coupon.totalOdds.toFixed(2)}`,
       ...coupon.legs.map(
         (l) =>
           `• ${l.match} : ${l.pick.selection} @ ${l.pick.odds.toFixed(2)} (${l.pick.probability.toFixed(0)} %)`,
@@ -257,7 +257,7 @@ export function CouponBuilder({
               Coupon proposé
             </p>
             <p className="text-sm text-muted">
-              {PROFILES[profile].label} · {coupon.legs.length} sélection
+              Fiable · cote {coupon.totalOdds.toFixed(2).replace(".", ",")} · {coupon.legs.length} sélection
               {coupon.legs.length > 1 ? "s" : ""}
             </p>
           </div>

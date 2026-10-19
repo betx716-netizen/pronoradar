@@ -188,9 +188,13 @@ export function AiCoupons({
     }
   }
 
+  // Le nom du coupon donne la cote réellement obtenue, pas la cote visée.
+  const title = (odds: number, n: number) =>
+    n ? `Fiable · cote ${odds.toFixed(2).replace(".", ",")}` : "Fiable";
+
   async function copy(c: Built, odds: number) {
     const text = [
-      `${LABELS[c.profile].label} — PronoRadar`,
+      `${title(odds, c.legs.length)} — PronoRadar`,
       ...c.legs.map(
         (l) => `• ${l.match} : ${l.pick.selection} @ ${l.pick.odds.toFixed(2)}`,
       ),
@@ -207,7 +211,7 @@ export function AiCoupons({
     const stake =
       Math.round(bankroll() * (c.stakePercent / 100) * 100) / 100 || 1;
     addBet({
-      profile: `IA · ${LABELS[c.profile].label.replace("Fiable · ", "")}`,
+      profile: `IA · ${title(odds, c.legs.length)}`,
       legs: c.legs,
       totalOdds: odds,
       probability: Math.round(prob * 10) / 10,
@@ -280,87 +284,114 @@ export function AiCoupons({
             })}
           </p>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {saved.coupons.map((c) => {
-              const odds =
-                Math.round(c.legs.reduce((t, l) => t * l.pick.odds, 1) * 100) /
-                100;
-              const prob =
-                c.legs.reduce((t, l) => t * (l.pick.probability / 100), 1) *
-                100;
-              return (
-                <article
-                  key={c.profile}
-                  className={`fade-in flex flex-col rounded-2xl border-2 bg-surface p-4 ${LABELS[c.profile].tone}`}
-                >
-                  <div className="mb-2 flex items-baseline justify-between gap-2">
-                    <h3 className="font-display text-2xl leading-none">
-                      {LABELS[c.profile].label}
-                    </h3>
-                    {c.legs.length > 0 && (
-                      <span className="font-display text-3xl leading-none text-accent tabular-nums">
-                        {odds.toFixed(2)}
-                      </span>
-                    )}
-                  </div>
-                  {c.legs.length === 0 ? (
-                    <p className="flex-1 text-sm text-muted">{c.comment}</p>
-                  ) : (
-                    <>
-                      <ol className="mb-3 space-y-2">
-                        {c.legs.map((l) => (
-                          <li
-                            key={l.match}
-                            className="rounded-xl bg-surface-2 p-2.5"
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <p className="truncate text-xs text-muted">
-                                  {l.match}
-                                </p>
-                                <p className="font-semibold">
-                                  {l.pick.selection}
-                                </p>
+            {saved.coupons
+              // Du plus sûr au plus coté, sans afficher deux fois le même coupon.
+              .filter((c, i, all) => {
+                const key = c.legs
+                  .map((l) => l.match + l.pick.selection)
+                  .sort()
+                  .join("|");
+                return (
+                  all.findIndex(
+                    (x) =>
+                      x.legs
+                        .map((l) => l.match + l.pick.selection)
+                        .sort()
+                        .join("|") === key,
+                  ) === i
+                );
+              })
+              .sort(
+                (a, b) =>
+                  a.legs.reduce((t, l) => t * l.pick.odds, 1) -
+                  b.legs.reduce((t, l) => t * l.pick.odds, 1),
+              )
+              .map((c) => {
+                const odds =
+                  Math.round(
+                    c.legs.reduce((t, l) => t * l.pick.odds, 1) * 100,
+                  ) / 100;
+                const prob =
+                  c.legs.reduce((t, l) => t * (l.pick.probability / 100), 1) *
+                  100;
+                return (
+                  <article
+                    key={c.profile}
+                    className={`fade-in flex flex-col rounded-2xl border-2 bg-surface p-4 ${LABELS[c.profile].tone}`}
+                  >
+                    <div className="mb-2 flex items-baseline justify-between gap-2">
+                      <h3 className="font-display text-2xl leading-none">
+                        {title(odds, c.legs.length)}
+                      </h3>
+                      {c.legs.length > 0 && (
+                        <span className="shrink-0 rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">
+                          {c.legs.length} sélection
+                          {c.legs.length > 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </div>
+                    {c.legs.length === 0 ? (
+                      <p className="flex-1 text-sm text-muted">{c.comment}</p>
+                    ) : (
+                      <>
+                        <ol className="mb-3 space-y-2">
+                          {c.legs.map((l) => (
+                            <li
+                              key={l.match}
+                              className="rounded-xl bg-surface-2 p-2.5"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="truncate text-xs text-muted">
+                                    {l.match}
+                                  </p>
+                                  <p className="font-semibold">
+                                    {l.pick.selection}
+                                  </p>
+                                </div>
+                                <span
+                                  className={`shrink-0 rounded-lg px-2 py-0.5 text-sm font-bold tabular-nums ${l.pick.oddsSource === "bookmaker" ? "bg-accent-soft text-accent" : "bg-gold-soft text-gold"}`}
+                                >
+                                  {l.pick.oddsSource === "estimée" ? "◆ " : ""}
+                                  {l.pick.odds.toFixed(2)}
+                                </span>
                               </div>
-                              <span
-                                className={`shrink-0 rounded-lg px-2 py-0.5 text-sm font-bold tabular-nums ${l.pick.oddsSource === "bookmaker" ? "bg-accent-soft text-accent" : "bg-gold-soft text-gold"}`}
-                              >
-                                {l.pick.oddsSource === "estimée" ? "◆ " : ""}
-                                {l.pick.odds.toFixed(2)}
-                              </span>
-                            </div>
-                            <p className="mt-1 text-xs text-muted">
-                              {l.reason}
-                            </p>
-                          </li>
-                        ))}
-                      </ol>
-                      <p className="mb-1 text-sm">{c.comment}</p>
-                      <p className="mb-3 text-xs text-muted">
-                        {c.legs.length} sélection{c.legs.length > 1 ? "s" : ""}{" "}
-                        · probabilité {prob.toFixed(prob < 10 ? 1 : 0)} % · mise
-                        conseillée {c.stakePercent} % de la bankroll
-                      </p>
-                      <div className="mt-auto flex gap-2">
-                        <button
-                          onClick={() => copy(c, odds)}
-                          className="flex-1 rounded-xl border border-border py-2 text-sm font-semibold"
-                        >
-                          {flash === `copy-${c.profile}` ? "Copié ✓" : "Copier"}
-                        </button>
-                        <button
-                          onClick={() => play(c, odds, prob)}
-                          className="flex-1 rounded-xl bg-accent py-2 text-sm font-bold text-on-accent active:scale-95"
-                        >
-                          {flash === `play-${c.profile}`
-                            ? "Enregistré ✓"
-                            : "J'ai joué"}
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </article>
-              );
-            })}
+                              <p className="mt-1 text-xs text-muted">
+                                {l.reason}
+                              </p>
+                            </li>
+                          ))}
+                        </ol>
+                        <p className="mb-1 text-sm">{c.comment}</p>
+                        <p className="mb-3 text-xs text-muted">
+                          {c.legs.length} sélection
+                          {c.legs.length > 1 ? "s" : ""} · probabilité{" "}
+                          {prob.toFixed(prob < 10 ? 1 : 0)} % · mise conseillée{" "}
+                          {c.stakePercent} % de la bankroll
+                        </p>
+                        <div className="mt-auto flex gap-2">
+                          <button
+                            onClick={() => copy(c, odds)}
+                            className="flex-1 rounded-xl border border-border py-2 text-sm font-semibold"
+                          >
+                            {flash === `copy-${c.profile}`
+                              ? "Copié ✓"
+                              : "Copier"}
+                          </button>
+                          <button
+                            onClick={() => play(c, odds, prob)}
+                            className="flex-1 rounded-xl bg-accent py-2 text-sm font-bold text-on-accent active:scale-95"
+                          >
+                            {flash === `play-${c.profile}`
+                              ? "Enregistré ✓"
+                              : "J'ai joué"}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </article>
+                );
+              })}
           </div>
         </>
       )}

@@ -8,11 +8,11 @@ import { edge, isValueBet } from "./value";
 export type RiskProfile = "x2" | "x5" | "x10" | "x20" | "x50" | "value";
 
 export const PROFILES: Record<RiskProfile, { label: string; description: string; minProbability: number; target?: number }> = {
-  x2: { label: "Fiable", description: "Les sélections les plus sûres, cote totale autour de 2", minProbability: 68, target: 2 },
-  x5: { label: "Fiable · cote 5", description: "Sélections fiables, cote totale autour de 5", minProbability: 65, target: 5 },
-  x10: { label: "Fiable · cote 10", description: "Sélections fiables, cote totale autour de 10", minProbability: 63, target: 10 },
-  x20: { label: "Fiable · cote 20", description: "Sélections fiables, cote totale autour de 20 : plus de matchs ou de meilleures cotes", minProbability: 62, target: 20 },
-  x50: { label: "Fiable · cote 50", description: "Sélections fiables, cote totale autour de 50 : beaucoup de matchs, donc plus de risque global", minProbability: 60, target: 50 },
+  x2: { label: "Objectif cote 2", description: "Les sélections les plus sûres, cote totale autour de 2", minProbability: 68, target: 2 },
+  x5: { label: "Objectif cote 5", description: "Sélections fiables, cote totale autour de 5", minProbability: 65, target: 5 },
+  x10: { label: "Objectif cote 10", description: "Sélections fiables, cote totale autour de 10", minProbability: 63, target: 10 },
+  x20: { label: "Objectif cote 20", description: "Sélections fiables, cote totale autour de 20 : plus de matchs ou de meilleures cotes", minProbability: 62, target: 20 },
+  x50: { label: "Objectif cote 50", description: "Sélections fiables, cote totale autour de 50 : beaucoup de matchs, donc plus de risque global", minProbability: 60, target: 50 },
   value: { label: "Value", description: "Uniquement les paris où notre probabilité bat la cote du bookmaker (avantage ≥ 3 %)", minProbability: 40 },
 };
 
