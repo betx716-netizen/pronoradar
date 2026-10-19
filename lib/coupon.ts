@@ -20,6 +20,20 @@ export const CATEGORY_LABELS: Record<MarketCategory, string> = {
   cartons: "Cartons",
   sets: "Sets",
   jeux: "Jeux",
+  rembourse: "Remboursé si nul",
+  mi_temps: "Mi-temps",
+  mi_temps_fin: "Mi-temps / Fin",
+  handicap: "Handicap",
+  score_exact: "Score exact",
+  buts_equipe: "Buts par équipe",
+  resultat_buts: "Résultat + buts",
+  resultat_btts: "Résultat + les deux marquent",
+  tirs_cadres: "Tirs cadrés",
+  hors_jeu: "Hors-jeu",
+  premier_set: "1er set",
+  handicap_jeux: "Handicap jeux",
+  score_sets: "Score en sets",
+  tie_break: "Tie-break",
 };
 
 export type CouponLeg = { match: string; competition: string; date: string | null; pick: MarketPick };

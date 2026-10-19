@@ -48,6 +48,20 @@ export const MarketCategorySchema = z.enum([
   "cartons",
   "sets",
   "jeux",
+  "rembourse",
+  "mi_temps",
+  "mi_temps_fin",
+  "handicap",
+  "score_exact",
+  "buts_equipe",
+  "resultat_buts",
+  "resultat_btts",
+  "tirs_cadres",
+  "hors_jeu",
+  "premier_set",
+  "handicap_jeux",
+  "score_sets",
+  "tie_break",
 ]);
 export type MarketCategory = z.infer<typeof MarketCategorySchema>;
 
@@ -104,7 +118,7 @@ export const AnalysisSchema = z.object({
   markets: z
     .array(MarketEstimateSchema)
     .describe(
-      "Football : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (plus/moins 8,5 à 10,5), fautes (plus/moins 20,5 à 24,5), cartons (plus/moins 3,5 ou 4,5). Tennis : nombre de sets, nombre de jeux. Une ligne par pari, en choisissant le côté (plus ou moins) le plus probable.",
+      "Football : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (plus/moins 8,5 à 10,5), fautes (plus/moins 20,5 à 24,5), cartons (plus/moins 3,5 ou 4,5), résultat à la mi-temps (mi_temps), mi-temps/fin de match (mi_temps_fin), handicap européen ou asiatique (handicap), 2 ou 3 scores exacts les plus probables (score_exact), buts de chaque équipe (buts_equipe, ex : 'PSG plus de 1,5 buts'), résultat + plus/moins 2,5 buts (resultat_buts), résultat + les deux marquent (resultat_btts), tirs cadrés (tirs_cadres), hors-jeu (hors_jeu). Tennis : nombre de sets, nombre de jeux, vainqueur du 1er set (premier_set), handicap jeux (handicap_jeux), score exact en sets (score_sets), au moins un tie-break (tie_break). Une ligne par pari, en choisissant le côté le plus probable.",
     ),
 });
 export type Analysis = z.infer<typeof AnalysisSchema>;

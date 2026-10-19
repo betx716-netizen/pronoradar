@@ -71,6 +71,26 @@ export function buildPicks(analysis: Analysis, odds: OddsSummary | null | undefi
     }
   }
 
+  // Remboursé si nul (football) : probabilité hors nul, cote déduite des cotes 1/N/2.
+  if (!tennis) {
+    const dnb = (o: number | null | undefined) => (o && odds?.draw ? Math.round(((o * (odds.draw - 1)) / odds.draw) * 100) / 100 : null);
+    const rest = p.home + p.away || 1;
+    for (const [label, prob, bookOdds] of [
+      [`${home} (remboursé si nul)`, (p.home / rest) * 100, dnb(odds?.home)],
+      [`${away} (remboursé si nul)`, (p.away / rest) * 100, dnb(odds?.away)],
+    ] as [string, number, number | null][]) {
+      picks.push({
+        category: "rembourse",
+        selection: label,
+        probability: round(prob),
+        odds: bookOdds ?? fairOdds(prob),
+        oddsSource: bookOdds ? "bookmaker" : "estimée",
+        basis: basis(Boolean(bookOdds)),
+        reasoning: "Mise remboursée en cas de match nul.",
+      });
+    }
+  }
+
   // Ligne de buts (ou de jeux) proposée par les bookmakers : probabilité tirée des cotes, marge retirée.
   const t = odds?.totals;
   if (t) {
@@ -100,7 +120,7 @@ export function buildPicks(analysis: Analysis, odds: OddsSummary | null | undefi
 
   // Estimations de l'IA (corners, fautes, cartons, autres lignes de buts…), sans doublon avec les cotes.
   for (const m of analysis.markets ?? []) {
-    if (m.category === "resultat" || m.category === "double_chance") continue;
+    if (m.category === "resultat" || m.category === "double_chance" || m.category === "rembourse") continue;
     if (picks.some((x) => x.selection.toLowerCase() === m.selection.toLowerCase())) continue;
     const prob = Math.min(99, Math.max(1, m.probability));
     picks.push({

@@ -3,7 +3,11 @@
 import { CATEGORY_LABELS } from "@/lib/coupon";
 import type { MarketCategory, MarketPick } from "@/lib/schemas";
 
-const ORDER: MarketCategory[] = ["resultat", "double_chance", "buts", "les_deux_marquent", "corners", "fautes", "cartons", "sets", "jeux"];
+const ORDER: MarketCategory[] = [
+  "resultat", "double_chance", "rembourse", "mi_temps", "mi_temps_fin", "handicap", "buts", "buts_equipe", "les_deux_marquent",
+  "resultat_buts", "resultat_btts", "score_exact", "corners", "tirs_cadres", "fautes", "cartons", "hors_jeu",
+  "sets", "jeux", "premier_set", "handicap_jeux", "score_sets", "tie_break",
+];
 
 function probColor(p: number) {
   return p >= 70 ? "bg-accent" : p >= 55 ? "bg-gold" : "bg-draw";

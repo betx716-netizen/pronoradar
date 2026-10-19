@@ -4,9 +4,12 @@ import { useMemo, useState } from "react";
 import { CATEGORY_LABELS, PROFILES, buildCoupon, type RiskProfile } from "@/lib/coupon";
 import type { AnalysisResult, MarketCategory } from "@/lib/schemas";
 
-const FOOTBALL_CATEGORIES: MarketCategory[] = ["resultat", "double_chance", "buts", "les_deux_marquent", "corners", "fautes", "cartons"];
-const TENNIS_CATEGORIES: MarketCategory[] = ["resultat", "sets", "jeux"];
-const DEFAULT_CATEGORIES: MarketCategory[] = ["resultat", "double_chance", "buts", "les_deux_marquent", "sets", "jeux"];
+const FOOTBALL_CATEGORIES: MarketCategory[] = [
+  "resultat", "double_chance", "rembourse", "mi_temps", "mi_temps_fin", "handicap", "buts", "buts_equipe", "les_deux_marquent",
+  "resultat_buts", "resultat_btts", "score_exact", "corners", "tirs_cadres", "fautes", "cartons", "hors_jeu",
+];
+const TENNIS_CATEGORIES: MarketCategory[] = ["resultat", "sets", "jeux", "premier_set", "handicap_jeux", "score_sets", "tie_break"];
+const DEFAULT_CATEGORIES: MarketCategory[] = ["resultat", "double_chance", "rembourse", "buts", "buts_equipe", "les_deux_marquent", "sets", "jeux", "premier_set"];
 
 export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
   const [profile, setProfile] = useState<RiskProfile>("equilibre");
@@ -101,7 +104,7 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
               );
             })}
           </div>
-          <p className="mt-2 text-xs text-muted">Corners, fautes et cartons reposent sur des estimations de l&apos;IA, sans cote de bookmaker.</p>
+          <p className="mt-2 text-xs text-muted">Hors résultat, double chance, remboursé si nul et ligne de buts, les marchés reposent sur des estimations de l&apos;IA : vérifiez la cote chez votre bookmaker.</p>
         </div>
       </section>
 

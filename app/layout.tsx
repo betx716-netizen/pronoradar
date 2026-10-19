@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 
@@ -10,6 +10,16 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "PronoRadar",
   description: "Recense les pronostics publiés sur le web, les compare et en tire une analyse.",
+};
+
+// Empêche le zoom automatique du navigateur mobile (double tap, focus d'un champ).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#07090d",
 };
 
 export default function RootLayout({
