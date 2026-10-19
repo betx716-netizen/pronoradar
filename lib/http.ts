@@ -1,6 +1,7 @@
 import { ApiError } from "@google/genai";
 import { ApiFootballError, hasApiFootball } from "./apifootball";
-import { AnalysisError, hasGemini } from "./gemini";
+import { AnalysisError, hasAI } from "./gemini";
+import { hasGroq, hasTavily } from "./backup";
 import { OddsApiError, hasOddsApi } from "./odds";
 import type { ServicesStatus, StreamEvent } from "./schemas";
 import { maskProviders } from "./mask";
@@ -8,10 +9,12 @@ import { maskProviders } from "./mask";
 export const isDemo = () => process.env.DEMO_MODE === "1";
 
 export const servicesStatus = (): ServicesStatus => ({
-  gemini: hasGemini(),
+  gemini: hasAI(),
   odds: hasOddsApi(),
   apiFootball: hasApiFootball(),
   demo: isDemo(),
+  backupAI: hasGroq(),
+  backupSearch: hasTavily(),
 });
 
 // Si APP_PASSWORD est défini, seules les requêtes portant ce mot de passe passent :

@@ -2,6 +2,7 @@ import { readKey } from "./env";
 import { ApiError, GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 import type { ConsultedPage, Usage } from "./schemas";
+import { BackupQuotaError, groqAvailable, groqChat, hasGroq, tavilyAvailable, webSearch } from "./backup";
 
 // "gemini-flash-latest" suit automatiquement le dernier modèle Flash ; GEMINI_MODEL permet d'en imposer un.
 const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
@@ -16,6 +17,11 @@ export const hasGemini = () => Boolean(readKey("GEMINI_API_KEY"));
 const pausedUntil = { search: 0, plain: 0 };
 export const geminiAvailable = () => hasGemini() && Date.now() >= pausedUntil.plain;
 export const googleSearchAvailable = () => geminiAvailable() && Date.now() >= pausedUntil.search;
+
+// Avec les services de secours : une IA (principale ou de secours) et une recherche web (intégrée ou de secours).
+export const hasAI = () => hasGemini() || hasGroq();
+export const aiAvailable = () => geminiAvailable() || groqAvailable();
+export const webSearchAvailable = () => googleSearchAvailable() || (tavilyAvailable() && aiAvailable());
 
 let client: GoogleGenAI | null = null;
 function getClient() {
@@ -105,7 +111,7 @@ async function withRetry<T>(fn: () => Promise<T>, onProgress: (m: string) => voi
  * Laisse Gemini chercher sur Google puis rédiger un dossier.
  * Renvoie le texte, les pages consultées et les requêtes Google effectuées.
  */
-export async function researchWithGoogle(opts: {
+async function geminiResearch(opts: {
   system: string;
   prompt: string;
   usage: Usage;
@@ -144,7 +150,7 @@ export async function researchWithGoogle(opts: {
 }
 
 /** Transforme un texte libre en JSON conforme au schéma (sortie structurée de Gemini, vérifiée par zod). */
-export async function structure<T extends z.ZodType>(
+async function geminiStructure<T extends z.ZodType>(
   schema: T,
   instructions: string,
   text: string,
@@ -174,7 +180,7 @@ export async function structure<T extends z.ZodType>(
 }
 
 /** Gemini sans recherche web : quand le quota de recherche Google est épuisé, il raisonne sur les données fournies. */
-export async function writeWithoutSearch(opts: { system: string; prompt: string; usage: Usage; onProgress: (message: string) => void }) {
+async function geminiWrite(opts: { system: string; prompt: string; usage: Usage; onProgress: (message: string) => void }) {
   const response = await withRetry(
     () => getClient().models.generateContent({ model: MODEL, contents: opts.prompt, config: { systemInstruction: opts.system } }),
     opts.onProgress,
@@ -183,4 +189,102 @@ export async function writeWithoutSearch(opts: { system: string; prompt: string;
   const text = response.text?.trim();
   if (!text) throw new AnalysisError("Aucun résultat exploitable n'a été trouvé.");
   return { text, consultedPages: [] as ConsultedPage[] };
+}
+
+// ——— Points d'entrée, avec bascule automatique sur les services de secours ———
+
+type WriteOpts = { system: string; prompt: string; usage: Usage; onProgress: (message: string) => void };
+
+const backupQuota = () => new AnalysisError("IA : quota gratuit atteint, y compris pour l'IA de secours. Réessayez plus tard.", "quota", true);
+const canFallBack = (e: unknown) => e instanceof AnalysisError && e.geminiUnavailable && groqAvailable();
+
+async function groqWrite(opts: WriteOpts) {
+  try {
+    const text = await groqChat(opts.system, opts.prompt, opts.onProgress);
+    opts.usage.geminiRequests++;
+    return { text, consultedPages: [] as ConsultedPage[] };
+  } catch (e) {
+    if (e instanceof BackupQuotaError) throw backupQuota();
+    throw e;
+  }
+}
+
+/** Rédaction sans recherche web : IA principale, sinon IA de secours. */
+export async function writeWithoutSearch(opts: WriteOpts) {
+  if (geminiAvailable()) {
+    try {
+      return await geminiWrite(opts);
+    } catch (e) {
+      if (!canFallBack(e)) throw e;
+      opts.onProgress("Bascule sur l'IA de secours…");
+    }
+  }
+  if (groqAvailable()) return groqWrite(opts);
+  throw backupQuota();
+}
+
+/**
+ * Recherche sur le web puis rédaction d'un dossier : recherche intégrée de l'IA principale,
+ * sinon recherche web de secours dont les résultats sont confiés à l'IA disponible.
+ */
+export async function researchWithGoogle(opts: WriteOpts & { queries?: string[] }) {
+  if (googleSearchAvailable()) {
+    try {
+      return await geminiResearch(opts);
+    } catch (e) {
+      const recoverable = e instanceof AnalysisError && (e.searchOnly || e.geminiUnavailable);
+      if (!recoverable || !tavilyAvailable() || !aiAvailable()) throw e;
+      opts.onProgress("Bascule sur la recherche web de secours…");
+    }
+  }
+  if (!tavilyAvailable() || !aiAvailable()) {
+    throw new AnalysisError("Recherche web indisponible pour le moment (quota atteint).", "quota", false, true);
+  }
+  const queries = opts.queries?.length ? opts.queries : [opts.prompt.replace(/\s+/g, " ").slice(0, 160)];
+  const { snippets, pages, searches } = await webSearch(queries.slice(0, 3), opts.onProgress);
+  opts.usage.webSearches += searches;
+  const written = await writeWithoutSearch({
+    ...opts,
+    system: `${opts.system}\n\nTu n'as pas d'accès direct au web : appuie-toi UNIQUEMENT sur les résultats de recherche fournis, cite leurs sources par leur nom, et n'invente rien.`,
+    prompt: `${opts.prompt}\n\nRésultats de recherche web :\n${snippets.join("\n") || "(aucun résultat)"}`,
+  });
+  return { text: written.text, consultedPages: pages };
+}
+
+/** Transforme un texte en JSON conforme au schéma : IA principale, sinon IA de secours (vérifié par zod). */
+export async function structure<T extends z.ZodType>(
+  schema: T,
+  instructions: string,
+  text: string,
+  usage: Usage,
+  onProgress: (message: string) => void,
+): Promise<z.infer<T>> {
+  if (geminiAvailable()) {
+    try {
+      return await geminiStructure(schema, instructions, text, usage, onProgress);
+    } catch (e) {
+      if (!canFallBack(e)) throw e;
+      onProgress("Bascule sur l'IA de secours…");
+    }
+  }
+  if (!groqAvailable()) throw backupQuota();
+  const { $schema: _ignored, ...jsonSchema } = z.toJSONSchema(schema, { target: "draft-7" });
+  const system = `${instructions}\n\nRéponds UNIQUEMENT avec un objet JSON valide conforme à ce schéma JSON (mêmes noms de champs, tous les champs obligatoires présents) :\n${JSON.stringify(jsonSchema)}`;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let raw: string;
+    try {
+      raw = await groqChat(system, text, onProgress, true);
+    } catch (e) {
+      if (e instanceof BackupQuotaError) throw backupQuota();
+      throw e;
+    }
+    usage.geminiRequests++;
+    try {
+      const parsed = schema.safeParse(JSON.parse(raw));
+      if (parsed.success) return parsed.data;
+    } catch {
+      // JSON invalide : nouvelle tentative.
+    }
+  }
+  throw new AnalysisError("Impossible de mettre en forme les résultats. Réessayez.");
 }

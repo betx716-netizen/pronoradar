@@ -1,7 +1,7 @@
 // « Coach de coupon » : Gemini relit le coupon proposé par le calcul, comme un parieur expérimenté,
 // et dit quelles sélections garder, lesquelles retirer et pourquoi.
 import { z } from "zod";
-import { AnalysisError, emptyUsage, geminiAvailable, structure, todayInParis } from "./gemini";
+import { AnalysisError, aiAvailable, emptyUsage, structure, todayInParis } from "./gemini";
 
 export type CoachStyle = "prudent" | "agressif";
 
@@ -70,7 +70,7 @@ ${STYLES[style]}
 Réponds en français, phrases courtes, sans jargon. Ne promets jamais de gain.`;
 
 export async function reviewCoupon(req: CoachRequest, onProgress: (m: string) => void): Promise<CoachReview> {
-  if (!geminiAvailable()) throw new AnalysisError("Gemini est indisponible (clé absente ou quota atteint). Réessayez plus tard.");
+  if (!aiAvailable()) throw new AnalysisError("Gemini est indisponible (clé absente ou quota atteint). Réessayez plus tard.");
   const total = req.legs.reduce((t, l) => t * l.odds, 1);
   const prob = req.legs.reduce((t, l) => t * (l.probability / 100), 1) * 100;
   const text = [

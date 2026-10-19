@@ -40,6 +40,8 @@ export function SettingsPanel({
       services?.apiFootball,
       "Modèle statistique, forme, blessés",
     ],
+    ["IA de secours", services?.backupAI, "Prend le relais quand le quota de l'IA principale est épuisé"],
+    ["Recherche web de secours", services?.backupSearch, "Prend le relais pour chercher les avis sur le web"],
   ];
 
   return (

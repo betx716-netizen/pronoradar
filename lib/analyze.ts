@@ -6,9 +6,9 @@ import { buildPicks } from "./markets";
 import {
   AnalysisError,
   emptyUsage,
-  geminiAvailable,
-  googleSearchAvailable,
-  hasGemini,
+  aiAvailable,
+  hasAI,
+  webSearchAvailable,
   researchWithGoogle,
   structure,
   todayInParis,
@@ -123,13 +123,13 @@ export async function analyzeMatch(req: AnalyzeRequest, onProgress: (message: st
   };
 
   // Sans Gemini (pas de clé, ou quota épuisé il y a peu) : analyse calculée à partir des seules données chiffrées.
-  if (!geminiAvailable()) {
-    if (hasData) return calculated(hasGemini() ? "Quota Gemini atteint récemment : analyse calculée sans IA." : undefined);
+  if (!aiAvailable()) {
+    if (hasData) return calculated(hasAI() ? "Quota Gemini atteint récemment : analyse calculée sans IA." : undefined);
     throw new AnalysisError(
-      hasGemini()
+      hasAI()
         ? "Gemini : quota gratuit atteint. Réessayez plus tard, ou choisissez un match trouvé à l'étape 1 (analyse calculée)."
         : "Sans clé Gemini, l'analyse repose sur les cotes et API-Football : choisissez un match trouvé à l'étape 1.",
-      hasGemini() ? "quota" : undefined,
+      hasAI() ? "quota" : undefined,
     );
   }
 
@@ -173,12 +173,18 @@ async function analyzeWithGemini(
     return writeWithoutSearch({ system: NO_SEARCH_SYSTEM, prompt, usage, onProgress });
   };
   let research: { text: string; consultedPages: AnalysisResult["consultedPages"] };
-  if (!googleSearchAvailable()) {
+  if (!webSearchAvailable()) {
     research = await withoutSearch("Quota de recherche Google atteint récemment.");
   } else {
     try {
       onProgress("Recherche des pronostics sur Google (Gemini)…");
-      research = await researchWithGoogle({ system: researchSystem(sourcesTarget), prompt, usage, onProgress });
+      research = await researchWithGoogle({
+        system: researchSystem(sourcesTarget),
+        prompt,
+        usage,
+        onProgress,
+        queries: [`${req.home} ${req.away} pronostic`, `${req.home} vs ${req.away} prediction`, `${req.home} ${req.away} blessés compositions`],
+      });
     } catch (e) {
       if (!(e instanceof AnalysisError && e.searchOnly)) throw e;
       research = await withoutSearch(e.message);

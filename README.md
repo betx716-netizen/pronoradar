@@ -9,6 +9,10 @@ L'IA recense les pronostics publiés pour des matchs de **football** et de **ten
 | [The Odds API](https://the-odds-api.com) | Matchs à venir et cotes de dizaines de bookmakers (une requête par championnat) | `ODDS_API_KEY` |
 | [API-Football](https://www.api-football.com) | Pronostic chiffré, forme, confrontations directes, blessés (football) | `API_FOOTBALL_KEY` |
 | [Google Gemini](https://aistudio.google.com/apikey) | Recherche Google des avis de pronostiqueurs et médias, synthèse et analyse | `GEMINI_API_KEY` |
+| [Groq](https://console.groq.com/keys) | IA de secours quand le quota Gemini est épuisé | `GROQ_API_KEY` |
+| [Tavily](https://app.tavily.com) | Recherche web de secours | `TAVILY_API_KEY` |
+
+Sans clé, le programme des matchs de football peut aussi venir de l'annuaire public d'ESPN (sans cotes) quand les autres sources sont épuisées.
 
 Une seule clé suffit : l'application utilise les services configurés. Sans Gemini, les analyses sont calculées à partir des cotes et des statistiques, sans avis de pronostiqueurs ni texte rédigé.
 

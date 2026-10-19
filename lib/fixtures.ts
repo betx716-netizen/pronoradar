@@ -1,5 +1,6 @@
 import { apiFootballRemaining, attachApiFootballIds, fetchApiFootballFixtures, hasApiFootball } from "./apifootball";
-import { emptyUsage, geminiAvailable, hasGemini, researchWithGoogle, structure, todayInParis } from "./gemini";
+import { aiAvailable, emptyUsage, hasAI, researchWithGoogle, structure, todayInParis } from "./gemini";
+import { espnCovers, fetchEspnFixtures } from "./espn";
 import { findLeague } from "./leagues";
 import { fetchOddsFixtures, hasOddsApi } from "./odds";
 import { FixturesSchema, type Fixture, type Sport } from "./schemas";
@@ -42,9 +43,22 @@ export async function findFixtures(sport: Sport, competition: string, onProgress
     usage.apiFootballRequestsRemaining = apiFootballRemaining();
   }
 
-  if (!fixtures && !geminiAvailable()) {
+  // Secours gratuit et sans quota : le programme seul, sans cotes.
+  if (!fixtures && sport === "football" && espnCovers(competition)) {
+    try {
+      const found = await fetchEspnFixtures(competition);
+      if (found.length || notes.length) {
+        fixtures = found;
+        if (notes.length) notes.push("Programme chargé depuis la source de secours : cotes indisponibles pour le moment.");
+      }
+    } catch (e) {
+      notes.push(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  if (!fixtures && !aiAvailable()) {
     notes.push(
-      hasGemini()
+      hasAI()
         ? "Gemini : quota gratuit atteint, impossible de chercher ce programme sur Google pour le moment."
         : sport === "tennis"
           ? "Le tennis nécessite la clé The Odds API ou la clé Gemini."
@@ -59,6 +73,7 @@ export async function findFixtures(sport: Sport, competition: string, onProgress
       const { text } = await researchWithGoogle({
         system: FIXTURES_SYSTEM,
         prompt: `Nous sommes le ${todayInParis()}. Sport : ${sport}. Compétition : ${competition}. Quels sont les prochains matchs ?`,
+        queries: [`${competition} programme prochains matchs`, `${competition} fixtures this week`],
         usage,
         onProgress,
       });
