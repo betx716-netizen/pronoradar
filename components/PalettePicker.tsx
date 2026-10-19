@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 
 // Palettes proposées : couleur d'en-tête et couleur d'accent (boutons, onglet actif…).
 export const PALETTES = [
-  { id: "", name: "Rouge vif", header: ["#b8000c", "#e10a17"], accent: "#e10a17" },
+  { id: "", name: "Ardoise & corail", header: ["#1e293b", "#334155"], accent: "#e2563f" },
   { id: "ardoise", name: "Ardoise & rouge doux", header: ["#1f2430", "#2d3340"], accent: "#d9464f" },
   { id: "nuit", name: "Bleu nuit", header: ["#0f1f3d", "#173468"], accent: "#2563eb" },
   { id: "emeraude", name: "Émeraude", header: ["#0b3b2e", "#0f5c43"], accent: "#059669" },
-  { id: "corail", name: "Ardoise & corail", header: ["#1e293b", "#334155"], accent: "#e2563f" },
+  { id: "rouge", name: "Rouge vif", header: ["#b8000c", "#e10a17"], accent: "#e10a17" },
   { id: "violet", name: "Violet premium", header: ["#1e1b4b", "#312e81"], accent: "#7c3aed" },
 ] as const;
 

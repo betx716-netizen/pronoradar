@@ -562,6 +562,9 @@ function App() {
     runJobs(toRun);
   }
 
+  // Analyses visibles : celles en cours et celles terminées depuis moins de 2 heures.
+  const visibleJobs = jobs.filter((j) => j.status !== "done" || !j.result || isRecent(j.result));
+
   const tabs: { id: Tab; label: string; icon: IconName; count?: number }[] = [
     {
       id: "matchs",
@@ -573,13 +576,12 @@ function App() {
       id: "analyses",
       label: "Analyses",
       icon: "analyses",
-      count: jobs.length || undefined,
+      count: visibleJobs.length || undefined,
     },
     {
       id: "coupon",
       label: "Coupon",
       icon: "coupon",
-      count: couponResults.length || undefined,
     },
     { id: "suivi", label: "Suivi", icon: "suivi" },
   ];
@@ -894,7 +896,7 @@ function App() {
           <section className="fade-in">
             <h1 className="mb-4 text-2xl font-bold tracking-tight">Analyses</h1>
             <ResultsGrid
-              jobs={jobs.filter((j) => j.status !== "done" || !j.result || isRecent(j.result))}
+              jobs={visibleJobs}
               running={running}
               onOpen={(j) => j.result && setDetail(j.result)}
               onStop={() => {
@@ -911,9 +913,20 @@ function App() {
             />
             {history.some((r) => !isRecent(r)) && (
               <div className="mt-10">
-                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-                  Historique
-                </h2>
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Historique</h2>
+                  <button
+                    onClick={() => {
+                      if (!confirm("Effacer tout l'historique des analyses ? Les coupons basés dessus seront aussi vidés.")) return;
+                      const keep = history.filter(isRecent);
+                      setHistory(keep);
+                      saveHistory(keep);
+                    }}
+                    className="text-xs font-semibold text-muted hover:text-danger"
+                  >
+                    Effacer l&apos;historique
+                  </button>
+                </div>
                 <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {history.filter((r) => !isRecent(r)).map((r) => (
                     <li key={r.createdAt + r.analysis.match.home}>

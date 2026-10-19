@@ -11,9 +11,9 @@
   --border: #e3e3e9;
   --text: #121216;
   --muted: #5d6270;
-  --accent: #e10a17;
-  --accent-strong: #b8000c;
-  --accent-soft: rgba(225, 10, 23, 0.08);
+  --accent: #e2563f;
+  --accent-strong: #c4442f;
+  --accent-soft: rgba(226, 86, 63, 0.1);
   --on-accent: #ffffff;
   --gold: #b45309;
   --gold-soft: rgba(217, 119, 6, 0.12);
@@ -25,8 +25,8 @@
   --warn-bg: #fff7e6;
   --warn-text: #92400e;
   --danger: #b91c1c;
-  --header-from: #b8000c;
-  --header-to: #e10a17;
+  --header-from: #1e293b;
+  --header-to: #334155;
 }
 
 /* Mode sombre rouge et noir : suit le réglage du téléphone, sauf choix manuel. */
@@ -40,9 +40,9 @@
   --border: #2c2c33;
   --text: #f4f4f6;
   --muted: #9a9ca6;
-  --accent: #ff2d3a;
-  --accent-strong: #c8000e;
-  --accent-soft: rgba(255, 45, 58, 0.14);
+  --accent: #f0705a;
+  --accent-strong: #e2563f;
+  --accent-soft: rgba(240, 112, 90, 0.16);
   --on-accent: #ffffff;
   --gold: #f5b544;
   --gold-soft: rgba(245, 181, 68, 0.14);
@@ -65,9 +65,9 @@
   --border: #2c2c33;
   --text: #f4f4f6;
   --muted: #9a9ca6;
-  --accent: #ff2d3a;
-  --accent-strong: #c8000e;
-  --accent-soft: rgba(255, 45, 58, 0.14);
+  --accent: #f0705a;
+  --accent-strong: #e2563f;
+  --accent-soft: rgba(240, 112, 90, 0.16);
   --on-accent: #ffffff;
   --gold: #f5b544;
   --gold-soft: rgba(245, 181, 68, 0.14);
@@ -111,7 +111,7 @@
 
 body {
   background:
-    radial-gradient(1000px 420px at 50% -220px, rgba(225, 10, 23, 0.07), transparent 70%),
+    radial-gradient(1000px 420px at 50% -220px, rgba(226, 86, 63, 0.06), transparent 70%),
     var(--bg);
   color: var(--text);
   overflow-x: clip;
@@ -262,7 +262,7 @@ h1 {
   .landing-float, .landing-tilt:hover { animation: none; transform: none; }
 }
 
-/* Palettes au choix (Paramètres → Couleurs). Le rouge d'origine reste celle par défaut. */
+/* Palettes au choix (Paramètres → Couleurs). Ardoise & corail est la palette par défaut. */
 :root[data-palette="ardoise"] {
   --accent: #d9464f;
   --accent-strong: #b8343c;
@@ -320,23 +320,23 @@ h1 {
     --accent-soft: rgba(16, 185, 129, 0.16);
   }
 }
-:root[data-palette="corail"] {
-  --accent: #e2563f;
-  --accent-strong: #c4442f;
-  --accent-soft: rgba(226, 86, 63, 0.1);
-  --header-from: #1e293b;
-  --header-to: #334155;
+:root[data-palette="rouge"] {
+  --accent: #e10a17;
+  --accent-strong: #b8000c;
+  --accent-soft: rgba(225, 10, 23, 0.08);
+  --header-from: #b8000c;
+  --header-to: #e10a17;
 }
-:root[data-palette="corail"][data-theme="dark"] {
-  --accent: #f0705a;
-  --accent-strong: #e2563f;
-  --accent-soft: rgba(240, 112, 90, 0.16);
+:root[data-palette="rouge"][data-theme="dark"] {
+  --accent: #ff2d3a;
+  --accent-strong: #c8000e;
+  --accent-soft: rgba(255, 45, 58, 0.14);
 }
 @media (prefers-color-scheme: dark) {
-  :root[data-palette="corail"]:not([data-theme="light"]) {
-    --accent: #f0705a;
-    --accent-strong: #e2563f;
-    --accent-soft: rgba(240, 112, 90, 0.16);
+  :root[data-palette="rouge"]:not([data-theme="light"]) {
+    --accent: #ff2d3a;
+    --accent-strong: #c8000e;
+    --accent-soft: rgba(255, 45, 58, 0.14);
   }
 }
 :root[data-palette="violet"] {

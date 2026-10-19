@@ -42,7 +42,7 @@ function MockCard({ className, home, away, score, pct, tone }: { className: stri
       <p className="text-[10px] font-semibold uppercase tracking-wider text-[#5d6270]">Analyse IA · confiance élevée</p>
       <div className="mt-1 flex items-center justify-between">
         <p className="font-display text-xl leading-none">{home}</p>
-        <p className="font-display text-2xl leading-none text-[#e10a17]">{score}</p>
+        <p className="font-display text-2xl leading-none text-[#e2563f]">{score}</p>
         <p className="font-display text-xl leading-none">{away}</p>
       </div>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e9e9ee]">
@@ -82,11 +82,11 @@ export function Landing({ onLogin }: { onLogin: () => void }) {
   }
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-[#0b0b0d] text-white">
+    <div className="min-h-screen overflow-x-clip bg-[#0f172a] text-white">
       {/* Bandeau */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 -skew-x-6 items-center justify-center rounded-lg bg-[#e10a17] font-display text-2xl">P</div>
+          <div className="flex h-10 w-10 -skew-x-6 items-center justify-center rounded-lg bg-[#e2563f] font-display text-2xl">P</div>
           <p className="font-display text-[1.7rem] leading-none tracking-wide">
             PRONO<span className="text-white/60">RADAR</span>
           </p>
@@ -98,7 +98,7 @@ export function Landing({ onLogin }: { onLogin: () => void }) {
 
       {/* Héros */}
       <section className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-6 lg:grid-cols-2 lg:pt-12">
-        <div className="pointer-events-none absolute -left-40 -top-20 h-96 w-96 rounded-full bg-[#e10a17]/25 blur-3xl" />
+        <div className="pointer-events-none absolute -left-40 -top-20 h-96 w-96 rounded-full bg-[#e2563f]/25 blur-3xl" />
         <div className="relative">
           <p className="mb-3 inline-block rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
             Pronostics · Analyse IA
@@ -106,13 +106,13 @@ export function Landing({ onLogin }: { onLogin: () => void }) {
           <h1 className="text-[3.2rem] leading-[0.9] sm:text-7xl">
             Pariez avec
             <br />
-            <span className="text-[#ff2d3a]">une longueur d&apos;avance.</span>
+            <span className="text-[#f0705a]">une longueur d&apos;avance.</span>
           </h1>
           <p className="mt-5 max-w-md text-lg text-white/70">
             L&apos;IA lit les pronostics du web, les compare aux cotes et aux statistiques, et vous propose des coupons fiables. Football et tennis.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <a href="#connexion" className="rounded-xl bg-[#e10a17] px-6 py-3 font-bold shadow-lg shadow-[#e10a17]/30 transition hover:bg-[#c8000e]">
+            <a href="#connexion" className="rounded-xl bg-[#e2563f] px-6 py-3 font-bold shadow-lg shadow-[#e2563f]/30 transition hover:bg-[#c4442f]">
               Accéder à l&apos;application
             </a>
             <a href="#fonctions" className="rounded-xl border border-white/20 px-6 py-3 font-semibold hover:border-white">
@@ -138,7 +138,7 @@ export function Landing({ onLogin }: { onLogin: () => void }) {
           </div>
           <MockCard className="left-0 top-4 [animation-delay:-2s]" home="PSG" away="OM" score="2-1" pct={64} tone="#15803d" />
           <MockCard className="bottom-6 right-0 [animation-delay:-4s]" home="Real" away="Barça" score="1-1" pct={38} tone="#b45309" />
-          <div className="landing-float absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-[#e10a17] px-5 py-3 text-center shadow-2xl">
+          <div className="landing-float absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-[#e2563f] px-5 py-3 text-center shadow-2xl">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-white/80">Coupon fiable</p>
             <p className="font-display text-4xl leading-none">cote 4,85</p>
           </div>
@@ -153,7 +153,7 @@ export function Landing({ onLogin }: { onLogin: () => void }) {
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
               <article key={f.title} className="landing-tilt rounded-2xl border border-[#e3e3e9] bg-white p-5 shadow-sm">
-                <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-[#e10a17]/10 text-[#e10a17]">
+                <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-[#e2563f]/10 text-[#e2563f]">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6" aria-hidden>
                     {f.icon}
                   </svg>
@@ -168,8 +168,8 @@ export function Landing({ onLogin }: { onLogin: () => void }) {
 
       {/* Connexion */}
       <section id="connexion" className="relative py-16">
-        <div className="pointer-events-none absolute right-0 top-0 h-80 w-80 rounded-full bg-[#e10a17]/20 blur-3xl" />
-        <form onSubmit={submit} className="relative mx-auto max-w-sm rounded-3xl border border-white/10 bg-[#141417] p-6 shadow-2xl">
+        <div className="pointer-events-none absolute right-0 top-0 h-80 w-80 rounded-full bg-[#e2563f]/20 blur-3xl" />
+        <form onSubmit={submit} className="relative mx-auto max-w-sm rounded-3xl border border-white/10 bg-[#1e293b] p-6 shadow-2xl">
           <h2 className="font-display text-4xl leading-none">Connexion</h2>
           <p className="mb-5 mt-1 text-sm text-white/60">Accès réservé.</p>
           <label className="mb-1 block text-sm font-semibold" htmlFor="login-user">
@@ -180,7 +180,7 @@ export function Landing({ onLogin }: { onLogin: () => void }) {
             autoComplete="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="mb-4 w-full rounded-xl border border-white/15 bg-white/5 px-3 py-3 outline-none focus:border-[#ff2d3a]"
+            className="mb-4 w-full rounded-xl border border-white/15 bg-white/5 px-3 py-3 outline-none focus:border-[#f0705a]"
           />
           <label className="mb-1 block text-sm font-semibold" htmlFor="login-pass">
             Mot de passe
@@ -191,10 +191,10 @@ export function Landing({ onLogin }: { onLogin: () => void }) {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mb-4 w-full rounded-xl border border-white/15 bg-white/5 px-3 py-3 outline-none focus:border-[#ff2d3a]"
+            className="mb-4 w-full rounded-xl border border-white/15 bg-white/5 px-3 py-3 outline-none focus:border-[#f0705a]"
           />
           {error && <p className="mb-3 text-sm text-[#f87171]">{error}</p>}
-          <button disabled={loading || !password} className="w-full rounded-xl bg-[#e10a17] py-3 font-bold transition hover:bg-[#c8000e] disabled:opacity-50">
+          <button disabled={loading || !password} className="w-full rounded-xl bg-[#e2563f] py-3 font-bold transition hover:bg-[#c4442f] disabled:opacity-50">
             {loading ? "Connexion…" : "Se connecter"}
           </button>
         </form>
