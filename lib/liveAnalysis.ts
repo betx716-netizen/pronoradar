@@ -28,18 +28,38 @@ export const LiveAnalysisSchema = z.object({
   no_more_goal: z.number().describe("Probabilité en % qu'il n'y ait plus de but"),
   expected_final_score: z.string().describe("Score final le plus probable, ex : '2-1'"),
   bets: z
-    .array(z.object({ bet: z.string(), probability: z.number(), reasoning: z.string() }))
-    .describe("2 à 4 paris en direct intéressants (résultat final, plus/moins de buts restants, prochain but…)"),
+    .array(
+      z.object({
+        bet: z.string().describe("Le pari en direct, précis"),
+        probability: z.number().describe("Probabilité en % qu'il passe"),
+        expected_odds: z.number().describe("Cote approximative attendue chez un bookmaker en ce moment"),
+        reasoning: z.string().describe("Pourquoi ce pari a de la valeur maintenant, chiffres du match à l'appui"),
+      }),
+    )
+    .describe("2 à 4 paris en direct RENTABLES, du meilleur au moins bon"),
   warning: z.string().describe("Ce qui pourrait tout changer (carton rouge, fatigue, changements…)"),
 });
 export type LiveAnalysis = z.infer<typeof LiveAnalysisSchema>;
 
-const SYSTEM = `Tu es un analyste de paris en direct, prudent et rigoureux. On te donne l'état d'un match de football EN COURS.
+const SYSTEM = `Tu es un parieur professionnel spécialiste du direct. On te donne l'état d'un match de football EN COURS.
+Ton seul objectif : trouver dans CE match un pari qui RAPPORTE, c'est-à-dire dont la probabilité réelle dépasse celle de la cote proposée.
+
+Interdits :
+- Ne propose JAMAIS ce qui est déjà quasiment acquis : la victoire de l'équipe qui mène largement, « plus de 0,5 but » quand il y a déjà des buts, la double chance de l'équipe qui mène… Leur cote est trop basse pour gagner de l'argent.
+- Aucun pari dont la cote attendue est inférieure à 1,60.
+
+Où chercher la valeur en direct :
+- Le marché réagit au score, pas au jeu : une équipe menée mais qui domine nettement (tirs, tirs cadrés, corners, possession) est souvent sous-cotée pour marquer le prochain but, égaliser ou faire match nul.
+- Un match à 0-0 très ouvert (beaucoup de tirs cadrés) : « plus de 1,5 but » ou « les deux équipes marquent » prennent de la valeur.
+- Un match fermé et peu de tirs : « moins de X buts » ou « pas de but supplémentaire ».
+- Carton rouge, fatigue, remplacements offensifs : en tenir compte.
+
+Pour chaque pari, donne la cote approximative attendue et explique avec les chiffres du match pourquoi il rapporte.
 - Pars du score et du temps restant : plus le match avance, plus le score actuel pèse. Une équipe menée de deux buts à la 80e gagne très rarement.
 - Sers-toi des statistiques (possession, tirs, tirs cadrés, corners) pour juger qui domine vraiment, pas seulement du score.
 - Tiens compte des cartons rouges et des faits marquants.
 - Les probabilités de résultat final font 100 au total ; celles du prochain but (domicile, extérieur, plus de but) aussi.
-- Propose des paris en direct qui ont de la valeur, avec leur probabilité. N'invente aucun fait absent des données.
+- N'invente aucun fait absent des données. Si aucun pari ne vaut le coup, dis-le dans le résumé et propose quand même le moins mauvais, en le signalant.
 Réponds en français, phrases courtes. Ne promets jamais de gain.`;
 
 export async function analyzeLive(req: LiveAnalysisRequest, onProgress: (m: string) => void): Promise<LiveAnalysis> {
@@ -71,8 +91,8 @@ export function demoLiveAnalysis(req: LiveAnalysisRequest): LiveAnalysis {
     no_more_goal: 20,
     expected_final_score: `${(req.homeScore ?? 0) + 1}-${req.awayScore ?? 0}`,
     bets: [
-      { bet: `Prochain but : ${req.home}`, probability: 52, reasoning: "Plus de tirs cadrés et pression constante (démo)." },
-      { bet: "Plus de 0,5 but restant", probability: 80, reasoning: "Rythme élevé des deux côtés (démo)." },
+      { bet: `Prochain but : ${req.home}`, probability: 52, expected_odds: 2.3, reasoning: "Plus de tirs cadrés et pression constante (démo)." },
+      { bet: "Les deux équipes marquent", probability: 45, expected_odds: 2.6, reasoning: "L'équipe menée se crée des occasions (démo)." },
     ],
     warning: "Un carton rouge ou une blessure changerait tout (démo).",
   };

@@ -121,17 +121,28 @@ export function LiveAnalysisSheet({ match, prior, onClose }: { match: LiveMatch;
                 ])}
               </div>
               <div>
-                <p className="mb-2 text-sm font-semibold">Paris en direct</p>
+                <p className="mb-2 text-sm font-semibold">Paris en direct qui peuvent rapporter</p>
                 <ul className="space-y-2">
-                  {result.bets.map((b) => (
-                    <li key={b.bet} className="rounded-xl bg-surface-2 p-3">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="break-words font-semibold">{b.bet}</span>
-                        <span className="shrink-0 font-bold tabular-nums text-accent">{Math.round(b.probability)} %</span>
-                      </div>
-                      <p className="mt-0.5 text-xs text-muted">{b.reasoning}</p>
-                    </li>
-                  ))}
+                  {result.bets
+                    .filter((b) => b.expected_odds >= 1.5)
+                    .map((b, i) => {
+                      // Cote à partir de laquelle le pari rapporte, d'après sa probabilité (avec une petite marge).
+                      const minOdds = Math.ceil((100 / Math.max(b.probability, 1)) * 1.05 * 100) / 100;
+                      const value = b.expected_odds >= minOdds;
+                      return (
+                        <li key={b.bet} className={`rounded-xl p-3 ${i === 0 ? "border-2 border-accent bg-accent-soft" : "bg-surface-2"}`}>
+                          {i === 0 && <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-accent">Meilleure option</p>}
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="break-words font-semibold">{b.bet}</span>
+                            <span className="shrink-0 font-display text-2xl leading-none tabular-nums text-accent">≈ {b.expected_odds.toFixed(2)}</span>
+                          </div>
+                          <p className="mt-1 text-xs text-muted">{b.reasoning}</p>
+                          <p className={`mt-1.5 text-xs font-semibold ${value ? "text-success" : "text-warn-text"}`}>
+                            {Math.round(b.probability)} % de chances · à jouer si la cote est d&apos;au moins {minOdds.toFixed(2)}
+                          </p>
+                        </li>
+                      );
+                    })}
                 </ul>
               </div>
               <p className="rounded-xl bg-warn-bg p-3 text-sm text-warn-text">{result.warning}</p>
