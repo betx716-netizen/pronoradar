@@ -3,7 +3,7 @@
 import { SOURCE_WEIGHTS, sourceDistribution, sourcePick, type Consensus, type Distribution } from "@/lib/consensus";
 import type { AnalysisResult, Outcome, Source, SourceType } from "@/lib/schemas";
 import { MarketsPanel } from "./MarketsPanel";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pitch } from "./Pitch";
 import { TeamLogo } from "./TeamLogo";
 
@@ -153,7 +153,10 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
   for (const o of consensus.outcomes) aiDist[o] = (aiRaw[o] / aiTotal) * 100;
   const totalSources = analysis.sources.length;
   const calc = result.engine === "calcul";
-  const lineups = analysis.lineups ?? null;
+  // Compositions officielles (publiées environ une heure avant le match) en priorité, sinon celles de l'analyse.
+  const [official, setOfficial] = useState<NonNullable<typeof analysis.lineups> | null>(null);
+  const [checking, setChecking] = useState(false);
+  const lineups = official ?? analysis.lineups ?? null;
 
   const [tab, setTab] = useState<Tab>("resume");
   const [side, setSide] = useState<"home" | "away">("home");
@@ -162,6 +165,27 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
     setSide(s);
     setTab("compos");
   };
+
+  useEffect(() => {
+    if (tab !== "compos" || sport !== "football" || official) return;
+    let alive = true;
+    const check = () => {
+      setChecking(true);
+      const q = new URLSearchParams({ competition: match.competition, home: match.home, away: match.away, date: match.date ?? "" });
+      fetch(`/api/lineups?${q}`)
+        .then((res) => res.json())
+        .then((d) => alive && d.lineups && setOfficial(d.lineups))
+        .catch(() => {})
+        .finally(() => alive && setChecking(false));
+    };
+    check();
+    // Tant que l'onglet est ouvert, on revérifie toutes les 5 minutes : l'officiel peut tomber à tout moment.
+    const t = setInterval(check, 5 * 60_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [tab, sport, official, match.competition, match.home, match.away, match.date]);
 
   const tabs: { id: Tab; label: string; hidden?: boolean }[] = [
     { id: "resume", label: "Résumé" },
@@ -384,7 +408,13 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
             <>
               <div className="flex items-baseline justify-between">
                 <p className="font-display text-3xl leading-none">{lineups[side].formation}</p>
-                <p className="text-xs text-muted">Composition probable, non officielle</p>
+                {lineups[side].status === "officielle" ? (
+                  <span className="rounded-full bg-success px-2.5 py-0.5 text-xs font-bold text-on-accent">✓ Composition officielle</span>
+                ) : (
+                  <span className="rounded-full bg-warn-bg px-2.5 py-0.5 text-xs font-semibold text-warn-text">
+                    Probable{lineups[side].source ? ` · ${lineups[side].source}` : ""}
+                  </span>
+                )}
               </div>
               <Pitch lineup={lineups[side]} team={side === "home" ? match.home : match.away} fallback={side === "home" ? "#1d4ed8" : "#c2410c"} />
               {lineups[side].doubts.length > 0 && (
@@ -396,7 +426,9 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
             </>
           ) : (
             <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted">
-              Composition probable non disponible pour cette analyse. Les analyses lancées à partir de maintenant la recherchent automatiquement ; relancez celle-ci pour l&apos;obtenir.
+              {checking
+                ? "Recherche de la composition officielle…"
+                : "Aucune composition publiée trouvée pour ce match. L'officielle s'affichera ici dès sa publication (environ une heure avant le coup d'envoi) : la page vérifie toutes les 5 minutes."}
             </div>
           )}
         </div>

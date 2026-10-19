@@ -92,6 +92,8 @@ export const LineupSchema = z.object({
     .nullable()
     .describe("Couleurs du maillot que l'équipe porte habituellement"),
   doubts: z.array(z.string()).describe("Joueurs incertains ou absents notables"),
+  status: z.enum(["officielle", "probable"]).describe("officielle si le onze de départ a été annoncé par le club, sinon probable"),
+  source: z.string().describe("Site où cette composition a été trouvée (ex : 'L'Équipe', 'site officiel du club'), jamais vide"),
 });
 export type Lineup = z.infer<typeof LineupSchema>;
 

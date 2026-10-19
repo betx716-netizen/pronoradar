@@ -30,7 +30,7 @@ const researchSystem = (sourcesTarget: string) => `Tu es un analyste sportif rig
 Règles de recherche :
 - Cherche des pronostiqueurs, des médias sportifs et des sites de prédictions chiffrées (Forebet, modèles xG…), en français et en anglais. Vise ${sourcesTarget} sources distinctes.
 - Pour chaque source, relève : son nom, l'issue qu'elle pronostique, ses probabilités en % s'il y en a, ses autres pronostics (score, buts, sets…) et son argument.
-- Recherche aussi le contexte : forme récente, blessés et suspendus, compositions probables (système de jeu et onze de départ de chaque équipe), enjeu du match. Au tennis : surface, classement, forme, fatigue.
+- Recherche aussi le contexte : forme récente, blessés et suspendus, compositions : cherche d'abord la composition OFFICIELLE (onze de départ annoncé par les clubs, environ une heure avant le match) ; si elle n'est pas encore publiée, reprends la composition probable publiée par un média fiable (L'Équipe, Foot Mercato, Sofascore, RotoWire, presse locale…) en notant sa source. N'invente JAMAIS une composition toi-même : si tu n'en trouves aucune publiée, dis-le. Cherche aussi l'enjeu du match. Au tennis : surface, classement, forme, fatigue.
 - Ne retiens que des pronostics qui concernent bien CE match à CETTE date.
 - N'invente jamais un pronostic ou une source. Si une information manque, dis-le.
 - Les cotes des bookmakers et les statistiques fournies dans la demande sont fiables : sers-t'en, inutile de les rechercher.
@@ -50,7 +50,7 @@ const STRUCTURE_SYSTEM = `Tu convertis un dossier d'analyse sportive en JSON. Re
 - Les probabilités sont en pourcentage (0 à 100).
 - Dans "sources", mets uniquement les sources trouvées sur le web (pas les cotes ni API-Football, déjà comptées). Leurs cotes sont à null. Si l'URL d'une source n'est pas connue, mets une chaîne vide.
 - Dans "markets", recopie les marchés secondaires du dossier (buts, les deux marquent, corners, fautes, cartons, mi-temps, mi-temps/fin, handicap, score exact, buts par équipe, combinés résultat + buts ou + les deux marquent, tirs cadrés, hors-jeu, sets, jeux, 1er set, handicap jeux, score en sets, tie-break), un pari par ligne avec la catégorie correspondante et sa fiabilité (fiable, moyenne ou fragile) avec sa probabilité.
-- Dans "lineups", recopie les compositions probables du dossier ; mets null si elles n'y sont pas ou au tennis. Le nombre de joueurs par ligne doit correspondre au système (4-3-3 : 4, 3, 3). Chaque joueur au format « numéro nom ». Dans "kit", les couleurs du maillot en hexadécimal (null si inconnues).
+- Dans "lineups", recopie les compositions du dossier avec leur statut (officielle ou probable) et leur source. Mets null si le dossier n'en cite aucune publiée par une source, ou au tennis : n'en reconstitue jamais une toi-même. Le nombre de joueurs par ligne doit correspondre au système (4-3-3 : 4, 3, 3). Chaque joueur au format « numéro nom ». Dans "kit", les couleurs du maillot en hexadécimal (null si inconnues).
 - Rédige tous les textes en français.`;
 
 // Utilisé quand la recherche Google n'est plus disponible : Gemini analyse sans pouvoir citer de pronostiqueurs.
@@ -59,7 +59,7 @@ Appuie-toi sur les données fournies (cotes, statistiques) et sur tes connaissan
 N'invente aucune source, aucun pronostiqueur, aucune blessure récente : la liste des sources doit rester vide.
 Rédige en français : contexte connu, ce que disent les cotes, puis TA propre analyse (probabilités en % pour chaque issue,
 issue la plus probable, score ou sets probables, confiance faible / moyenne / élevée, facteurs clés, risques).
-Précise que l'actualité récente (blessures, compositions) n'a pas pu être vérifiée.
+Précise que l'actualité récente (blessures, compositions) n'a pas pu être vérifiée. Ne donne AUCUNE composition d'équipe : sans accès au web, elle serait inventée.
 ${PHILOSOPHY}
 Donne aussi les marchés secondaires, chacun avec une probabilité en % et la moyenne attendue : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (ligne la plus pertinente entre 8,5 et 10,5), fautes (entre 20,5 et 24,5), cartons (3,5 ou 4,5). Ajoute aussi : résultat à la mi-temps, mi-temps/fin de match, handicap (-1 ou +1), les 2 ou 3 scores exacts les plus probables, le nombre de buts de chaque équipe, les combinés résultat + plus/moins 2,5 buts et résultat + les deux marquent, les tirs cadrés et les hors-jeu. Au tennis : nombre de sets et de jeux, vainqueur du 1er set, handicap jeux, score exact en sets et tie-break oui/non. Appuie-toi sur les moyennes de la saison des deux équipes (buts, corners, fautes, cartons), le style de jeu et l'arbitre si connu.`;
 
@@ -184,7 +184,7 @@ async function analyzeWithGemini(
         prompt,
         usage,
         onProgress,
-        queries: [`${req.home} ${req.away} pronostic`, `${req.home} vs ${req.away} prediction`, `${req.home} ${req.away} blessés compositions`],
+        queries: [`${req.home} ${req.away} pronostic`, `${req.home} vs ${req.away} prediction`, `${req.home} ${req.away} compositions officielles probables`],
       });
     } catch (e) {
       if (!(e instanceof AnalysisError && e.searchOnly)) throw e;

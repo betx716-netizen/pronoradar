@@ -69,6 +69,8 @@ export async function demoAnalysis(req: AnalyzeRequest, onProgress: (m: string) 
             goalkeeper: "1 Gardien Alpha",
             lines: [["3 Léo Martin", "4 Hugo Bernard", "5 Noah Petit", "2 Lucas Durand"], ["6 Adam Moreau", "8 Jules Simon", "10 Louis Michel"], ["11 Gabriel Laurent", "9 Arthur Lefebvre", "7 Raphaël Roux"]],
             kit: { shirt: "#c8102e", detail: "#ffffff" },
+            status: "probable" as const,
+            source: "Média sportif (démo)",
             doubts: ["Milieu 2 (incertain, démo)"],
           },
           away: {
@@ -77,6 +79,8 @@ export async function demoAnalysis(req: AnalyzeRequest, onProgress: (m: string) 
             lines: [["3 Tom Garcia", "4 Enzo David", "5 Nathan Bertrand", "2 Théo Robert"], ["11 Paul Richard", "6 Sacha Dubois", "8 Mathis Thomas", "7 Liam Fournier"], ["9 Ethan Girard", "10 Nolan Bonnet"]],
             kit: null,
             doubts: [],
+            status: "probable" as const,
+            source: "Média sportif (démo)",
           },
         },
     markets: tennis
