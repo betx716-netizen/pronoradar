@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CATEGORY_LABELS, PROFILES, buildCoupon, type RiskProfile } from "@/lib/coupon";
 import type { AnalysisResult, MarketCategory } from "@/lib/schemas";
+import { addBet } from "@/lib/history";
+import { kellyStake } from "@/lib/value";
 
 const FOOTBALL_CATEGORIES: MarketCategory[] = [
   "resultat", "double_chance", "rembourse", "mi_temps", "mi_temps_fin", "handicap", "buts", "buts_equipe", "les_deux_marquent",
@@ -16,6 +18,14 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
   const [size, setSize] = useState(4);
   const [categories, setCategories] = useState<MarketCategory[]>(DEFAULT_CATEGORIES);
   const [copied, setCopied] = useState(false);
+  const [bankroll, setBankroll] = useState(100);
+  useEffect(() => {
+    try {
+      const stored = Number(localStorage.getItem("pronoradar.bankroll"));
+      if (stored) setBankroll(stored);
+    } catch {}
+  }, []);
+  const [saved, setSaved] = useState(false);
 
   const available = results.some((r) => r.analysis.match.sport === "tennis")
     ? [...new Set([...FOOTBALL_CATEGORIES, ...TENNIS_CATEGORIES])]
@@ -24,6 +34,23 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
 
   const toggle = (c: MarketCategory) =>
     setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
+
+  const suggestedStake = kellyStake(bankroll, coupon.probability, coupon.totalOdds);
+  const [stakeInput, setStakeInput] = useState("");
+  const stake = stakeInput === "" ? suggestedStake : Number(stakeInput.replace(",", ".")) || 0;
+
+  function changeBankroll(v: number) {
+    setBankroll(v);
+    try {
+      localStorage.setItem("pronoradar.bankroll", String(v));
+    } catch {}
+  }
+
+  function save() {
+    addBet({ profile: PROFILES[profile].label, legs: coupon.legs, totalOdds: coupon.totalOdds, probability: coupon.probability, stake });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
 
   async function copy() {
     const text = [
@@ -51,7 +78,7 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
       <section className="space-y-5 rounded-2xl border border-border bg-surface p-5">
         <div>
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Profil de risque</h3>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {(Object.keys(PROFILES) as RiskProfile[]).map((p) => (
               <button
                 key={p}
@@ -170,6 +197,48 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
                 votre bookmaker avant de jouer.
               </p>
             )}
+          </div>
+        )}
+        {coupon.legs.length > 0 && (
+          <div className="mt-4 space-y-3 border-t border-dashed border-border pt-4">
+            {coupon.legs.length > 3 && (
+              <p className="rounded-lg bg-warn-bg p-2 text-xs text-warn-text">
+                Au-delà de 3 sélections, la probabilité de gain chute vite : chaque match ajouté multiplie le risque.
+              </p>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-xs text-muted">
+                Bankroll (€)
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  value={bankroll}
+                  onChange={(e) => changeBankroll(Number(e.target.value) || 0)}
+                  className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-text"
+                />
+              </label>
+              <label className="text-xs text-muted">
+                Mise (€)
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  value={stakeInput}
+                  placeholder={suggestedStake.toFixed(2)}
+                  onChange={(e) => setStakeInput(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-text"
+                />
+              </label>
+            </div>
+            <p className="text-xs text-muted">
+              {suggestedStake > 0
+                ? `Mise conseillée : ${suggestedStake.toFixed(2)} € (Kelly ¼, max 5 % de la bankroll).`
+                : "Mise conseillée : 0 € — d'après nos probabilités, ce coupon n'a pas d'avantage sur sa cote. Mieux vaut passer."}
+            </p>
+            <button onClick={save} className="w-full rounded-xl bg-accent py-2.5 font-semibold text-black hover:bg-accent-strong">
+              {saved ? "Enregistré dans le suivi ✓" : "J'ai joué ce coupon : l'enregistrer"}
+            </button>
           </div>
         )}
         <p className="mt-4 text-xs text-muted">Aide à la décision, aucun gain garanti. Jouez de façon responsable.</p>

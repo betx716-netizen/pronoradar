@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnalysisView } from "@/components/AnalysisView";
 import { CouponBuilder } from "@/components/CouponBuilder";
+import { BetTracker } from "@/components/BetTracker";
 import { ResultsGrid } from "@/components/ResultsGrid";
 import {
   QuotaError,
@@ -29,7 +30,7 @@ const DEFAULT_FAVORITES: Record<Sport, string[]> = {
   tennis: ["ATP", "WTA"],
 };
 
-type Tab = "matchs" | "analyses" | "coupon";
+type Tab = "matchs" | "analyses" | "coupon" | "suivi";
 type LeagueFixtures = { status: "loading" | "done" | "error"; fixtures: Fixture[]; error?: string; notes?: string[] };
 type Quotas = { odds: number | null; apiFootball: number | null };
 
@@ -316,6 +317,7 @@ export default function Home() {
     { id: "matchs", label: "Matchs", count: allFixtures.length || undefined },
     { id: "analyses", label: "Analyses", count: jobs.length || undefined },
     { id: "coupon", label: "Coupon", count: couponResults.length || undefined },
+    { id: "suivi", label: "Suivi" },
   ];
 
   return (
@@ -556,6 +558,14 @@ export default function Home() {
             <h1 className="text-2xl font-bold tracking-tight">Générateur de coupon</h1>
             <p className="mb-4 text-sm text-muted">Construit à partir de vos analyses des dernières {COUPON_HISTORY_HOURS} heures ({couponResults.length} matchs).</p>
             <CouponBuilder results={couponResults} />
+          </section>
+        )}
+
+        {tab === "suivi" && (
+          <section>
+            <h1 className="text-2xl font-bold tracking-tight">Suivi des paris</h1>
+            <p className="mb-4 text-sm text-muted">Vos coupons joués et leurs résultats, pour savoir si les analyses rapportent vraiment.</p>
+            <BetTracker />
           </section>
         )}
       </main>

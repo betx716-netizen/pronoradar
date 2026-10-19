@@ -2,6 +2,7 @@
 
 import { CATEGORY_LABELS } from "@/lib/coupon";
 import type { MarketCategory, MarketPick } from "@/lib/schemas";
+import { edge, isValueBet } from "@/lib/value";
 
 const ORDER: MarketCategory[] = [
   "resultat", "double_chance", "rembourse", "mi_temps", "mi_temps_fin", "handicap", "buts", "buts_equipe", "les_deux_marquent",
@@ -35,7 +36,12 @@ export function MarketsPanel({ picks }: { picks: MarketPick[] }) {
                 .map((p) => (
                   <li key={p.selection} title={p.reasoning || undefined}>
                     <div className="flex items-baseline justify-between gap-2 text-sm">
-                      <span className="min-w-0 truncate">{p.selection}</span>
+                      <span className="min-w-0 truncate">
+                        {p.selection}
+                        {isValueBet(p) && (
+                          <span className="ml-1.5 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold text-black">VALUE +{edge(p)!.toFixed(1)} %</span>
+                        )}
+                      </span>
                       <span className="shrink-0 tabular-nums">
                         <strong>{p.probability.toFixed(0)} %</strong>
                         <span className={`ml-2 rounded-md px-1.5 py-0.5 text-xs ${p.oddsSource === "bookmaker" ? "bg-accent-soft text-accent" : "bg-gold-soft text-gold"}`}>
@@ -54,7 +60,7 @@ export function MarketsPanel({ picks }: { picks: MarketPick[] }) {
         ))}
       </div>
       <p className="mt-3 text-xs text-muted">
-        Corners, fautes et cartons : estimations de l&apos;IA à partir des moyennes des équipes, aucun bookmaker gratuit ne les fournit.
+        ◆ : estimations de l&apos;IA, sans cote bookmaker gratuite. VALUE : notre probabilité dépasse celle de la cote moyenne des bookmakers ; comparez avec la cote de votre bookmaker, souvent un peu plus basse.
       </p>
     </section>
   );

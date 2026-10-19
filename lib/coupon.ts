@@ -1,10 +1,12 @@
 // Construit un coupon combiné à partir des matchs analysés : au plus une sélection par match,
 // choisie selon le profil de risque, puis classement des matchs pour garder les meilleures.
 import type { AnalysisResult, MarketCategory, MarketPick } from "./schemas";
+import { edge, isValueBet } from "./value";
 
-export type RiskProfile = "sur" | "equilibre" | "audacieux";
+export type RiskProfile = "value" | "sur" | "equilibre" | "audacieux";
 
 export const PROFILES: Record<RiskProfile, { label: string; description: string; minProbability: number }> = {
+  value: { label: "Value", description: "Uniquement les paris où notre probabilité bat la cote du bookmaker (avantage ≥ 3 %)", minProbability: 35 },
   sur: { label: "Sûr", description: "Sélections très probables, petite cote", minProbability: 70 },
   equilibre: { label: "Équilibré", description: "Bon compromis entre chance de gain et cote", minProbability: 58 },
   audacieux: { label: "Audacieux", description: "Cotes plus élevées, risque assumé", minProbability: 42 },
@@ -51,6 +53,7 @@ function score(pick: MarketPick, profile: RiskProfile) {
   // Une cote estimée n'est pas garantie chez le bookmaker : on la décote pour préférer les cotes réelles.
   const odds = pick.oddsSource === "bookmaker" ? pick.odds : 1 + (pick.odds - 1) * 0.85;
   const trust = pick.oddsSource === "bookmaker" ? 1.05 : 1;
+  if (profile === "value") return edge(pick) ?? -1;
   if (profile === "sur") return p * trust;
   if (profile === "equilibre") return p * Math.log(odds + 0.5) * trust;
   return p * odds * trust;
@@ -65,7 +68,7 @@ export function buildCoupon(
 
   for (const r of results) {
     const allowed = (r.picks ?? []).filter(
-      (p) => options.categories.includes(p.category) && p.probability >= minProbability && p.odds > 1.05,
+      (p) => options.categories.includes(p.category) && p.probability >= minProbability && p.odds > 1.05 && (options.profile !== "value" || isValueBet(p)),
     );
     if (allowed.length === 0) continue;
     const best = allowed.reduce((a, b) => (score(b, options.profile) > score(a, options.profile) ? b : a));
