@@ -35,13 +35,13 @@ export const MAX_LEAGUES = 5;
 export const MODES: Record<AnalysisMode, { label: string; description: string; apiFootballPerMatch: number; geminiPerMatch: number }> = {
   rapide: {
     label: "Rapide",
-    description: "cotes, pronostic API-Football, forme et avis trouvés sur Google",
+    description: "cotes, modèle statistique, forme et avis trouvés sur le web",
     apiFootballPerMatch: 1,
     geminiPerMatch: 2,
   },
   complete: {
     label: "Complète",
-    description: "en plus : blessés et suspendus, recherche Google plus large",
+    description: "en plus : blessés et suspendus, recherche web plus large",
     apiFootballPerMatch: 2,
     geminiPerMatch: 2,
   },

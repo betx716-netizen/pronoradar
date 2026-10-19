@@ -96,7 +96,7 @@ export async function analyzeMatch(req: AnalyzeRequest, onProgress: (message: st
 
   let insight: ApiFootballInsight | null = null;
   if (req.sport === "football" && req.apiFootballId && hasApiFootball()) {
-    onProgress("Statistiques API-Football…");
+    onProgress("Récupération des statistiques…");
     try {
       insight = await fetchInsight(req.apiFootballId, settings.injuries);
     } catch (e) {

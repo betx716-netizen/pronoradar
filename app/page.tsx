@@ -393,9 +393,9 @@ export default function Home() {
           <div className="mb-4 flex flex-wrap gap-2 text-xs">
             {(
               [
-                ["Gemini", services.gemini],
-                ["The Odds API", services.odds],
-                ["API-Football", services.apiFootball],
+                ["Analyse IA", services.gemini],
+                ["Cotes en direct", services.odds],
+                ["Statistiques", services.apiFootball],
               ] as const
             ).map(([label, on]) => (
               <span key={label} className={`rounded-full border px-2.5 py-1 ${on ? "border-accent/40 text-accent" : "border-border text-muted line-through"}`}>
@@ -551,7 +551,7 @@ export default function Home() {
                   <input className={inputClass} value={manual.away} onChange={(e) => setManual({ ...manual, away: e.target.value })} placeholder={sport === "tennis" ? "Joueur 2" : "Équipe à l'extérieur"} aria-label="Équipe ou joueur 2" />
                   <input className={inputClass} value={manual.competition} onChange={(e) => setManual({ ...manual, competition: e.target.value })} placeholder="Compétition (facultatif)" aria-label="Compétition" />
                   <input className={inputClass} value={manual.date} onChange={(e) => setManual({ ...manual, date: e.target.value })} placeholder="Date (facultatif)" aria-label="Date" />
-                  <p className="text-xs text-muted sm:col-span-2">{gemini ? "Analyse par Gemini, sans cotes de bookmakers." : "Nécessite la clé Gemini."}</p>
+                  <p className="text-xs text-muted sm:col-span-2">{gemini ? "Analyse par l'IA, sans cotes de bookmakers." : "Nécessite l'analyse IA, indisponible pour le moment."}</p>
                   <button disabled={running || manual.home.trim().length < 2 || manual.away.trim().length < 2} className="rounded-xl bg-accent py-2.5 font-semibold text-on-accent disabled:opacity-40 sm:col-span-2">
                     Analyser ce match
                   </button>

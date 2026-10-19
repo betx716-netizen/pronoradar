@@ -10,7 +10,7 @@ function denied(req: Request): Response | null {
   const expected = process.env.APP_PASSWORD;
   if (expected && req.headers.get("x-app-password") !== expected) return Response.json({ error: "Mot de passe incorrect." }, { status: 401 });
   const c = config();
-  if (!c.url || !c.key || !c.secret) return Response.json({ error: "Supabase n'est pas configuré." }, { status: 503 });
+  if (!c.url || !c.key || !c.secret) return Response.json({ error: "La sauvegarde en ligne n'est pas configurée." }, { status: 503 });
   return null;
 }
 
@@ -28,7 +28,7 @@ async function rpc(fn: string, args: Record<string, unknown>) {
 
 const fail = (err: unknown) => {
   console.error(err);
-  return Response.json({ error: "Impossible de joindre Supabase." }, { status: 502 });
+  return Response.json({ error: "Sauvegarde en ligne injoignable." }, { status: 502 });
 };
 
 export async function GET(req: Request) {

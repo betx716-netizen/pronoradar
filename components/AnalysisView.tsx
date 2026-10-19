@@ -160,7 +160,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
 
       {(calc || result.notice) && (
         <p className="rounded-lg bg-surface-2 px-4 py-2 text-sm text-muted">
-          {result.notice ?? "Analyse calculée sans IA (pas de clé Gemini) : elle repose uniquement sur les cotes et les statistiques."}
+          {result.notice ?? "Analyse calculée sans IA : elle repose uniquement sur les cotes et les statistiques."}
         </p>
       )}
 
@@ -335,8 +335,8 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
 
       <p className="text-xs text-muted">
         Analyse du {new Date(result.createdAt).toLocaleString("fr-FR")}
-        {usage.geminiRequests > 0 && ` · ${usage.geminiRequests} requêtes Gemini · ${usage.webSearches} recherches Google`}
-        {usage.apiFootballRequestsRemaining !== null && ` · ${usage.apiFootballRequestsRemaining} requêtes API-Football restantes aujourd'hui`}
+        {usage.geminiRequests > 0 && ` · ${usage.geminiRequests} requêtes IA · ${usage.webSearches} recherches web`}
+        {usage.apiFootballRequestsRemaining !== null && ` · ${usage.apiFootballRequestsRemaining} requêtes statistiques restantes aujourd'hui`}
         . Ces informations sont une aide à la réflexion, pas une garantie : aucun pronostic n'est sûr. Pariez de façon responsable.
       </p>
     </div>

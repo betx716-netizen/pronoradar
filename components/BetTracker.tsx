@@ -33,9 +33,9 @@ export function BetTracker() {
   };
   const syncNote = {
     loading: "Synchronisation…",
-    synced: "Historique sauvegardé dans Supabase, disponible sur tous vos appareils.",
-    local: "Supabase n'est pas configuré : l'historique est gardé dans ce navigateur uniquement.",
-    error: "Supabase injoignable : l'historique local est affiché, il sera envoyé à la prochaine synchronisation.",
+    synced: "Historique sauvegardé en ligne, disponible sur tous vos appareils.",
+    local: "Sauvegarde en ligne non configurée : l'historique est gardé dans ce navigateur uniquement.",
+    error: "Sauvegarde en ligne injoignable : l'historique local est affiché, il sera envoyé à la prochaine synchronisation.",
   }[sync];
 
   if (bets.length === 0) {

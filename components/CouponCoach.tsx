@@ -14,7 +14,7 @@ const VERDICTS: Record<CoachReview["verdict"], { label: string; className: strin
 
 const matchName = (r: AnalysisResult) => `${r.analysis.match.home} – ${r.analysis.match.away}`;
 
-/** Gemini relit le coupon proposé : verdict, maillon faible, sélections à garder ou retirer. */
+/** L'IA relit le coupon proposé : verdict, maillon faible, sélections à garder ou retirer. */
 export function CouponCoach({
   coupon,
   results,

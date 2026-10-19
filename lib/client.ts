@@ -1,6 +1,7 @@
 "use client";
 
 import type { StreamEvent } from "./schemas";
+import { maskProviders } from "./mask";
 
 export class UnauthorizedError extends Error {}
 export class QuotaError extends Error {}
@@ -41,7 +42,8 @@ export function setPassword(value: string) {
 
 export function loadHistory<T>(): T[] {
   try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]") as T[];
+    // Les analyses enregistrées avant le masquage des noms de services sont masquées à la lecture.
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]", (k, v) => (typeof v === "string" && k !== "url" ? maskProviders(v) : v)) as T[];
   } catch {
     return [];
   }

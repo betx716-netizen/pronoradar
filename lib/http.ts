@@ -3,6 +3,7 @@ import { ApiFootballError, hasApiFootball } from "./apifootball";
 import { AnalysisError, hasGemini } from "./gemini";
 import { OddsApiError, hasOddsApi } from "./odds";
 import type { ServicesStatus, StreamEvent } from "./schemas";
+import { maskProviders } from "./mask";
 
 export const isDemo = () => process.env.DEMO_MODE === "1";
 
@@ -19,7 +20,7 @@ export function guard(req: Request): Response | null {
   const s = servicesStatus();
   if (!s.demo && !s.gemini && !s.odds && !s.apiFootball) {
     return Response.json(
-      { error: "Aucune clé configurée : ajoutez GEMINI_API_KEY, ODDS_API_KEY ou API_FOOTBALL_KEY dans Vercel." },
+      { error: "Service non configuré : les clés d'accès manquent dans les réglages du serveur." },
       { status: 500 },
     );
   }
@@ -43,7 +44,9 @@ export function streamTask(task: (progress: (message: string) => void) => Promis
   const encoder = new TextEncoder();
   const body = new ReadableStream({
     async start(controller) {
-      const send = (e: StreamEvent) => controller.enqueue(encoder.encode(JSON.stringify(e) + "\n"));
+      // Tout ce qui part vers le navigateur passe par le masquage des noms de services (hors adresses web).
+      const send = (e: StreamEvent) =>
+        controller.enqueue(encoder.encode(JSON.stringify(e, (k, v) => (typeof v === "string" && k !== "url" ? maskProviders(v) : v)) + "\n"));
       try {
         const data = await task((message) => send({ type: "progress", message }));
         send({ type: "result", data });
