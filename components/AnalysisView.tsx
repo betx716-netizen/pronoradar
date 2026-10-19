@@ -1,10 +1,23 @@
 "use client";
 
-import { SOURCE_WEIGHTS, sourceDistribution, sourcePick, type Consensus, type Distribution } from "@/lib/consensus";
-import type { AnalysisResult, Outcome, Source, SourceType } from "@/lib/schemas";
+import {
+  SOURCE_WEIGHTS,
+  sourceDistribution,
+  sourcePick,
+  type Consensus,
+  type Distribution,
+} from "@/lib/consensus";
+import type {
+  AnalysisResult,
+  Outcome,
+  Source,
+  SourceType,
+} from "@/lib/schemas";
 import { MarketsPanel } from "./MarketsPanel";
 import { useEffect, useState } from "react";
 import { Pitch } from "./Pitch";
+import { LiveDot } from "./LiveBoard";
+import { findLive, useLiveScores } from "@/lib/live";
 import { TeamLogo } from "./TeamLogo";
 
 const TYPE_LABELS: Record<SourceType, string> = {
@@ -30,10 +43,24 @@ const OUTCOME_COLORS: Record<Outcome, string> = {
 
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
 
-function Card({ title, children, className = "" }: { title?: string; children: React.ReactNode; className?: string }) {
+function Card({
+  title,
+  children,
+  className = "",
+}: {
+  title?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <section className={`rounded-2xl border border-border bg-surface p-4 sm:p-5 ${className}`}>
-      {title && <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">{title}</h3>}
+    <section
+      className={`rounded-2xl border border-border bg-surface p-4 sm:p-5 ${className}`}
+    >
+      {title && (
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+          {title}
+        </h3>
+      )}
       {children}
     </section>
   );
@@ -62,25 +89,41 @@ function ProbBar({
         <>
           <div className="flex h-3 overflow-hidden rounded-full bg-surface-2">
             {outcomes.map((o) => (
-              <div key={o} className={OUTCOME_COLORS[o]} style={{ width: `${dist[o]}%` }} title={`${name(o)} : ${dist[o].toFixed(0)} %`} />
+              <div
+                key={o}
+                className={OUTCOME_COLORS[o]}
+                style={{ width: `${dist[o]}%` }}
+                title={`${name(o)} : ${dist[o].toFixed(0)} %`}
+              />
             ))}
           </div>
           <div className="mt-1 flex justify-between gap-2 text-xs tabular-nums text-muted">
             {outcomes.map((o) => (
               <span key={o}>
-                {name(o)} <strong className="text-text">{dist[o].toFixed(0)} %</strong>
+                {name(o)}{" "}
+                <strong className="text-text">{dist[o].toFixed(0)} %</strong>
               </span>
             ))}
           </div>
         </>
       ) : (
-        <p className="text-xs text-muted">Aucune donnée trouvée pour cette catégorie.</p>
+        <p className="text-xs text-muted">
+          Aucune donnée trouvée pour cette catégorie.
+        </p>
       )}
     </div>
   );
 }
 
-function SourceCard({ s, name, sport }: { s: Source; name: (o: Outcome) => string; sport: "football" | "tennis" }) {
+function SourceCard({
+  s,
+  name,
+  sport,
+}: {
+  s: Source;
+  name: (o: Outcome) => string;
+  sport: "football" | "tennis";
+}) {
   const pick = sourcePick(s, sport);
   const dist = sourceDistribution(s, sport);
   const hasOdds = s.odds_home != null && s.odds_away != null;
@@ -93,7 +136,12 @@ function SourceCard({ s, name, sport }: { s: Source; name: (o: Outcome) => strin
     <li className="rounded-lg border border-border p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         {host ? (
-          <a href={s.url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">
+          <a
+            href={s.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-accent hover:underline"
+          >
             {s.name}
           </a>
         ) : (
@@ -104,13 +152,17 @@ function SourceCard({ s, name, sport }: { s: Source; name: (o: Outcome) => strin
         </span>
       </div>
       {(host || s.published) && (
-        <p className="mt-0.5 truncate text-xs text-muted">{[host, s.published].filter(Boolean).join(" · ")}</p>
+        <p className="mt-0.5 truncate text-xs text-muted">
+          {[host, s.published].filter(Boolean).join(" · ")}
+        </p>
       )}
       <p className="mt-2 text-sm">
         Pronostic :{" "}
         {pick ? (
           <strong className="inline-flex items-center gap-1.5">
-            <span className={`inline-block h-2.5 w-2.5 rounded-full ${OUTCOME_COLORS[pick]}`} />
+            <span
+              className={`inline-block h-2.5 w-2.5 rounded-full ${OUTCOME_COLORS[pick]}`}
+            />
             {name(pick)}
           </strong>
         ) : (
@@ -120,8 +172,13 @@ function SourceCard({ s, name, sport }: { s: Source; name: (o: Outcome) => strin
           <span className="ml-2 text-xs tabular-nums text-muted">
             ({hasOdds ? "cotes " : ""}
             {hasOdds
-              ? [s.odds_home, s.odds_draw, s.odds_away].filter((v) => v != null).join(" / ")
-              : [s.prob_home, s.prob_draw, s.prob_away].filter((v) => v != null).map((v) => `${v} %`).join(" / ")}
+              ? [s.odds_home, s.odds_draw, s.odds_away]
+                  .filter((v) => v != null)
+                  .join(" / ")
+              : [s.prob_home, s.prob_draw, s.prob_away]
+                  .filter((v) => v != null)
+                  .map((v) => `${v} %`)
+                  .join(" / ")}
             )
           </span>
         )}
@@ -130,7 +187,10 @@ function SourceCard({ s, name, sport }: { s: Source; name: (o: Outcome) => strin
       {s.other_tips.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {s.other_tips.map((t) => (
-            <span key={t} className="rounded-md bg-surface-2 px-2 py-0.5 text-xs">
+            <span
+              key={t}
+              className="rounded-md bg-surface-2 px-2 py-0.5 text-xs"
+            >
               {t}
             </span>
           ))}
@@ -146,19 +206,33 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
   const { analysis, consensus, usage, consultedPages } = result;
   const { match, ai_analysis: ai, context } = analysis;
   const sport = match.sport;
-  const name = (o: Outcome) => (o === "home" ? match.home : o === "away" ? match.away : "Nul");
-  const aiRaw: Distribution = { home: ai.prob_home, draw: ai.prob_draw, away: ai.prob_away };
+  const name = (o: Outcome) =>
+    o === "home" ? match.home : o === "away" ? match.away : "Nul";
+  const aiRaw: Distribution = {
+    home: ai.prob_home,
+    draw: ai.prob_draw,
+    away: ai.prob_away,
+  };
   const aiTotal = consensus.outcomes.reduce((s, o) => s + aiRaw[o], 0) || 1;
   const aiDist: Distribution = { home: 0, draw: 0, away: 0 };
   for (const o of consensus.outcomes) aiDist[o] = (aiRaw[o] / aiTotal) * 100;
   const totalSources = analysis.sources.length;
   const calc = result.engine === "calcul";
   // Compositions officielles (publiées environ une heure avant le match) en priorité, sinon celles de l'analyse.
-  const [official, setOfficial] = useState<NonNullable<typeof analysis.lineups> | null>(null);
+  const [official, setOfficial] = useState<NonNullable<
+    typeof analysis.lineups
+  > | null>(null);
   const [checking, setChecking] = useState(false);
   const lineups = official ?? analysis.lineups ?? null;
 
   const [tab, setTab] = useState<Tab>("resume");
+  // Score en direct si le match a commencé (football).
+  const live = findLive(
+    useLiveScores(sport === "football" ? [match.competition] : []).matches,
+    match.home,
+    match.away,
+  );
+  const playing = live && live.state !== "pre" ? live : null;
   const [side, setSide] = useState<"home" | "away">("home");
   // Toucher une équipe ouvre sa composition probable.
   const openTeam = (s: "home" | "away") => {
@@ -171,7 +245,12 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
     let alive = true;
     const check = () => {
       setChecking(true);
-      const q = new URLSearchParams({ competition: match.competition, home: match.home, away: match.away, date: match.date ?? "" });
+      const q = new URLSearchParams({
+        competition: match.competition,
+        home: match.home,
+        away: match.away,
+        date: match.date ?? "",
+      });
       fetch(`/api/lineups?${q}`)
         .then((res) => res.json())
         .then((d) => alive && d.lineups && setOfficial(d.lineups))
@@ -185,7 +264,15 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
       alive = false;
       clearInterval(t);
     };
-  }, [tab, sport, official, match.competition, match.home, match.away, match.date]);
+  }, [
+    tab,
+    sport,
+    official,
+    match.competition,
+    match.home,
+    match.away,
+    match.date,
+  ]);
 
   const tabs: { id: Tab; label: string; hidden?: boolean }[] = [
     { id: "resume", label: "Résumé" },
@@ -201,21 +288,35 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
       title="Voir la composition probable"
     >
       <span className="rounded-full bg-white p-1.5 shadow">
-        <TeamLogo name={s === "home" ? match.home : match.away} sport={sport} size={44} />
+        <TeamLogo
+          name={s === "home" ? match.home : match.away}
+          sport={sport}
+          size={44}
+        />
       </span>
-      <span className="line-clamp-2 font-display text-xl leading-none sm:text-2xl">{s === "home" ? match.home : match.away}</span>
-      {sport === "football" && <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60 group-hover:text-white">Voir la compo</span>}
+      <span className="line-clamp-2 font-display text-xl leading-none sm:text-2xl">
+        {s === "home" ? match.home : match.away}
+      </span>
+      {sport === "football" && (
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60 group-hover:text-white">
+          Voir la compo
+        </span>
+      )}
     </button>
   );
 
   return (
     <div className="space-y-4">
       {result.demo && (
-        <p className="rounded-lg bg-warn-bg px-4 py-2 text-sm text-warn-text">Mode démonstration : les sources et les chiffres ci-dessous sont fictifs.</p>
+        <p className="rounded-lg bg-warn-bg px-4 py-2 text-sm text-warn-text">
+          Mode démonstration : les sources et les chiffres ci-dessous sont
+          fictifs.
+        </p>
       )}
       {(calc || result.notice) && (
         <p className="rounded-lg bg-surface-2 px-4 py-2 text-sm text-muted">
-          {result.notice ?? "Analyse calculée sans IA : elle repose uniquement sur les cotes et les statistiques."}
+          {result.notice ??
+            "Analyse calculée sans IA : elle repose uniquement sur les cotes et les statistiques."}
         </p>
       )}
 
@@ -229,9 +330,41 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
         <div className="flex items-center gap-2 px-3 py-4">
           {team("home")}
           <div className="shrink-0 text-center">
-            <p className="text-[10px] uppercase tracking-wider text-white/60">{calc ? "Pronostic" : sport === "tennis" ? "Sets probables" : "Score probable"}</p>
-            <p className="font-display text-4xl leading-none tabular-nums sm:text-5xl">{calc ? name(ai.predicted_outcome) : ai.score_prediction}</p>
-            <span className="mt-2 inline-block rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold">Confiance {ai.confidence}</span>
+            {playing ? (
+              <>
+                <p
+                  className={`flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-wider ${playing.state === "in" ? "text-[#f87171]" : "text-white/60"}`}
+                >
+                  {playing.state === "in" && <LiveDot />}
+                  {playing.state === "in"
+                    ? `En direct · ${playing.clock}`
+                    : "Terminé"}
+                </p>
+                <p className="font-display text-5xl leading-none tabular-nums">
+                  {playing.homeScore}-{playing.awayScore}
+                </p>
+                <p className="mt-1 text-[11px] text-white/60">
+                  Prédit :{" "}
+                  {calc ? name(ai.predicted_outcome) : ai.score_prediction}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-[10px] uppercase tracking-wider text-white/60">
+                  {calc
+                    ? "Pronostic"
+                    : sport === "tennis"
+                      ? "Sets probables"
+                      : "Score probable"}
+                </p>
+                <p className="font-display text-4xl leading-none tabular-nums sm:text-5xl">
+                  {calc ? name(ai.predicted_outcome) : ai.score_prediction}
+                </p>
+              </>
+            )}
+            <span className="mt-2 inline-block rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold">
+              Confiance {ai.confidence}
+            </span>
           </div>
           {team("away")}
         </div>
@@ -239,13 +372,18 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
         <div className="px-4 pb-4">
           <div className="flex h-2.5 overflow-hidden rounded-full bg-white/10">
             {consensus.outcomes.map((o) => (
-              <div key={o} className={OUTCOME_COLORS[o]} style={{ width: `${aiDist[o]}%` }} />
+              <div
+                key={o}
+                className={OUTCOME_COLORS[o]}
+                style={{ width: `${aiDist[o]}%` }}
+              />
             ))}
           </div>
           <div className="mt-1.5 flex justify-between text-xs tabular-nums text-white/80">
             {consensus.outcomes.map((o) => (
               <span key={o}>
-                {o === "draw" ? "Nul" : o === "home" ? "1" : "2"} <strong className="text-white">{aiDist[o].toFixed(0)} %</strong>
+                {o === "draw" ? "Nul" : o === "home" ? "1" : "2"}{" "}
+                <strong className="text-white">{aiDist[o].toFixed(0)} %</strong>
               </span>
             ))}
           </div>
@@ -271,28 +409,50 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
         <div className="fade-in space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl border-l-4 border-home bg-surface p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Les pronostiqueurs</p>
-              <p className="mt-1 font-display text-2xl leading-none">{consensus.pick ? name(consensus.pick) : "—"}</p>
-              <p className="mt-1 text-xs text-muted">
-                {consensus.pick ? `${consensus.agreement.toFixed(0)} % des votes · ${plural(totalSources, "source")}` : "Pas assez de pronostics"}
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Les pronostiqueurs
               </p>
-              <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${LEVEL_STYLES[consensus.level]}`}>Consensus {consensus.level}</span>
+              <p className="mt-1 font-display text-2xl leading-none">
+                {consensus.pick ? name(consensus.pick) : "—"}
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                {consensus.pick
+                  ? `${consensus.agreement.toFixed(0)} % des votes · ${plural(totalSources, "source")}`
+                  : "Pas assez de pronostics"}
+              </p>
+              <span
+                className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${LEVEL_STYLES[consensus.level]}`}
+              >
+                Consensus {consensus.level}
+              </span>
             </div>
             <div className="rounded-2xl border-l-4 border-accent bg-surface p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">{calc ? "Le calcul" : "L'IA"}</p>
-              <p className="mt-1 font-display text-2xl leading-none">{name(ai.predicted_outcome)}</p>
-              <p className="mt-1 text-xs text-muted">Confiance {ai.confidence}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                {calc ? "Le calcul" : "L'IA"}
+              </p>
+              <p className="mt-1 font-display text-2xl leading-none">
+                {name(ai.predicted_outcome)}
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Confiance {ai.confidence}
+              </p>
             </div>
           </div>
 
           <Card title={calc ? "Synthèse" : "L'avis de l'IA"}>
             <p className="leading-relaxed">{ai.summary}</p>
-            {ai.consensus_comment && <p className="mt-3 rounded-xl bg-surface-2 p-3 text-sm leading-relaxed text-muted">{ai.consensus_comment}</p>}
+            {ai.consensus_comment && (
+              <p className="mt-3 rounded-xl bg-surface-2 p-3 text-sm leading-relaxed text-muted">
+                {ai.consensus_comment}
+              </p>
+            )}
           </Card>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <section className="rounded-2xl border border-success/30 bg-success-soft p-4">
-              <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-success">Points forts</h3>
+              <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-success">
+                Points forts
+              </h3>
               <ul className="space-y-1.5 text-sm">
                 {ai.key_factors.map((f) => (
                   <li key={f} className="flex gap-2">
@@ -303,7 +463,9 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
               </ul>
             </section>
             <section className="rounded-2xl border border-danger/30 bg-accent-soft p-4">
-              <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-danger">Ce qui peut tout changer</h3>
+              <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-danger">
+                Ce qui peut tout changer
+              </h3>
               <ul className="space-y-1.5 text-sm">
                 {ai.risks.map((r) => (
                   <li key={r} className="flex gap-2">
@@ -317,7 +479,9 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
 
           {consensus.divergences.length > 0 && (
             <section className="rounded-2xl bg-warn-bg p-4 text-warn-text">
-              <h3 className="mb-2 text-sm font-bold uppercase tracking-wide">Points de désaccord</h3>
+              <h3 className="mb-2 text-sm font-bold uppercase tracking-wide">
+                Points de désaccord
+              </h3>
               <ul className="list-disc space-y-1 pl-5 text-sm">
                 {consensus.divergences.map((d) => (
                   <li key={d}>{d}</li>
@@ -347,7 +511,10 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
                 <dd className="mt-1 flex flex-wrap gap-1.5">
                   {context.absences.length ? (
                     context.absences.map((a) => (
-                      <span key={a} className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs text-danger">
+                      <span
+                        key={a}
+                        className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs text-danger"
+                      >
                         {a}
                       </span>
                     ))
@@ -367,17 +534,44 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
           </Card>
 
           <Card title="Comparaison des probabilités">
-            <ProbBar label="Bookmakers" hint={`marge retirée · ${plural(consensus.counts.bookmaker + consensus.counts.exchange, "source")}`} dist={consensus.market} outcomes={consensus.outcomes} name={name} />
-            <ProbBar label="Modèles statistiques" hint={plural(consensus.counts.stats_model, "source")} dist={consensus.models} outcomes={consensus.outcomes} name={name} />
-            <ProbBar label="Vote de toutes les sources" hint="pondéré : cotes ×3, modèles ×2, avis ×1" dist={consensus.pick ? consensus.votes : null} outcomes={consensus.outcomes} name={name} />
-            <ProbBar label={calc ? "Calcul automatique" : "Analyse de l'IA"} hint={calc ? "cotes 60 % + modèle 40 %" : undefined} dist={aiDist} outcomes={consensus.outcomes} name={name} />
+            <ProbBar
+              label="Bookmakers"
+              hint={`marge retirée · ${plural(consensus.counts.bookmaker + consensus.counts.exchange, "source")}`}
+              dist={consensus.market}
+              outcomes={consensus.outcomes}
+              name={name}
+            />
+            <ProbBar
+              label="Modèles statistiques"
+              hint={plural(consensus.counts.stats_model, "source")}
+              dist={consensus.models}
+              outcomes={consensus.outcomes}
+              name={name}
+            />
+            <ProbBar
+              label="Vote de toutes les sources"
+              hint="pondéré : cotes ×3, modèles ×2, avis ×1"
+              dist={consensus.pick ? consensus.votes : null}
+              outcomes={consensus.outcomes}
+              name={name}
+            />
+            <ProbBar
+              label={calc ? "Calcul automatique" : "Analyse de l'IA"}
+              hint={calc ? "cotes 60 % + modèle 40 %" : undefined}
+              dist={aiDist}
+              outcomes={consensus.outcomes}
+              name={name}
+            />
           </Card>
 
           {analysis.secondary_trends.length > 0 && (
             <Card title="Tendances des pronostiqueurs">
               <ul className="space-y-1.5">
                 {analysis.secondary_trends.map((t) => (
-                  <li key={t.market} className="flex flex-wrap justify-between gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm">
+                  <li
+                    key={t.market}
+                    className="flex flex-wrap justify-between gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm"
+                  >
                     <span className="font-medium">{t.market}</span>
                     <span className="text-muted">{t.verdict}</span>
                   </li>
@@ -396,27 +590,46 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
                 key={s}
                 onClick={() => setSide(s)}
                 className={`flex items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-semibold transition ${
-                  side === s ? (s === "home" ? "bg-home text-white" : "bg-away text-white") : "text-muted"
+                  side === s
+                    ? s === "home"
+                      ? "bg-home text-white"
+                      : "bg-away text-white"
+                    : "text-muted"
                 }`}
               >
-                <TeamLogo name={s === "home" ? match.home : match.away} sport={sport} size={20} />
-                <span className="truncate">{s === "home" ? match.home : match.away}</span>
+                <TeamLogo
+                  name={s === "home" ? match.home : match.away}
+                  sport={sport}
+                  size={20}
+                />
+                <span className="truncate">
+                  {s === "home" ? match.home : match.away}
+                </span>
               </button>
             ))}
           </div>
           {lineups ? (
             <>
               <div className="flex items-baseline justify-between">
-                <p className="font-display text-3xl leading-none">{lineups[side].formation}</p>
+                <p className="font-display text-3xl leading-none">
+                  {lineups[side].formation}
+                </p>
                 {lineups[side].status === "officielle" ? (
-                  <span className="rounded-full bg-success px-2.5 py-0.5 text-xs font-bold text-on-accent">✓ Composition officielle</span>
+                  <span className="rounded-full bg-success px-2.5 py-0.5 text-xs font-bold text-on-accent">
+                    ✓ Composition officielle
+                  </span>
                 ) : (
                   <span className="rounded-full bg-warn-bg px-2.5 py-0.5 text-xs font-semibold text-warn-text">
-                    Probable{lineups[side].source ? ` · ${lineups[side].source}` : ""}
+                    Probable
+                    {lineups[side].source ? ` · ${lineups[side].source}` : ""}
                   </span>
                 )}
               </div>
-              <Pitch lineup={lineups[side]} team={side === "home" ? match.home : match.away} fallback={side === "home" ? "#1d4ed8" : "#c2410c"} />
+              <Pitch
+                lineup={lineups[side]}
+                team={side === "home" ? match.home : match.away}
+                fallback={side === "home" ? "#1d4ed8" : "#c2410c"}
+              />
               {lineups[side].doubts.length > 0 && (
                 <p className="rounded-xl bg-warn-bg p-3 text-sm text-warn-text">
                   <strong>Incertains : </strong>
@@ -444,18 +657,30 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
         <div className="fade-in space-y-4">
           <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {analysis.sources.map((s, i) => (
-              <SourceCard key={`${s.url}-${i}`} s={s} name={name} sport={sport} />
+              <SourceCard
+                key={`${s.url}-${i}`}
+                s={s}
+                name={name}
+                sport={sport}
+              />
             ))}
           </ul>
           {consultedPages.length > 0 && (
             <details className="rounded-2xl border border-border bg-surface p-4">
               <summary className="cursor-pointer text-sm font-semibold text-muted">
-                {consultedPages.length} page{consultedPages.length > 1 ? "s" : ""} consultée{consultedPages.length > 1 ? "s" : ""}
+                {consultedPages.length} page
+                {consultedPages.length > 1 ? "s" : ""} consultée
+                {consultedPages.length > 1 ? "s" : ""}
               </summary>
               <ul className="mt-3 space-y-1 text-sm">
                 {consultedPages.map((p) => (
                   <li key={p.url} className="truncate">
-                    <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                    <a
+                      href={p.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent hover:underline"
+                    >
                       {p.title || p.url}
                     </a>
                   </li>
@@ -468,8 +693,10 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
 
       <p className="text-xs text-muted">
         Analyse du {new Date(result.createdAt).toLocaleString("fr-FR")}
-        {usage.geminiRequests > 0 && ` · ${usage.geminiRequests} requêtes IA · ${usage.webSearches} recherches web`}
-        . Aide à la réflexion, pas une garantie : aucun pronostic n&apos;est sûr. Pariez de façon responsable.
+        {usage.geminiRequests > 0 &&
+          ` · ${usage.geminiRequests} requêtes IA · ${usage.webSearches} recherches web`}
+        . Aide à la réflexion, pas une garantie : aucun pronostic n&apos;est
+        sûr. Pariez de façon responsable.
       </p>
     </div>
   );

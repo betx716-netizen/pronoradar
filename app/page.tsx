@@ -16,6 +16,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ScrollRow } from "@/components/ScrollRow";
 import { Landing } from "@/components/Landing";
+import { LiveBoard, LiveDot } from "@/components/LiveBoard";
+import { findLive, useLiveScores, type LiveMatch } from "@/lib/live";
 import { isValueBet } from "@/lib/value";
 import {
   QuotaError,
@@ -45,8 +47,13 @@ const COUPON_HISTORY_HOURS = 7 * 24;
 // Sans date connue, elle reste 2 jours.
 function matchOver(r: AnalysisResult, now: number) {
   const date = r.analysis.match.date;
-  const end = date && /^\d{4}-\d{2}-\d{2}/.test(date) ? new Date(`${date.slice(0, 10)}T23:59:59+02:00`).getTime() : NaN;
-  return Number.isFinite(end) ? now > end : now - new Date(r.createdAt).getTime() > 2 * 86400_000;
+  const end =
+    date && /^\d{4}-\d{2}-\d{2}/.test(date)
+      ? new Date(`${date.slice(0, 10)}T23:59:59+02:00`).getTime()
+      : NaN;
+  return Number.isFinite(end)
+    ? now > end
+    : now - new Date(r.createdAt).getTime() > 2 * 86400_000;
 }
 
 // Championnats chargés à la première visite, avant que l'utilisateur ait choisi les siens.
@@ -55,7 +62,7 @@ const DEFAULT_FAVORITES: Record<Sport, string[]> = {
   tennis: ["ATP", "WTA"],
 };
 
-type Tab = "matchs" | "analyses" | "coupon" | "suivi";
+type Tab = "matchs" | "direct" | "analyses" | "coupon" | "suivi";
 type LeagueFixtures = {
   status: "loading" | "done" | "error";
   fixtures: Fixture[];
@@ -110,10 +117,12 @@ function MatchCard({
   f,
   checked,
   onToggle,
+  live,
 }: {
   f: Fixture;
   checked: boolean;
   onToggle: () => void;
+  live?: LiveMatch | null;
 }) {
   const pct = impliedPercents(f);
   const tennis = f.odds ? f.odds.draw === null : false;
@@ -154,6 +163,21 @@ function MatchCard({
             {checked ? "✓ À analyser" : "＋ Analyser"}
           </button>
         </div>
+        {live && live.state !== "pre" && (
+          <div
+            className={`mt-3 flex items-center justify-between rounded-xl px-3 py-2 ${live.state === "in" ? "bg-accent-soft" : "bg-surface-2"}`}
+          >
+            <span
+              className={`flex items-center gap-1.5 text-xs font-bold ${live.state === "in" ? "text-danger" : "text-muted"}`}
+            >
+              {live.state === "in" && <LiveDot />}
+              {live.state === "in" ? `EN DIRECT · ${live.clock}` : "TERMINÉ"}
+            </span>
+            <span className="font-display text-2xl leading-none tabular-nums">
+              {live.homeScore} - {live.awayScore}
+            </span>
+          </div>
+        )}
         {f.odds && pct ? (
           <div className="mt-3 flex gap-1.5">
             <OddsButton
@@ -237,9 +261,13 @@ function App() {
     // Une analyse retirée de la liste ne revient pas au rechargement : seules les plus récentes que l'effacement réapparaissent.
     let cleared = 0;
     try {
-      cleared = Number(localStorage.getItem("pronoradar.analysesClearedAt")) || 0;
+      cleared =
+        Number(localStorage.getItem("pronoradar.analysesClearedAt")) || 0;
     } catch {}
-    const recent = saved.filter((r) => new Date(r.createdAt).getTime() > cleared && !matchOver(r, Date.now()));
+    const recent = saved.filter(
+      (r) =>
+        new Date(r.createdAt).getTime() > cleared && !matchOver(r, Date.now()),
+    );
     setJobs((prev) =>
       prev.length
         ? prev
@@ -254,7 +282,13 @@ function App() {
               odds: null,
               apiFootballId: null,
             };
-            return { id: fixtureId(fixture), fixture, status: "done" as const, message: "Terminé", result: r };
+            return {
+              id: fixtureId(fixture),
+              fixture,
+              status: "done" as const,
+              message: "Terminé",
+              result: r,
+            };
           }),
     );
   }, []);
@@ -569,9 +603,17 @@ function App() {
     runJobs(toRun);
   }
 
+  // Scores en direct des championnats de football choisis (gratuit), pour l'onglet Direct et les cartes de match.
+  const live = useLiveScores(sport === "football" ? leagues : []);
+  const liveCount = live.matches.filter((m) => m.state === "in").length;
+
   // Analyses visibles : celles en cours et celles terminées depuis moins de 2 heures.
-  const visibleJobs = jobs.filter((j) => j.status !== "done" || !j.result || isRecent(j.result));
-  const visibleResults = visibleJobs.flatMap((j) => (j.status === "done" && j.result ? [j.result] : []));
+  const visibleJobs = jobs.filter(
+    (j) => j.status !== "done" || !j.result || isRecent(j.result),
+  );
+  const visibleResults = visibleJobs.flatMap((j) =>
+    j.status === "done" && j.result ? [j.result] : [],
+  );
 
   const tabs: { id: Tab; label: string; icon: IconName; count?: number }[] = [
     {
@@ -579,6 +621,12 @@ function App() {
       label: "Matchs",
       icon: "matchs",
       count: allFixtures.length || undefined,
+    },
+    {
+      id: "direct",
+      label: "Direct",
+      icon: "direct",
+      count: liveCount || undefined,
     },
     {
       id: "analyses",
@@ -655,7 +703,9 @@ function App() {
       <main className="mx-auto max-w-6xl px-4 pt-6">
         {needPassword && (
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent bg-surface p-4">
-            <p className="text-sm font-semibold">Votre session a expiré : reconnectez-vous.</p>
+            <p className="text-sm font-semibold">
+              Votre session a expiré : reconnectez-vous.
+            </p>
             <button
               onClick={() => window.location.reload()}
               className="rounded-xl bg-accent px-4 py-2 font-semibold text-on-accent"
@@ -679,7 +729,9 @@ function App() {
             <HeroBanner
               matches={allFixtures.length}
               analyses={visibleResults.length}
-              values={visibleResults.filter((r) => r.picks?.some(isValueBet)).length}
+              values={
+                visibleResults.filter((r) => r.picks?.some(isValueBet)).length
+              }
               loading={searching}
             />
             <TopPicks results={visibleResults} onOpen={setDetail} />
@@ -780,7 +832,9 @@ function App() {
                       <div className="sticky top-[4.25rem] z-20 -mx-4 mb-3 flex items-center gap-3 border-b-2 border-accent bg-bg/95 px-4 py-2.5 backdrop-blur">
                         <LeagueLogo name={league} size={32} />
                         <div className="min-w-0 flex-1">
-                          <h2 className="font-display text-[1.65rem] leading-none sm:text-3xl">{league}</h2>
+                          <h2 className="font-display text-[1.65rem] leading-none sm:text-3xl">
+                            {league}
+                          </h2>
                           <p className="text-xs text-muted">
                             {ids.length} match{ids.length > 1 ? "s" : ""}
                           </p>
@@ -804,7 +858,9 @@ function App() {
                       <div className="space-y-5">
                         {days.map(([day, fixtures]) => (
                           <div key={day}>
-                            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">{dayLabel(day)}</h3>
+                            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">
+                              {dayLabel(day)}
+                            </h3>
                             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                               {fixtures.map((f) => (
                                 <MatchCard
@@ -812,6 +868,7 @@ function App() {
                                   f={f}
                                   checked={selected.has(fixtureId(f))}
                                   onToggle={() => toggleFixture(fixtureId(f))}
+                                  live={findLive(live.matches, f.home, f.away)}
                                 />
                               ))}
                             </ul>
@@ -898,6 +955,18 @@ function App() {
           </section>
         )}
 
+        {tab === "direct" && (
+          <section className="fade-in">
+            <h1 className="mb-1 text-2xl font-bold tracking-tight">
+              Scores en direct
+            </h1>
+            <p className="mb-5 text-sm text-muted">
+              Les matchs de vos championnats de football, en direct.
+            </p>
+            <LiveBoard leagues={sport === "football" ? leagues : []} />
+          </section>
+        )}
+
         {tab === "analyses" && (
           <section className="fade-in">
             <h1 className="mb-4 text-2xl font-bold tracking-tight">Analyses</h1>
@@ -913,17 +982,27 @@ function App() {
               onClear={() => {
                 setJobs([]);
                 try {
-                  localStorage.setItem("pronoradar.analysesClearedAt", String(Date.now()));
+                  localStorage.setItem(
+                    "pronoradar.analysesClearedAt",
+                    String(Date.now()),
+                  );
                 } catch {}
               }}
             />
             {history.some((r) => !isRecent(r)) && (
               <div className="mt-10">
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Historique</h2>
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+                    Historique
+                  </h2>
                   <button
                     onClick={() => {
-                      if (!confirm("Effacer tout l'historique des analyses ? Les coupons basés dessus seront aussi vidés.")) return;
+                      if (
+                        !confirm(
+                          "Effacer tout l'historique des analyses ? Les coupons basés dessus seront aussi vidés.",
+                        )
+                      )
+                        return;
                       const keep = history.filter(isRecent);
                       setHistory(keep);
                       saveHistory(keep);
@@ -934,22 +1013,24 @@ function App() {
                   </button>
                 </div>
                 <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {history.filter((r) => !isRecent(r)).map((r) => (
-                    <li key={r.createdAt + r.analysis.match.home}>
-                      <button
-                        onClick={() => setDetail(r)}
-                        className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-surface px-3 py-2.5 text-left hover:border-accent/60"
-                      >
-                        <span className="min-w-0 truncate text-sm font-medium">
-                          {r.analysis.match.sport === "tennis" ? "🎾" : "⚽"}{" "}
-                          {r.analysis.match.home} – {r.analysis.match.away}
-                        </span>
-                        <span className="shrink-0 text-xs text-muted">
-                          {new Date(r.createdAt).toLocaleDateString("fr-FR")}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
+                  {history
+                    .filter((r) => !isRecent(r))
+                    .map((r) => (
+                      <li key={r.createdAt + r.analysis.match.home}>
+                        <button
+                          onClick={() => setDetail(r)}
+                          className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-surface px-3 py-2.5 text-left hover:border-accent/60"
+                        >
+                          <span className="min-w-0 truncate text-sm font-medium">
+                            {r.analysis.match.sport === "tennis" ? "🎾" : "⚽"}{" "}
+                            {r.analysis.match.home} – {r.analysis.match.away}
+                          </span>
+                          <span className="shrink-0 text-xs text-muted">
+                            {new Date(r.createdAt).toLocaleDateString("fr-FR")}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
                 </ul>
               </div>
             )}
@@ -977,12 +1058,19 @@ function App() {
             </div>
             {/* Les deux restent montés pour que la génération automatique de l'IA se fasse même sur l'autre onglet. */}
             <div className={couponTab === "ia" ? "" : "hidden"}>
-              <AiCoupons results={couponResults} autoKey={autoCoupons} clearedAt={couponClearedAt} onClearAll={clearCoupon} />
+              <AiCoupons
+                results={couponResults}
+                autoKey={autoCoupons}
+                clearedAt={couponClearedAt}
+                onClearAll={clearCoupon}
+              />
             </div>
             <div className={couponTab === "manuel" ? "" : "hidden"}>
               <p className="mb-4 text-sm text-muted">
-                Vous choisissez l&apos;objectif, le nombre maximum de sélections et les marchés : le coupon se construit à partir de vos analyses de
-                matchs pas encore joués ({couponResults.length} match{couponResults.length > 1 ? "s" : ""}).
+                Vous choisissez l&apos;objectif, le nombre maximum de sélections
+                et les marchés : le coupon se construit à partir de vos analyses
+                de matchs pas encore joués ({couponResults.length} match
+                {couponResults.length > 1 ? "s" : ""}).
               </p>
               <CouponBuilder results={couponResults} onClear={clearCoupon} />
             </div>
@@ -1004,7 +1092,7 @@ function App() {
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] backdrop-blur-xl lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] backdrop-blur-xl lg:hidden"
         role="tablist"
       >
         {tabs.map((t) => (
@@ -1077,7 +1165,10 @@ function App() {
             >
               ← Fermer
             </button>
-            <AnalysisView key={detail.createdAt + detail.analysis.match.home} result={detail} />
+            <AnalysisView
+              key={detail.createdAt + detail.analysis.match.home}
+              result={detail}
+            />
           </div>
         </div>
       )}
@@ -1091,13 +1182,17 @@ export default function Home() {
   useEffect(() => {
     fetch("/api/auth")
       .then((r) => r.json())
-      .then((d: { required: boolean; authenticated: boolean }) => setState(!d.required || d.authenticated ? "in" : "out"))
+      .then((d: { required: boolean; authenticated: boolean }) =>
+        setState(!d.required || d.authenticated ? "in" : "out"),
+      )
       .catch(() => setState("in"));
   }, []);
   if (state === "loading")
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="flex h-14 w-14 -skew-x-6 animate-pulse items-center justify-center rounded-xl bg-accent font-display text-3xl text-white">P</div>
+        <div className="flex h-14 w-14 -skew-x-6 animate-pulse items-center justify-center rounded-xl bg-accent font-display text-3xl text-white">
+          P
+        </div>
       </div>
     );
   if (state === "out") return <Landing onLogin={() => setState("in")} />;

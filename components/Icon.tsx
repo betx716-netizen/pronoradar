@@ -4,6 +4,7 @@ const PATHS = {
   analyses: "M3 3v18h18M7 15l4-4 3 3 5-6",
   coupon: "M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4Zm9 0v12",
   suivi: "M3 17l6-6 4 4 8-8M15 7h6v6",
+  direct: "M5 12a7 7 0 0 1 14 0M8.5 12a3.5 3.5 0 0 1 7 0M12 12v.01M4 19h16",
 } as const;
 
 export type IconName = keyof typeof PATHS;

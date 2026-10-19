@@ -126,3 +126,66 @@ export async function fetchOfficialLineups(competition: string, home: string, aw
   const la = a && toLineup(a);
   return lh && la ? { home: lh, away: la } : null;
 }
+
+// ——— Scores en direct ———
+
+export type LiveMatch = {
+  competition: string;
+  home: string;
+  away: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  state: "pre" | "in" | "post";
+  clock: string; // « 67' », « MT », « Terminé », ou l'heure de coup d'envoi
+  date: string;
+};
+
+type LiveEvent = {
+  date?: string;
+  competitions?: {
+    competitors?: { homeAway?: string; score?: string; team?: { displayName?: string } }[];
+    status?: { displayClock?: string; type?: { state?: string; shortDetail?: string; completed?: boolean } };
+  }[];
+};
+
+function clockLabel(state: string, detail: string, displayClock: string, date: string) {
+  if (state === "post") return "Terminé";
+  if (state === "pre") return new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" }).format(new Date(date));
+  if (/^HT|half/i.test(detail)) return "MT";
+  return displayClock && displayClock !== "0'" ? displayClock : detail;
+}
+
+/** Matchs d'hier, d'aujourd'hui et de demain d'un championnat, avec leur score et leur état. */
+export async function fetchLiveScores(competition: string): Promise<LiveMatch[]> {
+  const slug = SLUGS[competition];
+  if (!slug) return [];
+  const now = Date.now();
+  const range = `${ymd(new Date(now - 86400000))}-${ymd(new Date(now + 86400000))}`;
+  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard?dates=${range}&limit=200`, {
+    next: { revalidate: 30 },
+  });
+  if (!res.ok) return [];
+  const events: LiveEvent[] = (await res.json())?.events ?? [];
+  return events.flatMap((e) => {
+    const c = e.competitions?.[0];
+    const h = c?.competitors?.find((x) => x.homeAway === "home");
+    const a = c?.competitors?.find((x) => x.homeAway === "away");
+    if (!e.date || !h?.team?.displayName || !a?.team?.displayName) return [];
+    const state = (c?.status?.type?.state ?? "pre") as LiveMatch["state"];
+    const score = (s?: string) => (state === "pre" || s == null || s === "" ? null : Number(s));
+    return [
+      {
+        competition,
+        home: h.team.displayName,
+        away: a.team.displayName,
+        homeScore: score(h.score),
+        awayScore: score(a.score),
+        state,
+        clock: clockLabel(state, c?.status?.type?.shortDetail ?? "", c?.status?.displayClock ?? "", e.date),
+        date: e.date,
+      },
+    ];
+  });
+}
+
+export { sameTeam };
