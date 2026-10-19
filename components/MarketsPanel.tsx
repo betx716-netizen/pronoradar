@@ -11,7 +11,7 @@ const ORDER: MarketCategory[] = [
 ];
 
 function probColor(p: number) {
-  return p >= 70 ? "bg-accent" : p >= 55 ? "bg-gold" : "bg-draw";
+  return p >= 70 ? "bg-success" : p >= 55 ? "bg-gold" : "bg-draw";
 }
 
 /** Tous les paris d'un match, regroupés par marché, avec probabilité, cote et origine de la donnée. */
@@ -40,7 +40,7 @@ export function MarketsPanel({ picks }: { picks: MarketPick[] }) {
                         {p.selection}
                         {p.reliability === "fragile" && <span className="ml-1.5 text-[10px] text-warn-text">fragile</span>}
                         {isValueBet(p) && (
-                          <span className="ml-1.5 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold text-black">VALUE +{edge(p)!.toFixed(1)} %</span>
+                          <span className="ml-1.5 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold text-on-accent">VALUE +{edge(p)!.toFixed(1)} %</span>
                         )}
                       </span>
                       <span className="shrink-0 tabular-nums">

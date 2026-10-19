@@ -2,25 +2,29 @@
 
 /* Thème premium sombre, identique quel que soit le réglage du système. */
 :root {
-  color-scheme: dark;
-  --bg: #07090d;
-  --surface: #0f1319;
-  --surface-2: #161b23;
-  --surface-3: #1d2430;
-  --border: #242c39;
-  --text: #eef1f6;
-  --muted: #8b95a7;
-  --accent: #3ddc97;
-  --accent-strong: #23c47f;
-  --accent-soft: rgba(61, 220, 151, 0.12);
-  --gold: #f2c35b;
-  --gold-soft: rgba(242, 195, 91, 0.12);
-  --home: #60a5fa;
-  --draw: #94a3b8;
-  --away: #fb923c;
-  --warn-bg: rgba(242, 195, 91, 0.1);
-  --warn-text: #f2c35b;
-  --danger: #f87171;
+  /* Thème rouge et blanc : fond clair, rouge vif pour la marque et les actions. */
+  color-scheme: light;
+  --bg: #f6f6f8;
+  --surface: #ffffff;
+  --surface-2: #f3f3f6;
+  --surface-3: #e9e9ee;
+  --border: #e3e3e9;
+  --text: #121216;
+  --muted: #5d6270;
+  --accent: #e10a17;
+  --accent-strong: #b8000c;
+  --accent-soft: rgba(225, 10, 23, 0.08);
+  --on-accent: #ffffff;
+  --gold: #b45309;
+  --gold-soft: rgba(217, 119, 6, 0.12);
+  --success: #15803d;
+  --success-soft: rgba(21, 128, 61, 0.1);
+  --home: #1d4ed8;
+  --draw: #64748b;
+  --away: #c2410c;
+  --warn-bg: #fff7e6;
+  --warn-text: #92400e;
+  --danger: #b91c1c;
 }
 
 @theme inline {
@@ -34,6 +38,9 @@
   --color-accent: var(--accent);
   --color-accent-strong: var(--accent-strong);
   --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
   --color-gold: var(--gold);
   --color-gold-soft: var(--gold-soft);
   --color-home: var(--home);
@@ -43,12 +50,12 @@
   --color-warn-text: var(--warn-text);
   --color-danger: var(--danger);
   --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-bebas);
 }
 
 body {
   background:
-    radial-gradient(1200px 500px at 10% -10%, rgba(61, 220, 151, 0.08), transparent 60%),
-    radial-gradient(900px 400px at 100% 0%, rgba(96, 165, 250, 0.07), transparent 60%),
+    radial-gradient(1000px 420px at 50% -220px, rgba(225, 10, 23, 0.07), transparent 70%),
     var(--bg);
   color: var(--text);
   overflow-x: clip;
@@ -132,4 +139,23 @@ button {
 
 @media (prefers-reduced-motion: reduce) {
   .fade-in, .sheet, .slip-pulse, .drawer { animation: none; }
+}
+
+/* Titres en capitales condensées, façon affiche sportive. */
+h1 {
+  font-family: var(--font-bebas), sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  font-size: 2.25rem;
+  line-height: 1;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Cartes : légère ombre pour détacher le blanc du fond. */
+.bg-surface {
+  box-shadow: 0 1px 2px rgba(18, 18, 22, 0.04), 0 4px 16px -8px rgba(18, 18, 22, 0.08);
 }

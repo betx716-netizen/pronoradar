@@ -200,11 +200,11 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
           <div className="mt-4 grid grid-cols-2 gap-3 border-t border-dashed border-border pt-4">
             <div>
               <p className="text-xs uppercase tracking-wide text-muted">Cote totale</p>
-              <p className="text-3xl font-bold text-gold tabular-nums">{coupon.totalOdds.toFixed(2)}</p>
+              <p className="font-display text-5xl leading-none text-accent tabular-nums">{coupon.totalOdds.toFixed(2)}</p>
             </div>
             <div className="text-right">
               <p className="text-xs uppercase tracking-wide text-muted">Probabilité estimée</p>
-              <p className="text-3xl font-bold tabular-nums">{coupon.probability.toFixed(1)} %</p>
+              <p className="font-display text-5xl leading-none tabular-nums">{coupon.probability.toFixed(1)} %</p>
             </div>
             {coupon.estimatedOddsCount > 0 && (
               <p className="col-span-2 text-xs text-muted">
@@ -256,7 +256,7 @@ export function CouponBuilder({ results }: { results: AnalysisResult[] }) {
                 ? `Mise conseillée : ${suggestedStake.toFixed(2)} € (Kelly ¼, max 5 % de la bankroll).`
                 : "Mise conseillée : 0 € — d'après nos probabilités, ce coupon n'a pas d'avantage sur sa cote. Mieux vaut passer."}
             </p>
-            <button onClick={save} className="w-full rounded-xl bg-accent py-2.5 font-semibold text-black hover:bg-accent-strong">
+            <button onClick={save} className="w-full rounded-xl bg-accent py-2.5 font-semibold text-on-accent hover:bg-accent-strong">
               {saved ? "Enregistré dans le suivi ✓" : "J'ai joué ce coupon : l'enregistrer"}
             </button>
           </div>

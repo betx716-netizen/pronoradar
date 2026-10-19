@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Bebas_Neue, Geist } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
+
+const bebas = Bebas_Neue({ variable: "--font-bebas", weight: "400", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "PronoRadar",
@@ -19,7 +21,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#07090d",
+  themeColor: "#e10a17",
 };
 
 export default function RootLayout({
@@ -29,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className={`${geistSans.variable} font-sans antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} ${bebas.variable} font-sans antialiased`}>{children}</body>
     </html>
   );
 }

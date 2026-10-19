@@ -14,7 +14,7 @@ const TYPE_LABELS: Record<SourceType, string> = {
 };
 
 const LEVEL_STYLES: Record<Consensus["level"], string> = {
-  fort: "bg-accent-soft text-accent",
+  fort: "bg-success-soft text-success",
   modéré: "bg-surface-2 text-text",
   partagé: "bg-warn-bg text-warn-text",
   insuffisant: "bg-warn-bg text-warn-text",

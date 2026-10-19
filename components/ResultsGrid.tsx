@@ -7,7 +7,7 @@ import { TeamLogo } from "./TeamLogo";
 import type { Outcome } from "@/lib/schemas";
 
 const LEVEL_STYLES: Record<string, string> = {
-  fort: "bg-accent-soft text-accent",
+  fort: "bg-success-soft text-success",
   modéré: "bg-surface-3 text-text",
   partagé: "bg-warn-bg text-warn-text",
   insuffisant: "bg-warn-bg text-warn-text",
@@ -20,7 +20,7 @@ const outcomeName = (o: Outcome | null, home: string, away: string) =>
 function Ring({ value }: { value: number }) {
   const r = 18;
   const c = 2 * Math.PI * r;
-  const color = value >= 75 ? "var(--accent)" : value >= 55 ? "var(--gold)" : "var(--draw)";
+  const color = value >= 75 ? "var(--success)" : value >= 55 ? "var(--gold)" : "var(--draw)";
   return (
     <svg viewBox="0 0 44 44" className="h-12 w-12 shrink-0 -rotate-90">
       <circle cx="22" cy="22" r={r} fill="none" stroke="var(--surface-3)" strokeWidth="4" />
@@ -172,7 +172,7 @@ export function ResultsGrid({
           ) : (
             <>
               {remaining > 0 && (
-                <button onClick={onResume} className="rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-black">
+                <button onClick={onResume} className="rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-on-accent">
                   Relancer les {remaining} restants
                 </button>
               )}

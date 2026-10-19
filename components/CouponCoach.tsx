@@ -7,9 +7,9 @@ import { CATEGORY_LABELS, type Coupon } from "@/lib/coupon";
 import type { AnalysisResult } from "@/lib/schemas";
 
 const VERDICTS: Record<CoachReview["verdict"], { label: string; className: string }> = {
-  solide: { label: "Coupon solide", className: "bg-accent text-black" },
-  jouable: { label: "Jouable", className: "bg-gold text-black" },
-  a_eviter: { label: "À éviter", className: "bg-danger text-black" },
+  solide: { label: "Coupon solide", className: "bg-success text-on-accent" },
+  jouable: { label: "Jouable", className: "bg-gold text-on-accent" },
+  a_eviter: { label: "À éviter", className: "bg-danger text-on-accent" },
 };
 
 const matchName = (r: AnalysisResult) => `${r.analysis.match.home} – ${r.analysis.match.away}`;
@@ -141,7 +141,7 @@ export function CouponCoach({
           </p>
           <div className="flex gap-2">
             {toRemove.length > 0 && (
-              <button onClick={() => onExclude(toRemove)} className="flex-1 rounded-xl bg-accent py-2.5 text-sm font-bold text-black active:scale-[0.98]">
+              <button onClick={() => onExclude(toRemove)} className="flex-1 rounded-xl bg-accent py-2.5 text-sm font-bold text-on-accent active:scale-[0.98]">
                 Retirer les {toRemove.length} sélection{toRemove.length > 1 ? "s" : ""} déconseillée{toRemove.length > 1 ? "s" : ""}
               </button>
             )}

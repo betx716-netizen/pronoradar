@@ -8,6 +8,7 @@ import { ResultsGrid } from "@/components/ResultsGrid";
 import { OddsButton } from "@/components/OddsButton";
 import { TopPicks } from "@/components/TopPicks";
 import { TeamLogo } from "@/components/TeamLogo";
+import { Icon, type IconName } from "@/components/Icon";
 import {
   QuotaError,
   UnauthorizedError,
@@ -98,7 +99,7 @@ function MatchCard({ f, checked, onToggle }: { f: Fixture; checked: boolean; onT
             onClick={onToggle}
             aria-pressed={checked}
             className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold transition active:scale-95 ${
-              checked ? "border-accent bg-accent text-black" : "border-border text-muted hover:text-text"
+              checked ? "border-accent bg-accent text-on-accent" : "border-border text-muted hover:text-text"
             }`}
           >
             {checked ? "✓ À analyser" : "＋ Analyser"}
@@ -331,11 +332,11 @@ export default function Home() {
     runJobs(toRun);
   }
 
-  const tabs: { id: Tab; label: string; icon: string; count?: number }[] = [
-    { id: "matchs", label: "Matchs", icon: "🏟️", count: allFixtures.length || undefined },
-    { id: "analyses", label: "Analyses", icon: "📊", count: jobs.length || undefined },
-    { id: "coupon", label: "Coupon", icon: "🎟️", count: couponResults.length || undefined },
-    { id: "suivi", label: "Suivi", icon: "📈" },
+  const tabs: { id: Tab; label: string; icon: IconName; count?: number }[] = [
+    { id: "matchs", label: "Matchs", icon: "matchs", count: allFixtures.length || undefined },
+    { id: "analyses", label: "Analyses", icon: "analyses", count: jobs.length || undefined },
+    { id: "coupon", label: "Coupon", icon: "coupon", count: couponResults.length || undefined },
+    { id: "suivi", label: "Suivi", icon: "suivi" },
   ];
   const selectionBar = tab === "matchs" && selectedFixtures.length > 0;
 
@@ -346,18 +347,18 @@ export default function Home() {
 
   return (
     <div className="min-h-screen pb-44 lg:pb-32">
-      <header className="sticky top-0 z-30 border-b border-border bg-bg/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 bg-gradient-to-r from-accent-strong via-accent to-accent text-on-accent shadow-lg shadow-accent/20">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-home text-lg font-black text-black">P</div>
+            <div className="flex h-10 w-10 -skew-x-6 items-center justify-center rounded-lg bg-white font-display text-2xl text-accent shadow">P</div>
             <div>
-              <p className="text-lg font-bold leading-none tracking-tight">
-                Prono<span className="text-accent">Radar</span>
+              <p className="font-display text-[1.7rem] leading-none tracking-wide">
+                PRONO<span className="text-white/75">RADAR</span>
               </p>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gold">Premium</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/80">Pronostics · Analyse IA</p>
             </div>
           </div>
-          <nav className="hidden rounded-xl border border-border bg-surface p-1 lg:flex" role="tablist">
+          <nav className="hidden rounded-xl bg-black/15 p-1 lg:flex" role="tablist">
             {tabs.map((t) => (
               <button
                 key={t.id}
@@ -365,12 +366,13 @@ export default function Home() {
                 aria-selected={tab === t.id}
                 onClick={() => goTo(t.id)}
                 className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold transition ${
-                  tab === t.id ? "bg-surface-3 text-text" : "text-muted hover:text-text"
+                  tab === t.id ? "bg-white text-accent" : "text-white/80 hover:text-white"
                 }`}
               >
+                <Icon name={t.icon} className="h-4 w-4" />
                 {t.label}
                 {t.count !== undefined && (
-                  <span className={`rounded-full px-1.5 text-[11px] ${t.id === "coupon" ? "bg-gold-soft text-gold" : "bg-accent-soft text-accent"}`}>
+                  <span className={`rounded-full px-1.5 text-[11px] ${tab === t.id ? "bg-accent text-on-accent" : "bg-white/20 text-white"}`}>
                     {t.count}
                   </span>
                 )}
@@ -413,7 +415,7 @@ export default function Home() {
             </label>
             <div className="flex gap-2">
               <input id="pw" type="password" className={inputClass} value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} />
-              <button className="rounded-xl bg-accent px-4 font-semibold text-black">Valider</button>
+              <button className="rounded-xl bg-accent px-4 font-semibold text-on-accent">Valider</button>
             </div>
           </form>
         )}
@@ -438,7 +440,7 @@ export default function Home() {
                     key={s}
                     onClick={() => switchSport(s)}
                     disabled={running}
-                    className={`rounded-lg px-3.5 py-1.5 text-sm font-semibold ${sport === s ? "bg-accent text-black" : "text-muted hover:text-text"}`}
+                    className={`rounded-lg px-3.5 py-1.5 text-sm font-semibold ${sport === s ? "bg-accent text-on-accent" : "text-muted hover:text-text"}`}
                   >
                     {s === "football" ? "⚽ Football" : "🎾 Tennis"}
                   </button>
@@ -538,7 +540,7 @@ export default function Home() {
                   <input className={inputClass} value={manual.competition} onChange={(e) => setManual({ ...manual, competition: e.target.value })} placeholder="Compétition (facultatif)" aria-label="Compétition" />
                   <input className={inputClass} value={manual.date} onChange={(e) => setManual({ ...manual, date: e.target.value })} placeholder="Date (facultatif)" aria-label="Date" />
                   <p className="text-xs text-muted sm:col-span-2">{gemini ? "Analyse par Gemini, sans cotes de bookmakers." : "Nécessite la clé Gemini."}</p>
-                  <button disabled={running || manual.home.trim().length < 2 || manual.away.trim().length < 2} className="rounded-xl bg-accent py-2.5 font-semibold text-black disabled:opacity-40 sm:col-span-2">
+                  <button disabled={running || manual.home.trim().length < 2 || manual.away.trim().length < 2} className="rounded-xl bg-accent py-2.5 font-semibold text-on-accent disabled:opacity-40 sm:col-span-2">
                     Analyser ce match
                   </button>
                 </form>
@@ -596,7 +598,7 @@ export default function Home() {
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-border bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] backdrop-blur-xl lg:hidden"
         role="tablist"
       >
         {tabs.map((t) => (
@@ -607,11 +609,13 @@ export default function Home() {
             onClick={() => goTo(t.id)}
             className={`relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition active:scale-95 ${tab === t.id ? "text-accent" : "text-muted"}`}
           >
-            {tab === t.id && <span className="absolute inset-x-6 top-0 h-0.5 rounded-full bg-accent" />}
-            <span className={`text-xl transition ${tab === t.id ? "scale-110" : "opacity-70 grayscale"}`}>{t.icon}</span>
+            
+            <span className={`flex h-8 w-12 items-center justify-center rounded-full transition ${tab === t.id ? "bg-accent-soft" : ""}`}>
+              <Icon name={t.icon} />
+            </span>
             {t.label}
             {t.count !== undefined && (
-              <span className="absolute right-[18%] top-1 min-w-4 rounded-full bg-accent px-1 text-[10px] leading-4 text-black">{t.count > 99 ? "99+" : t.count}</span>
+              <span className="absolute right-[18%] top-1 min-w-4 rounded-full bg-accent px-1 text-[10px] leading-4 text-on-accent">{t.count > 99 ? "99+" : t.count}</span>
             )}
           </button>
         ))}
@@ -638,7 +642,7 @@ export default function Home() {
                   </button>
                 ))}
               </div>
-              <button onClick={launchSelected} disabled={running} className="rounded-xl bg-accent px-5 py-2.5 font-bold text-black shadow-lg shadow-accent/20 disabled:opacity-40">
+              <button onClick={launchSelected} disabled={running} className="rounded-xl bg-accent px-5 py-2.5 font-bold text-on-accent shadow-lg shadow-accent/20 disabled:opacity-40">
                 Analyser →
               </button>
             </div>

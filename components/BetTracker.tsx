@@ -7,7 +7,7 @@ import { loadHistory, profit, removeBet, syncHistory, updateBet, type BetStatus,
 const STATUS_LABELS: Record<BetStatus, string> = { en_cours: "En cours", gagne: "Gagné", perdu: "Perdu", rembourse: "Remboursé" };
 const STATUS_STYLES: Record<BetStatus, string> = {
   en_cours: "border-border text-muted",
-  gagne: "border-accent bg-accent-soft text-accent",
+  gagne: "border-success bg-success-soft text-success",
   perdu: "border-danger/60 bg-danger/10 text-danger",
   rembourse: "border-draw/60 text-draw",
 };
@@ -65,8 +65,8 @@ export function BetTracker() {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Bénéfice" value={euros(net)} tone={net >= 0 ? "text-accent" : "text-danger"} />
-        <Stat label="Rentabilité (ROI)" value={staked ? `${((net / staked) * 100).toFixed(1)} %` : "—"} tone={net >= 0 ? "text-accent" : "text-danger"} />
+        <Stat label="Bénéfice" value={euros(net)} tone={net >= 0 ? "text-success" : "text-danger"} />
+        <Stat label="Rentabilité (ROI)" value={staked ? `${((net / staked) * 100).toFixed(1)} %` : "—"} tone={net >= 0 ? "text-success" : "text-danger"} />
         <Stat label="Coupons gagnés" value={`${won} / ${settled.length}`} />
         <Stat label="Gains attendus" value={settled.length ? `${expected.toFixed(1)}` : "—"} hint="Nombre de coupons qui auraient dû passer selon nos probabilités" />
       </div>
@@ -124,7 +124,7 @@ export function BetTracker() {
                 </button>
               ))}
               {(b.status === "gagne" || b.status === "perdu") && (
-                <span className={`ml-auto text-sm font-semibold tabular-nums ${profit(b) >= 0 ? "text-accent" : "text-danger"}`}>{euros(profit(b))}</span>
+                <span className={`ml-auto text-sm font-semibold tabular-nums ${profit(b) >= 0 ? "text-success" : "text-danger"}`}>{euros(profit(b))}</span>
               )}
               <button onClick={() => remove(b.id)} className="text-xs text-muted hover:text-danger" aria-label="Supprimer">
                 Supprimer
