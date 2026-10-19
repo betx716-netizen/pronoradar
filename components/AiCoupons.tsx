@@ -256,6 +256,21 @@ export function AiCoupons({
           >
             {saved ? "Refaire" : "Générer"}
           </button>
+          {saved && (
+            <button
+              onClick={() => {
+                if (!confirm("Supprimer tous les coupons de l'IA ? Ils ne seront refaits qu'après vos prochaines analyses, ou en touchant « Générer »."))
+                  return;
+                setSaved(null);
+                try {
+                  localStorage.removeItem(STORE);
+                } catch {}
+              }}
+              className="rounded-xl border border-border px-3 py-2 text-sm font-semibold text-muted hover:border-danger hover:text-danger"
+            >
+              Supprimer
+            </button>
+          )}
         </div>
       </div>
 
