@@ -30,7 +30,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr">
+    <html lang="fr" suppressHydrationWarning>
+      <head>
+        {/* Applique le thème choisi avant l'affichage, pour éviter un flash de la mauvaise couleur. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem("pronoradar.theme");if(t)document.documentElement.dataset.theme=t}catch(e){}`,
+          }}
+        />
+      </head>
       <body className={`${geistSans.variable} ${bebas.variable} font-sans antialiased`}>{children}</body>
     </html>
   );

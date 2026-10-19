@@ -27,6 +27,58 @@
   --danger: #b91c1c;
 }
 
+/* Mode sombre rouge et noir : suit le réglage du téléphone, sauf choix manuel. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  color-scheme: dark;
+  --bg: #0b0b0d;
+  --surface: #141417;
+  --surface-2: #1b1b1f;
+  --surface-3: #25252b;
+  --border: #2c2c33;
+  --text: #f4f4f6;
+  --muted: #9a9ca6;
+  --accent: #ff2d3a;
+  --accent-strong: #c8000e;
+  --accent-soft: rgba(255, 45, 58, 0.14);
+  --on-accent: #ffffff;
+  --gold: #f5b544;
+  --gold-soft: rgba(245, 181, 68, 0.14);
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.14);
+  --home: #60a5fa;
+  --draw: #94a3b8;
+  --away: #fb923c;
+  --warn-bg: rgba(245, 181, 68, 0.12);
+  --warn-text: #f5b544;
+  --danger: #f87171;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0b0d;
+  --surface: #141417;
+  --surface-2: #1b1b1f;
+  --surface-3: #25252b;
+  --border: #2c2c33;
+  --text: #f4f4f6;
+  --muted: #9a9ca6;
+  --accent: #ff2d3a;
+  --accent-strong: #c8000e;
+  --accent-soft: rgba(255, 45, 58, 0.14);
+  --on-accent: #ffffff;
+  --gold: #f5b544;
+  --gold-soft: rgba(245, 181, 68, 0.14);
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.14);
+  --home: #60a5fa;
+  --draw: #94a3b8;
+  --away: #fb923c;
+  --warn-bg: rgba(245, 181, 68, 0.12);
+  --warn-text: #f5b544;
+  --danger: #f87171;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -158,4 +210,7 @@ h1 {
 /* Cartes : légère ombre pour détacher le blanc du fond. */
 .bg-surface {
   box-shadow: 0 1px 2px rgba(18, 18, 22, 0.04), 0 4px 16px -8px rgba(18, 18, 22, 0.08);
+}
+:root[data-theme="dark"] .bg-surface {
+  box-shadow: none;
 }

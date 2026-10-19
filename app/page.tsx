@@ -9,6 +9,9 @@ import { OddsButton } from "@/components/OddsButton";
 import { TopPicks } from "@/components/TopPicks";
 import { TeamLogo } from "@/components/TeamLogo";
 import { Icon, type IconName } from "@/components/Icon";
+import { HeroBanner } from "@/components/HeroBanner";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { isValueBet } from "@/lib/value";
 import {
   QuotaError,
   UnauthorizedError,
@@ -358,6 +361,7 @@ export default function Home() {
               <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/80">Pronostics · Analyse IA</p>
             </div>
           </div>
+          <div className="flex items-center gap-2">
           <nav className="hidden rounded-xl bg-black/15 p-1 lg:flex" role="tablist">
             {tabs.map((t) => (
               <button
@@ -379,6 +383,8 @@ export default function Home() {
               </button>
             ))}
           </nav>
+          <ThemeToggle />
+          </div>
         </div>
       </header>
 
@@ -428,6 +434,12 @@ export default function Home() {
 
         {tab === "matchs" && (
           <section className="fade-in">
+            <HeroBanner
+              matches={allFixtures.length}
+              analyses={couponResults.length}
+              values={couponResults.filter((r) => r.picks?.some(isValueBet)).length}
+              loading={searching}
+            />
             <TopPicks results={couponResults} onOpen={setDetail} />
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
