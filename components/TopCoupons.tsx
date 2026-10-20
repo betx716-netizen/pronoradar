@@ -8,9 +8,15 @@ import { ScrollRow } from "./ScrollRow";
 export function TopCoupons({ onOpen, refreshKey }: { onOpen: () => void; refreshKey: number }) {
   const [coupons, setCoupons] = useState<Built[]>([]);
   useEffect(() => {
-    const saved = loadAiCoupons();
-    const odds = (c: Built) => c.legs.reduce((t, l) => t * l.pick.odds, 1);
-    setCoupons((saved?.coupons ?? []).filter((c) => c.legs.length).sort((a, b) => odds(a) - odds(b)));
+    const refresh = () => {
+      const saved = loadAiCoupons();
+      const odds = (c: Built) => c.legs.reduce((t, l) => t * l.pick.odds, 1);
+      setCoupons((saved?.coupons ?? []).filter((c) => c.legs.length).sort((a, b) => odds(a) - odds(b)));
+    };
+    refresh();
+    // Mis à jour dès que l'IA génère ou qu'on supprime des coupons.
+    window.addEventListener("pronoradar-coupons", refresh);
+    return () => window.removeEventListener("pronoradar-coupons", refresh);
   }, [refreshKey]);
 
   if (coupons.length === 0) return null;

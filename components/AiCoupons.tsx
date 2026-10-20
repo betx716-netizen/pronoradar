@@ -158,6 +158,7 @@ export function AiCoupons({
       setSaved(next);
       try {
         localStorage.setItem(STORE, JSON.stringify(next));
+        window.dispatchEvent(new Event("pronoradar-coupons"));
       } catch {}
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -173,6 +174,7 @@ export function AiCoupons({
       setSaved(null);
       try {
         localStorage.removeItem(STORE);
+        window.dispatchEvent(new Event("pronoradar-coupons"));
         localStorage.setItem(DELETED, new Date(clearedAt).toISOString());
       } catch {}
     }
