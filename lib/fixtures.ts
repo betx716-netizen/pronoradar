@@ -1,4 +1,4 @@
-import { apiFootballRemaining, attachApiFootballIds, fetchApiFootballFixtures, hasApiFootball } from "./apifootball";
+import { ApiFootballError, apiFootballRemaining, attachApiFootballIds, fetchApiFootballFixtures, hasApiFootball } from "./apifootball";
 import { aiAvailable, emptyUsage, hasAI, researchWithGoogle, structure, todayInParis } from "./gemini";
 import { espnCovers, fetchEspnFixtures } from "./espn";
 import { findLeague } from "./leagues";
@@ -38,7 +38,7 @@ export async function findFixtures(sport: Sport, competition: string, onProgress
         ? await attachApiFootballIds(fixtures, league.apiFootballId)
         : await fetchApiFootballFixtures(league.apiFootballId, competition);
     } catch (e) {
-      notes.push(e instanceof Error ? e.message : String(e));
+      if (!(e instanceof ApiFootballError && e.quiet)) notes.push(e instanceof Error ? e.message : String(e));
     }
     usage.apiFootballRequestsRemaining = apiFootballRemaining();
   }

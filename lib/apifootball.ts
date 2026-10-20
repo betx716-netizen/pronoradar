@@ -7,9 +7,20 @@ import type { Fixture } from "./schemas";
 
 const BASE = "https://v3.football.api-sports.io";
 
-export const hasApiFootball = () => Boolean(readKey("API_FOOTBALL_KEY"));
+// L'offre gratuite d'API-Football ne donne plus accès à la saison en cours (seulement 2022 à 2024) :
+// dès qu'on le constate, on cesse de l'utiliser, sans afficher d'erreur, et les autres sources prennent le relais.
+let seasonBlocked = false;
+export const apiFootballSeasonBlocked = () => seasonBlocked;
+export const hasApiFootball = () => Boolean(readKey("API_FOOTBALL_KEY")) && !seasonBlocked;
 
-export class ApiFootballError extends Error {}
+export class ApiFootballError extends Error {
+  constructor(
+    message: string,
+    readonly quiet = false,
+  ) {
+    super(message);
+  }
+}
 
 let lastRemaining: number | null = null;
 export const apiFootballRemaining = () => lastRemaining;
@@ -24,7 +35,14 @@ async function get<T>(path: string, params: Record<string, string | number>): Pr
   const body = (await res.json()) as { errors: unknown; response: T[] };
   // L'API répond 200 même en cas d'erreur (quota, saison non incluse dans la formule…).
   const errors = body.errors && typeof body.errors === "object" ? Object.values(body.errors as Record<string, string>) : [];
-  if (errors.length > 0) throw new ApiFootballError(`API-Football : ${errors.join(" ")}`);
+  if (errors.length > 0) {
+    const text = errors.join(" ");
+    if (/free plans? do not have access|try from \d{4}/i.test(text)) {
+      seasonBlocked = true;
+      throw new ApiFootballError("Statistiques : saison en cours non incluse dans l'offre gratuite.", true);
+    }
+    throw new ApiFootballError(`API-Football : ${text}`);
+  }
   return body.response;
 }
 

@@ -242,7 +242,7 @@ export type MarketPick = {
 };
 
 // Services configurés sur le serveur (clés présentes).
-export type ServicesStatus = { gemini: boolean; odds: boolean; apiFootball: boolean; demo: boolean; backupAI?: boolean; backupSearch?: boolean };
+export type ServicesStatus = { gemini: boolean; odds: boolean; apiFootball: boolean; demo: boolean; backupAI?: boolean; backupSearch?: boolean; statsLimited?: boolean };
 
 // Événements envoyés au navigateur pendant l'analyse (une ligne JSON par événement).
 export type StreamEvent =

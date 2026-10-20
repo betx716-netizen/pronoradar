@@ -1,4 +1,4 @@
-import { apiFootballRemaining, fetchInsight, hasApiFootball, type ApiFootballInsight } from "./apifootball";
+import { ApiFootballError, apiFootballRemaining, fetchInsight, hasApiFootball, type ApiFootballInsight } from "./apifootball";
 import { computeConsensus } from "./consensus";
 import { apiSources } from "./apiSources";
 import { analysisWithoutAI } from "./calculated";
@@ -101,7 +101,7 @@ export async function analyzeMatch(req: AnalyzeRequest, onProgress: (message: st
     try {
       insight = await fetchInsight(req.apiFootballId, settings.injuries);
     } catch (e) {
-      onProgress(e instanceof Error ? e.message : String(e));
+      if (!(e instanceof ApiFootballError && e.quiet)) onProgress(e instanceof Error ? e.message : String(e));
     }
     usage.apiFootballRequestsRemaining = apiFootballRemaining();
   }

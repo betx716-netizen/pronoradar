@@ -1,5 +1,5 @@
 import { ApiError } from "@google/genai";
-import { ApiFootballError, hasApiFootball } from "./apifootball";
+import { ApiFootballError, apiFootballSeasonBlocked, hasApiFootball } from "./apifootball";
 import { AnalysisError, hasAI } from "./gemini";
 import { hasGroq, hasTavily } from "./backup";
 import { OddsApiError, hasOddsApi } from "./odds";
@@ -14,6 +14,7 @@ export const servicesStatus = (): ServicesStatus => ({
   odds: hasOddsApi(),
   apiFootball: hasApiFootball(),
   demo: isDemo(),
+  statsLimited: apiFootballSeasonBlocked(),
   backupAI: hasGroq(),
   backupSearch: hasTavily(),
 });
