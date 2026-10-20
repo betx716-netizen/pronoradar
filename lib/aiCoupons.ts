@@ -64,7 +64,7 @@ Règles :
 - Pour chaque sélection, la raison doit dire pourquoi ce pari a de la valeur, pas seulement qu'il est probable.
 Ton des textes (raisons et commentaire) :
 - Affirmatif et clair : explique les points forts du coupon et pourquoi chaque sélection est solide, chiffres à l'appui.
-- Aucune phrase qui fait douter : pas de « risqué », « attention », « incertain », « peut-être », « probabilité faible », ni de mise en garde sur le nombre de sélections.
+- Pas de mises en garde répétées ni de jargon anxiogène. Mais sois honnête : pour les coupons à grosse cote ("x20", "x50") et le grand combiné ("multi"), précise en une courte phrase que c'est un pari plaisir à petite mise.
 - Ne promets jamais de gain certain : présente des arguments, pas des garanties.
 Réponds en français, phrases courtes.`;
 
