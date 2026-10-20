@@ -1,11 +1,14 @@
 "use client";
 // Scores en direct côté navigateur : interrogés toutes les 30 secondes tant que la page est visible.
 import { useEffect, useState } from "react";
-import type { LiveMatch } from "./espn";
+import { SLUGS, parseScoreboard, scoreboardUrl, ymd, type LiveMatch } from "./espn";
 import type { MarketPick } from "./schemas";
 import { SOFA_LIVE_URL, parseSofaLive } from "./sofa";
 
 export type { LiveMatch };
+
+// Grandes compétitions interrogées par le téléphone quand le serveur ne renvoie rien en direct.
+const PHONE_WORLD = ["uefa.champions", "uefa.europa", "uefa.europa.conf", "eng.1", "esp.1", "ita.1", "ger.1", "fra.1"];
 
 export function useLiveScores(leagues: string[], world = false) {
   const key = [...new Set(leagues)].sort().join(",");
@@ -44,8 +47,30 @@ export function useLiveScores(leagues: string[], world = false) {
               .catch(() => {});
           }
           setUpdatedAt(Date.now());
+          // Le serveur n'a aucun match en cours (source injoignable depuis le serveur) : le téléphone interroge ESPN lui-même.
+          const serverLive = [...(d.matches ?? []), ...server].some((m) => m.state === "in");
+          if (!serverLive) phoneFallback();
         })
-        .catch(() => {});
+        .catch(() => phoneFallback());
+    };
+    const phoneFallback = () => {
+      const now = Date.now();
+      const range = `${ymd(new Date(now - 86400000))}-${ymd(new Date(now + 86400000))}`;
+      const mine = key ? key.split(",").map((l) => SLUGS[l]).filter(Boolean) : [];
+      const extra = world ? PHONE_WORLD.filter((s) => !mine.includes(s)) : [];
+      const get = (slug: string) =>
+        fetch(scoreboardUrl(slug, range))
+          .then((r) => (r.ok ? r.json() : Promise.reject()))
+          .then((data) => parseScoreboard(data, slug))
+          .catch(() => [] as LiveMatch[]);
+      Promise.all([Promise.all(mine.map(get)), Promise.all(extra.map(get))]).then(([a, b]) => {
+        if (!alive) return;
+        const own = a.flat();
+        const others = b.flat().filter((m) => m.state === "in");
+        if (own.length) setMatches((prev) => (prev.some((m) => m.state === "in") ? prev : own));
+        if (others.length) setWorld((prev) => [...prev, ...others.filter((m) => !prev.some((p) => p.id === m.id))]);
+        setUpdatedAt(Date.now());
+      });
     };
     load();
     const t = setInterval(load, 30_000);

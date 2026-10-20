@@ -19,7 +19,7 @@ export const SLUGS: Record<string, string> = {
 
 export const espnCovers = (competition: string) => competition in SLUGS;
 
-const ymd = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, "");
+export const ymd = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, "");
 // fr-CA donne AAAA-MM-JJ, en-GB donne HH:MM.
 const paris = (iso: string, locale: string, opts: Intl.DateTimeFormatOptions) =>
   new Intl.DateTimeFormat(locale, { timeZone: "Europe/Paris", ...opts }).format(new Date(iso));
@@ -172,14 +172,11 @@ function clockLabel(state: string, detail: string, displayClock: string, date: s
 // Nom du championnat pour l'affichage : celui de l'application si on le connaît, sinon celui d'ESPN.
 const APP_NAME = Object.fromEntries(Object.entries(SLUGS).map(([name, slug]) => [slug, name]));
 
-async function fetchSlug(slug: string, range: string, revalidate: number): Promise<LiveMatch[]> {
-  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard?dates=${range}&limit=200`, {
-    next: { revalidate },
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
-  const label: string = APP_NAME[slug] ?? data?.leagues?.[0]?.name ?? slug;
-  const events: LiveEvent[] = data?.events ?? [];
+/** Lit un tableau des scores ESPN ; sert au serveur comme au téléphone (secours si le serveur n'obtient rien). */
+export function parseScoreboard(data: unknown, slug: string): LiveMatch[] {
+  const d = data as { leagues?: { name?: string }[]; events?: LiveEvent[] } | null;
+  const label: string = APP_NAME[slug] ?? d?.leagues?.[0]?.name ?? slug;
+  const events: LiveEvent[] = d?.events ?? [];
   return events.flatMap((e) => {
     const c = e.competitions?.[0];
     const h = c?.competitors?.find((x) => x.homeAway === "home");
@@ -202,6 +199,16 @@ async function fetchSlug(slug: string, range: string, revalidate: number): Promi
       },
     ];
   });
+}
+
+export const scoreboardUrl = (slug: string, range: string) =>
+  `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard?dates=${range}&limit=200`;
+
+async function fetchSlug(slug: string, range: string, revalidate: number): Promise<LiveMatch[]> {
+  // Délai maximal : une source lente ne doit pas bloquer tout l'onglet Direct.
+  const res = await fetch(scoreboardUrl(slug, range), { next: { revalidate }, signal: AbortSignal.timeout(6000) });
+  if (!res.ok) return [];
+  return parseScoreboard(await res.json(), slug);
 }
 
 /** Matchs d'hier, d'aujourd'hui et de demain d'un championnat de l'application, avec leur score et leur état. */
@@ -256,7 +263,11 @@ export { sameTeam };
 import { SOFA_HEADERS, parseSofaLive, parseSofaStats } from "./sofa";
 
 export async function fetchSofaLive(): Promise<LiveMatch[]> {
-  const res = await fetch("https://api.sofascore.com/api/v1/sport/football/events/live", { headers: SOFA_HEADERS, next: { revalidate: 30 } });
+  const res = await fetch("https://api.sofascore.com/api/v1/sport/football/events/live", {
+    headers: SOFA_HEADERS,
+    next: { revalidate: 30 },
+    signal: AbortSignal.timeout(5000),
+  });
   if (!res.ok) throw new Error(`Sofascore ${res.status}`);
   return parseSofaLive(await res.json());
 }
