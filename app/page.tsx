@@ -8,8 +8,11 @@ import { BetTracker } from "@/components/BetTracker";
 import { ResultsGrid } from "@/components/ResultsGrid";
 import { OddsButton } from "@/components/OddsButton";
 import { TopPicks } from "@/components/TopPicks";
+import { TopScorers } from "@/components/TopScorers";
+import { TopCoupons } from "@/components/TopCoupons";
 import { TeamLogo } from "@/components/TeamLogo";
 import { LeagueLogo } from "@/components/LeagueLogo";
+import { useClubColors } from "@/lib/teamColors";
 import { Icon, type IconName } from "@/components/Icon";
 import { HeroBanner } from "@/components/HeroBanner";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -129,89 +132,95 @@ function MatchCard({
 }) {
   const pct = impliedPercents(f);
   const tennis = f.odds ? f.odds.draw === null : false;
+  // Affiche du match : dégradé aux couleurs des deux clubs, assombri pour que le texte reste lisible.
+  const homeColors = useClubColors(tennis ? null : f.home);
+  const awayColors = useClubColors(tennis ? null : f.away);
+  const from = homeColors?.shirt ?? "#1e293b";
+  const to = awayColors?.shirt ?? "#334155";
+  const playing = live && live.state !== "pre" ? live : null;
+
+  const team = (name: string) => (
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 text-center">
+      <span className="rounded-full bg-white p-1.5 shadow-lg">
+        <TeamLogo name={name} sport={tennis ? "tennis" : "football"} size={40} />
+      </span>
+      <span className="line-clamp-2 font-display text-lg leading-none text-white drop-shadow sm:text-xl">{name}</span>
+    </div>
+  );
+
   return (
     <li className="fade-in">
-      <div
-        className={`rounded-2xl border p-3.5 transition ${
-          checked
-            ? "border-accent bg-accent-soft/40"
-            : "border-border bg-surface hover:border-muted"
-        }`}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted">
-              {f.competition}
-              {f.time ? ` · ${f.time}` : ""}
-            </p>
-            <p className="mt-1 flex items-center gap-2 font-semibold">
-              <TeamLogo name={f.home} sport={tennis ? "tennis" : "football"} />
-              <span className="truncate">{f.home}</span>
-            </p>
-            <p className="mt-1 flex items-center gap-2 font-semibold">
-              <TeamLogo name={f.away} sport={tennis ? "tennis" : "football"} />
-              <span className="truncate">{f.away}</span>
-            </p>
+      <div className={`overflow-hidden rounded-3xl shadow-lg transition ${checked ? "ring-4 ring-accent" : ""}`}>
+        <div
+          className="relative px-3 pb-3 pt-2.5"
+          style={{ background: `linear-gradient(115deg, ${from} 0%, ${from} 35%, ${to} 65%, ${to} 100%)` }}
+        >
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-black/45 to-black/70" />
+          <div className="relative">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-white/80">{f.competition}</p>
+              <button
+                type="button"
+                onClick={onToggle}
+                aria-pressed={checked}
+                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold transition active:scale-95 ${
+                  checked ? "bg-accent text-on-accent" : "bg-white/20 text-white backdrop-blur hover:bg-white/30"
+                }`}
+              >
+                {checked ? "✓ À analyser" : "＋ Analyser"}
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              {team(f.home)}
+              <div className="shrink-0 text-center">
+                {playing ? (
+                  <>
+                    <p className={`flex items-center justify-center gap-1 text-[11px] font-bold ${playing.state === "in" ? "text-[#fca5a5]" : "text-white/70"}`}>
+                      {playing.state === "in" && <LiveDot />}
+                      {playing.state === "in" ? playing.clock : "Terminé"}
+                    </p>
+                    <p className="font-display text-4xl leading-none text-white tabular-nums">
+                      {playing.homeScore}-{playing.awayScore}
+                    </p>
+                  </>
+                ) : (
+                  <p className="font-display text-3xl leading-none text-white">{f.time ?? "—"}</p>
+                )}
+              </div>
+              {team(f.away)}
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-pressed={checked}
-            className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold transition active:scale-95 ${
-              checked
-                ? "border-accent bg-accent text-on-accent"
-                : "border-border text-muted hover:text-text"
-            }`}
-          >
-            {checked ? "✓ À analyser" : "＋ Analyser"}
-          </button>
         </div>
-        {live && live.state !== "pre" && (
-          <div
-            className={`mt-3 flex items-center justify-between rounded-xl px-3 py-2 ${live.state === "in" ? "bg-accent-soft" : "bg-surface-2"}`}
-          >
-            <span
-              className={`flex items-center gap-1.5 text-xs font-bold ${live.state === "in" ? "text-danger" : "text-muted"}`}
-            >
-              {live.state === "in" && <LiveDot />}
-              {live.state === "in" ? `EN DIRECT · ${live.clock}` : "TERMINÉ"}
-            </span>
-            <span className="font-display text-2xl leading-none tabular-nums">
-              {live.homeScore} - {live.awayScore}
-            </span>
-          </div>
-        )}
-        {f.odds && pct ? (
-          <div className="mt-3 flex gap-1.5">
-            <OddsButton
-              leg={resultLeg(f, `Victoire ${f.home}`, f.odds.home, pct[0])}
-              label="1"
-              sub={`${pct[0]} %`}
-            />
-            {!tennis && f.odds.draw && (
-              <OddsButton
-                leg={resultLeg(f, "Match nul", f.odds.draw, pct[1])}
-                label="N"
-                sub={`${pct[1]} %`}
-              />
-            )}
-            <OddsButton
-              leg={resultLeg(f, `Victoire ${f.away}`, f.odds.away, pct[2])}
-              label="2"
-              sub={`${pct[2]} %`}
-            />
-          </div>
-        ) : (
-          <p className="mt-3 text-xs text-muted">Cotes indisponibles</p>
-        )}
-        {f.odds?.totals && (
-          <p className="mt-2 text-xs text-muted">
-            {tennis ? "Jeux" : "Buts"}{" "}
-            {String(f.odds.totals.point).replace(".", ",")} : plus{" "}
-            {f.odds.totals.over.toFixed(2)} · moins{" "}
-            {f.odds.totals.under.toFixed(2)}
-          </p>
-        )}
+        <div className="bg-surface p-2.5">
+          {f.odds && pct ? (
+            <div className="flex gap-2">
+              {(
+                [
+                  ["1", f.odds.home, pct[0], f.home],
+                  ...(!tennis && f.odds.draw ? [["N", f.odds.draw, pct[1], "Nul"]] : []),
+                  ["2", f.odds.away, pct[2], f.away],
+                ] as [string, number, number, string][]
+              ).map(([label, odd, p, name]) => (
+                <div key={label} className="flex min-w-0 flex-1 flex-col items-center rounded-xl bg-surface-3 px-1 py-1.5">
+                  <span className="max-w-full truncate text-[10px] font-semibold uppercase text-muted">{label === "N" ? "Nul" : name}</span>
+                  <span className="font-display text-2xl leading-none tabular-nums">{odd.toFixed(2)}</span>
+                  <span className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface">
+                    <span className="block h-full bg-accent" style={{ width: `${p}%` }} />
+                  </span>
+                  <span className="text-[10px] tabular-nums text-muted">{p} %</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="py-1 text-center text-xs text-muted">Cotes indisponibles</p>
+          )}
+          {f.odds?.totals && (
+            <p className="mt-2 text-center text-xs text-muted">
+              {tennis ? "Jeux" : "Buts"} {String(f.odds.totals.point).replace(".", ",")} : plus {f.odds.totals.over.toFixed(2)} · moins{" "}
+              {f.odds.totals.under.toFixed(2)}
+            </p>
+          )}
+        </div>
       </div>
     </li>
   );
@@ -737,7 +746,9 @@ function App() {
               }
               loading={searching}
             />
+            <TopCoupons refreshKey={autoCoupons + (tab === "matchs" ? 1 : 0)} onOpen={() => goTo("coupon")} />
             <TopPicks results={visibleResults} onOpen={setDetail} />
+            <TopScorers results={visibleResults} onOpen={setDetail} />
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">
@@ -1101,7 +1112,7 @@ function App() {
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] backdrop-blur-xl lg:hidden"
+        className="fixed inset-x-3 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 grid grid-cols-5 rounded-3xl border border-border bg-surface/95 shadow-[0_8px_30px_-6px_rgba(0,0,0,0.25)] backdrop-blur-xl lg:hidden"
         role="tablist"
       >
         {tabs.map((t) => (
@@ -1128,7 +1139,7 @@ function App() {
       </nav>
 
       {selectionBar && (
-        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-border bg-bg/90 backdrop-blur-xl lg:bottom-0">
+        <div className="fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 border-t border-border bg-bg/90 backdrop-blur-xl lg:bottom-0">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
             <p className="text-sm">
               <strong className="text-accent">{selectedFixtures.length}</strong>{" "}

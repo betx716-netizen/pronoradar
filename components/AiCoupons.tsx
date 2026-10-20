@@ -19,7 +19,7 @@ const LABELS: Record<AiProfile, { label: string; tone: string }> = {
   x50: { label: "Fiable · cote 50", tone: "border-accent/60" },
 };
 
-type Built = {
+export type Built = {
   profile: AiProfile;
   legs: (CouponLeg & { reason: string })[];
   comment: string;
@@ -45,7 +45,7 @@ const DELETED = "pronoradar.aiCouponsDeletedAt";
 const KEEP_MS = 2 * 3600_000; // les coupons restent affichés 2 heures
 
 // Coupons enregistrés, s'ils ont moins de 2 heures.
-function load(): Saved | null {
+export function loadAiCoupons(): Saved | null {
   try {
     const saved: Saved | null = JSON.parse(localStorage.getItem(STORE) ?? "null");
     return saved && Date.now() - new Date(saved.createdAt).getTime() < KEEP_MS ? saved : null;
@@ -83,7 +83,7 @@ export function AiCoupons({
   const lastAuto = useRef(autoKey);
 
   useEffect(() => {
-    setSaved(load());
+    setSaved(loadAiCoupons());
     try {
       const s = localStorage.getItem(SIZE_KEY);
       if (s !== null) setSize(s === "auto" ? null : Number(s));
@@ -168,7 +168,7 @@ export function AiCoupons({
   // Coupons vidés (ici ou depuis le générateur manuel) : on efface ceux de l'IA générés avant.
   useEffect(() => {
     if (!clearedAt) return;
-    const current = load();
+    const current = loadAiCoupons();
     if (current && new Date(current.createdAt).getTime() <= clearedAt) {
       setSaved(null);
       try {
@@ -182,7 +182,7 @@ export function AiCoupons({
   // pendant qu'on était sur un autre onglet, on le fait à l'ouverture, quand une analyse est plus récente que les coupons.
   useEffect(() => {
     if (autoKey === 0) return;
-    const current = load();
+    const current = loadAiCoupons();
     const newest = results.reduce(
       (m, r) => (r.createdAt > m ? r.createdAt : m),
       "",

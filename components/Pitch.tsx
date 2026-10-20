@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { Lineup } from "@/lib/schemas";
+import { useClubColors } from "@/lib/teamColors";
 
 // « 10 Ousmane Dembélé » → numéro 10, nom affiché « Dembélé ».
 function parsePlayer(raw: string) {
@@ -12,32 +12,14 @@ function parsePlayer(raw: string) {
 }
 
 // Texte lisible sur la couleur du maillot.
-function ink(hex: string) {
+export function ink(hex: string) {
   const h = hex.replace("#", "");
   if (h.length !== 6) return "#ffffff";
   const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
   return 0.299 * r + 0.587 * g + 0.114 * b > 160 ? "#111111" : "#ffffff";
 }
 
-// Couleurs du club (annuaire public), utilisées quand l'analyse ne les donne pas.
-function useClubColors(team: string) {
-  const [colors, setColors] = useState<{ shirt: string; detail: string } | null>(null);
-  useEffect(() => {
-    let alive = true;
-    fetch(`/api/logo?name=${encodeURIComponent(team)}`)
-      .then((r) => r.json())
-      .then((d: { color: string | null; alternate: string | null }) => {
-        if (alive && d.color) setColors({ shirt: d.color, detail: d.alternate && d.alternate !== d.color ? d.alternate : "#ffffff" });
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [team]);
-  return colors;
-}
-
-function Jersey({ shirt, detail, number, keeper }: { shirt: string; detail: string; number: string; keeper?: boolean }) {
+export function Jersey({ shirt, detail, number, keeper }: { shirt: string; detail: string; number: string; keeper?: boolean }) {
   const body = keeper ? "#facc15" : shirt;
   const trim = keeper ? "#111111" : detail;
   return (
