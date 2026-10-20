@@ -267,6 +267,7 @@ function App() {
     return () => clearInterval(t);
   }, []);
   const isRecent = (r: AnalysisResult) => !matchOver(r, now);
+  const [analysesClearedAt, setAnalysesClearedAt] = useState(0);
   useEffect(() => {
     const saved = loadHistory<AnalysisResult>();
     setHistory(saved);
@@ -276,6 +277,7 @@ function App() {
       cleared =
         Number(localStorage.getItem("pronoradar.analysesClearedAt")) || 0;
     } catch {}
+    setAnalysesClearedAt(cleared);
     const recent = saved.filter(
       (r) =>
         new Date(r.createdAt).getTime() > cleared && !matchOver(r, Date.now()),
@@ -364,9 +366,11 @@ function App() {
 
   // Le coupon puise dans les analyses de la session et dans celles des dernières 48 heures.
   const couponResults = useMemo(() => {
+    // Mêmes analyses que celles affichées dans l'onglet Analyses : ni vidées, ni de matchs déjà joués.
     const limit = Math.max(
       Date.now() - COUPON_HISTORY_HOURS * 3600000,
       couponClearedAt,
+      analysesClearedAt,
     );
     const seen = new Set<string>();
     // Les matchs déjà joués ne sont plus proposés dans les coupons.
@@ -382,7 +386,7 @@ function App() {
         seen.add(key);
         return true;
       });
-  }, [doneJobs, history, couponClearedAt]);
+  }, [doneJobs, history, couponClearedAt, analysesClearedAt]);
 
   function trackQuotas(u: Usage) {
     setQuotas((q) => ({
@@ -1001,6 +1005,7 @@ function App() {
               onResume={resume}
               onClear={() => {
                 setJobs([]);
+                setAnalysesClearedAt(Date.now());
                 try {
                   localStorage.setItem(
                     "pronoradar.analysesClearedAt",

@@ -148,8 +148,10 @@ export function AiCoupons({
         const seen = new Set<string>();
         const legs = (c?.legs ?? []).flatMap((l) => {
           const leg = index.get(l.pick_id.trim());
-          // Une seule sélection par match, et seulement des paris existants.
+          // Une seule sélection par match, et seulement des paris existants. Hors grand combiné, pas de
+          // sélection sous 1,35 : à ce prix-là, elle ne rapporte presque rien et ajoute un risque.
           if (!leg || seen.has(leg.match)) return [];
+          if (profile !== "multi" && leg.pick.odds < 1.35) return [];
           seen.add(leg.match);
           return [{ ...leg, reason: l.reason }];
         });
