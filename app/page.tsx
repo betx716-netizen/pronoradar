@@ -1057,8 +1057,8 @@ function App() {
           </section>
         )}
 
-        {tab === "coupon" && (
-          <section className="fade-in">
+        {/* Toujours monté (caché hors de l'onglet) : les coupons de l'IA se génèrent même depuis l'accueil. */}
+        <section className={tab === "coupon" ? "fade-in" : "hidden"}>
             {/* Deux espaces séparés : les coupons faits par l'IA, et le générateur où l'on règle tout soi-même. */}
             <div className="mb-5 grid grid-cols-2 gap-1 rounded-2xl border border-border bg-surface p-1">
               {(
@@ -1095,7 +1095,6 @@ function App() {
               <CouponBuilder results={couponResults} onClear={clearCoupon} />
             </div>
           </section>
-        )}
 
         {tab === "suivi" && (
           <section className="fade-in">
