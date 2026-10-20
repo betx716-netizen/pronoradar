@@ -31,7 +31,7 @@ export function TopCoupons({ onOpen, refreshKey }: { onOpen: () => void; refresh
           mobile ? "w-72 shrink-0 snap-start" : "h-full"
         }`}
       >
-        <div className="flex items-center justify-between bg-[#0f172a] px-4 py-2 text-white">
+        <div className="flex items-center justify-between bg-[#050505] px-4 py-2 text-white">
           <span className="font-display text-3xl leading-none text-accent">#{i + 1}</span>
           <span className="text-xs font-semibold text-white/70">
             {c.legs.length} sélection{c.legs.length > 1 ? "s" : ""}

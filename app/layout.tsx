@@ -21,7 +21,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#1e293b",
+  themeColor: "#050505",
 };
 
 export default function RootLayout({
@@ -35,7 +35,7 @@ export default function RootLayout({
         {/* Applique le thème choisi avant l'affichage, pour éviter un flash de la mauvaise couleur. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var d=document.documentElement,t=localStorage.getItem("pronoradar.theme"),p=localStorage.getItem("pronoradar.palette");if(t)d.dataset.theme=t;if(p)d.dataset.palette=p}catch(e){}`,
+            __html: `try{var d=document.documentElement,t=localStorage.getItem("pronoradar.theme"),p=localStorage.getItem("pronoradar.palette.v2");if(t)d.dataset.theme=t;if(p)d.dataset.palette=p}catch(e){}`,
           }}
         />
       </head>

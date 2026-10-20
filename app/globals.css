@@ -11,9 +11,9 @@
   --border: #e3e3e9;
   --text: #121216;
   --muted: #5d6270;
-  --accent: #e2563f;
-  --accent-strong: #c4442f;
-  --accent-soft: rgba(226, 86, 63, 0.1);
+  --accent: #16a34a;
+  --accent-strong: #15803d;
+  --accent-soft: rgba(22, 163, 74, 0.1);
   --on-accent: #ffffff;
   --gold: #b45309;
   --gold-soft: rgba(217, 119, 6, 0.12);
@@ -25,8 +25,8 @@
   --warn-bg: #fff7e6;
   --warn-text: #92400e;
   --danger: #b91c1c;
-  --header-from: #1e293b;
-  --header-to: #334155;
+  --header-from: #050505;
+  --header-to: #0f3a1e;
 }
 
 /* Mode sombre rouge et noir : suit le réglage du téléphone, sauf choix manuel. */
@@ -40,9 +40,9 @@
   --border: #2c2c33;
   --text: #f4f4f6;
   --muted: #9a9ca6;
-  --accent: #f0705a;
-  --accent-strong: #e2563f;
-  --accent-soft: rgba(240, 112, 90, 0.16);
+  --accent: #22c55e;
+  --accent-strong: #16a34a;
+  --accent-soft: rgba(34, 197, 94, 0.16);
   --on-accent: #ffffff;
   --gold: #f5b544;
   --gold-soft: rgba(245, 181, 68, 0.14);
@@ -65,9 +65,9 @@
   --border: #2c2c33;
   --text: #f4f4f6;
   --muted: #9a9ca6;
-  --accent: #f0705a;
-  --accent-strong: #e2563f;
-  --accent-soft: rgba(240, 112, 90, 0.16);
+  --accent: #22c55e;
+  --accent-strong: #16a34a;
+  --accent-soft: rgba(34, 197, 94, 0.16);
   --on-accent: #ffffff;
   --gold: #f5b544;
   --gold-soft: rgba(245, 181, 68, 0.14);
@@ -111,7 +111,7 @@
 
 body {
   background:
-    radial-gradient(1000px 420px at 50% -220px, rgba(226, 86, 63, 0.06), transparent 70%),
+    radial-gradient(1000px 420px at 50% -220px, rgba(22, 163, 74, 0.07), transparent 70%),
     var(--bg);
   color: var(--text);
   overflow-x: clip;
@@ -356,5 +356,26 @@ h1 {
     --accent: #9b6bff;
     --accent-strong: #7c3aed;
     --accent-soft: rgba(155, 107, 255, 0.16);
+  }
+}
+
+/* Ancienne palette par défaut. */
+:root[data-palette="corail"] {
+  --accent: #e2563f;
+  --accent-strong: #c4442f;
+  --accent-soft: rgba(226, 86, 63, 0.1);
+  --header-from: #1e293b;
+  --header-to: #334155;
+}
+:root[data-palette="corail"][data-theme="dark"] {
+  --accent: #f0705a;
+  --accent-strong: #e2563f;
+  --accent-soft: rgba(240, 112, 90, 0.16);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="corail"]:not([data-theme="light"]) {
+    --accent: #f0705a;
+    --accent-strong: #e2563f;
+    --accent-soft: rgba(240, 112, 90, 0.16);
   }
 }
