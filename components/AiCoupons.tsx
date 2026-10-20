@@ -17,6 +17,7 @@ const LABELS: Record<AiProfile, { label: string; tone: string }> = {
   x10: { label: "Fiable · cote 10", tone: "border-gold/50" },
   x20: { label: "Fiable · cote 20", tone: "border-away/50" },
   x50: { label: "Fiable · cote 50", tone: "border-accent/60" },
+  multi: { label: "Grand combiné sûr", tone: "border-success/60" },
 };
 
 export type Built = {
@@ -38,7 +39,12 @@ function candidates(r: AnalysisResult): MarketPick[] {
   const ok = (r.picks ?? []).filter((p) => p.odds >= 1.3 && p.probability >= 45 && p.reliability !== "fragile");
   const byValue = [...ok].sort((a, b) => b.probability * b.odds - a.probability * a.odds).slice(0, 8);
   const byProb = [...ok].sort((a, b) => b.probability - a.probability).slice(0, 6);
-  return [...new Set([...byValue, ...byProb])];
+  // Pour le grand combiné : les paris les plus sûrs, même à toute petite cote.
+  const safe = (r.picks ?? [])
+    .filter((p) => p.odds >= 1.04 && p.odds < 1.45 && p.probability >= 78 && p.reliability !== "fragile")
+    .sort((a, b) => b.probability - a.probability)
+    .slice(0, 3);
+  return [...new Set([...byValue, ...byProb, ...safe])].slice(0, 14);
 }
 
 const DELETED = "pronoradar.aiCouponsDeletedAt";
@@ -136,7 +142,7 @@ export function AiCoupons({
         setLoading,
       );
       const coupons: Built[] = (
-        ["x2", "x5", "x10", "x20", "x50"] as AiProfile[]
+        ["x2", "x5", "x10", "x20", "x50", "multi"] as AiProfile[]
       ).map((profile) => {
         const c = res.coupons.find((x) => x.profile === profile);
         const seen = new Set<string>();
@@ -221,7 +227,7 @@ export function AiCoupons({
 
   // Le nom du coupon donne la cote réellement obtenue, pas la cote visée.
   const title = (odds: number, n: number) =>
-    n ? `Fiable · cote ${odds.toFixed(2).replace(".", ",")}` : "Fiable";
+    n ? `${n >= 8 ? "Grand combiné" : "Fiable"} · cote ${odds.toFixed(2).replace(".", ",")}` : "Fiable";
 
   async function copy(c: Built, odds: number) {
     const text = [

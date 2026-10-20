@@ -5,7 +5,7 @@ import { edge, isValueBet } from "./value";
 
 // Tous les coupons restent fiables : chaque sélection doit être probable. Ce qui change d'un profil à l'autre,
 // c'est la cote visée, atteinte en ajoutant des matchs ou en prenant des paris mieux cotés mais toujours solides.
-export type RiskProfile = "x2" | "x5" | "x10" | "x20" | "x50" | "value";
+export type RiskProfile = "x2" | "x5" | "x10" | "x20" | "x50" | "multi" | "value";
 
 export const PROFILES: Record<RiskProfile, { label: string; description: string; minProbability: number; target?: number }> = {
   x2: { label: "Objectif cote 2", description: "Sélections solides qui ont de la valeur, cote totale autour de 2", minProbability: 60, target: 2 },
@@ -13,6 +13,7 @@ export const PROFILES: Record<RiskProfile, { label: string; description: string;
   x10: { label: "Objectif cote 10", description: "Sélections solides qui ont de la valeur, cote totale autour de 10", minProbability: 54, target: 10 },
   x20: { label: "Objectif cote 20", description: "Cote totale autour de 20 : des outsiders bien analysés plutôt qu'une pile de favoris", minProbability: 52, target: 20 },
   x50: { label: "Objectif cote 50", description: "Cote totale autour de 50 : plus de matchs, donc plus de risque global", minProbability: 50, target: 50 },
+  multi: { label: "Grand combiné sûr", description: "10 à 15 sélections parmi les plus sûres, à petite cote (1,05 à 1,40)", minProbability: 78 },
   value: { label: "Value", description: "Uniquement les paris où notre probabilité bat la cote du bookmaker (avantage ≥ 3 %), cote totale autour de 4", minProbability: 40, target: 4 },
 };
 
@@ -95,17 +96,25 @@ export function buildCoupon(
       forcedLegs.push({ ...leg, pick: forced });
       continue;
     }
-    const allowed = (r.picks ?? []).filter(
-      (p) => options.categories.includes(p.category) && reliable(p, minProbability) && (options.profile !== "value" || isValueBet(p)),
+    const allowed = (r.picks ?? []).filter((p) =>
+      options.profile === "multi"
+        ? options.categories.includes(p.category) && p.probability >= minProbability && p.reliability !== "fragile" && p.odds >= 1.04 && p.odds < 1.45
+        : options.categories.includes(p.category) && reliable(p, minProbability) && (options.profile !== "value" || isValueBet(p)),
     );
     if (allowed.length === 0) continue;
     pools.push({ leg, picks: allowed });
     // Value : le plus gros avantage. Sinon : le pari qui fait monter la cote au moindre risque.
     const best =
-      options.profile === "value"
+      options.profile === "multi"
+        ? allowed.reduce((x, y) => (y.probability > x.probability ? y : x))
+        : options.profile === "value"
         ? allowed.reduce((x, y) => ((edge(y) ?? -1) > (edge(x) ?? -1) ? y : x))
         : allowed.reduce((x, y) => (cost(y) < cost(x) ? y : x));
-    candidates.push({ ...leg, pick: best, cost: options.profile === "value" ? -(edge(best) ?? 0) : cost(best) });
+    candidates.push({
+      ...leg,
+      pick: best,
+      cost: options.profile === "multi" ? -best.probability : options.profile === "value" ? -(edge(best) ?? 0) : cost(best),
+    });
   }
 
   const legs = [...forcedLegs];

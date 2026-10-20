@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { AnalysisError, aiAvailable, emptyUsage, structure, todayInParis } from "./gemini";
 
-export const AI_PROFILES = ["x2", "x5", "x10", "x20", "x50"] as const;
+export const AI_PROFILES = ["x2", "x5", "x10", "x20", "x50", "multi"] as const;
 export type AiProfile = (typeof AI_PROFILES)[number];
 
 export const AiCouponsRequestSchema = z.object({
@@ -44,6 +44,7 @@ const SYSTEM = (size: number | null) => `Tu es un parieur professionnel. Ton but
 - "x10" : cote totale autour de 10. Mise 1 à 2 %.
 - "x20" : cote totale autour de 20. Mise 0,5 à 1,5 %.
 - "x50" : cote totale autour de 50. Mise 0,5 à 1 %.
+- "multi" : un GRAND COMBINÉ de 10 à 15 sélections à petite cote (1,05 à 1,40 chacune), les plus sûres de toutes les analyses : favoris très solides, double chance, « plus de 0,5 but », etc. Chaque sélection doit avoir au moins 80 % de probabilité. Pour ce coupon seulement, les règles de cote minimum et de nombre de favoris ne s'appliquent pas. Mise 1 à 2 %.
 
 Ta philosophie :
 - Une petite cote ne garantit rien. Un favori à 1,25 perd une fois sur quatre et rapporte très peu : il ne vaut que si sa probabilité réelle dépasse nettement 80 %.
@@ -52,7 +53,7 @@ Ta philosophie :
 - Mieux vaut peu de sélections bien choisies à 1,60-2,50 qu'une pile de favoris à 1,20.
 
 Règles :
-- Chaque sélection : cote d'au moins 1,40 et probabilité d'au moins 50 % (60 % pour "x2"). Pas de score exact ni de marché « fragile ».
+- Sauf pour "multi" : chaque sélection a une cote d'au moins 1,40 et probabilité d'au moins 50 % (60 % pour "x2"). Pas de score exact ni de marché « fragile ».
 - Pas plus de deux favoris à moins de 1,60 dans un même coupon.
 - ${size ? `Au plus ${size} sélection(s) par coupon.` : "Choisis le nombre de sélections nécessaire pour approcher la cote visée, en privilégiant 2 à 6 sélections."}
 - Au plus UNE sélection par match dans un même coupon. Un même match peut figurer dans plusieurs coupons.
