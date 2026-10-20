@@ -391,7 +391,10 @@ export function CouponBuilder({
               </label>
             </div>
             <p className="text-xs text-muted">
-              Mise conseillée : {fcfa(suggestedStake)} · gain potentiel {fcfa(stake * coupon.totalOdds)}
+              {kelly > 0
+                ? `Mise conseillée : ${fcfa(suggestedStake)} · gain potentiel ${fcfa(stake * coupon.totalOdds)}`
+                : `Pas d'avantage sur la cote d'après nos probabilités : le mieux est de passer, ou de jouer une mise plaisir (${fcfa(suggestedStake)}).`}
+
             </p>
             <button
               onClick={save}

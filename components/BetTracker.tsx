@@ -78,6 +78,16 @@ function couponOutcome(
   return "gagne";
 }
 
+// Type de coupon, pour comparer ce qui rapporte : grand combiné, grosse cote, value, petit combiné, simple…
+function couponType(b: SavedBet) {
+  if (/value/i.test(b.profile)) return "Value";
+  if (b.legs.length >= 8) return "Grand combiné (8+)";
+  if (b.totalOdds >= 10) return "Grosse cote (10+)";
+  if (b.legs.length === 1) return "Pari simple";
+  if (b.legs.length <= 3) return "Petit combiné (2-3)";
+  return "Combiné (4-7)";
+}
+
 const dateLabel = (iso: string) =>
   new Date(iso).toLocaleString("fr-FR", {
     day: "numeric",
@@ -315,6 +325,19 @@ export function BetTracker() {
   const list =
     filter === "tous" ? bets : bets.filter((b) => b.status === filter);
 
+  // Rentabilité par type de coupon : le meilleur indicateur pour savoir quelle méthode garder.
+  const byType = new Map<string, { n: number; won: number; staked: number; net: number }>();
+  for (const b of settled) {
+    const k = couponType(b);
+    const t = byType.get(k) ?? { n: 0, won: 0, staked: 0, net: 0 };
+    t.n++;
+    if (b.status === "gagne") t.won++;
+    t.staked += b.stake;
+    t.net += profit(b);
+    byType.set(k, t);
+  }
+  const types = [...byType].sort((a, b) => b[1].net / (b[1].staked || 1) - a[1].net / (a[1].staked || 1));
+
   return (
     <div className="space-y-5">
       {/* Bilan */}
@@ -381,6 +404,35 @@ export function BetTracker() {
           Vous gagnez nettement moins que prévu : nos probabilités semblent trop
           optimistes. Réduisez les mises ou visez des cotes plus basses.
         </p>
+      )}
+
+      {types.length > 0 && (
+        <section className="rounded-2xl border border-border bg-surface p-4">
+          <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted">Rentabilité par type de coupon</h3>
+          <p className="mb-3 text-xs text-muted">Du plus rentable au moins rentable : gardez ce qui gagne, abandonnez ce qui perd.</p>
+          <ul className="space-y-2">
+            {types.map(([k, t]) => {
+              const roi = t.staked ? (t.net / t.staked) * 100 : 0;
+              return (
+                <li key={k} className="flex items-center justify-between gap-3 rounded-xl bg-surface-2 px-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">{k}</p>
+                    <p className="text-xs text-muted">
+                      {t.won}/{t.n} gagnés · {fcfa(t.staked)} misés
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-display text-2xl leading-none tabular-nums ${t.net >= 0 ? "text-success" : "text-danger"}`}>{fcfa(t.net, true)}</p>
+                    <p className={`text-xs font-semibold tabular-nums ${roi >= 0 ? "text-success" : "text-danger"}`}>
+                      {roi >= 0 ? "+" : ""}
+                      {roi.toFixed(1)} %
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
 
       {byMarket.size > 0 && (

@@ -227,7 +227,9 @@ export function AiCoupons({
 
   // Le nom du coupon donne la cote réellement obtenue, pas la cote visée.
   const title = (odds: number, n: number) =>
-    n ? `${n >= 8 ? "Grand combiné" : "Fiable"} · cote ${odds.toFixed(2).replace(".", ",")}` : "Fiable";
+    n
+      ? `${n >= 8 ? "Grand combiné" : odds < 4 ? "Fiable" : odds < 10 ? "Équilibré" : "Grosse cote"} · cote ${odds.toFixed(2).replace(".", ",")}`
+      : "Fiable";
 
   async function copy(c: Built, odds: number) {
     const text = [
@@ -419,7 +421,8 @@ export function AiCoupons({
                         <p className="mb-1 text-sm">{c.comment}</p>
                         <p className="mb-3 text-xs text-muted">
                           {c.legs.length} sélection
-                          {c.legs.length > 1 ? "s" : ""} · mise conseillée {c.stakePercent} % de la bankroll
+                          {c.legs.length > 1 ? "s" : ""} · chances estimées {prob.toFixed(prob < 10 ? 1 : 0)} % · mise conseillée{" "}
+                          {odds >= 10 || c.legs.length >= 8 ? "1 % max (pari plaisir)" : `${c.stakePercent} % de la bankroll`}
                         </p>
                         <div className="mt-auto flex gap-2">
                           <button
