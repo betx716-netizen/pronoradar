@@ -86,7 +86,7 @@ export function Landing({ onLogin }: { onLogin: () => void }) {
       {/* Bandeau */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 -skew-x-6 items-center justify-center rounded-lg bg-[#e2563f] font-display text-2xl">P</div>
+          <img src="/logo-mark.png" alt="PronoRadar" className="h-10 w-10 rounded-lg bg-black object-cover shadow" />
           <p className="font-display text-[1.7rem] leading-none tracking-wide">
             PRONO<span className="text-white/60">RADAR</span>
           </p>
