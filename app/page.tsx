@@ -348,12 +348,26 @@ function App() {
   const doneJobs = jobs.filter((j) => j.status === "done" && j.result);
 
   // Matchs regroupés par championnat (dans l'ordre choisi), puis par jour.
+  // Onglets des jours : d'aujourd'hui au même jour la semaine suivante (8 jours, heure de Paris).
+  const weekDays = useMemo(() => {
+    const fmt = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" });
+    return Array.from({ length: 8 }, (_, i) => fmt.format(new Date(Date.now() + i * 86400000)));
+  }, []);
+  const [day, setDay] = useState<string | null>(null);
+  const countByDay = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const f of allFixtures) m.set(f.date, (m.get(f.date) ?? 0) + 1);
+    return m;
+  }, [allFixtures]);
+  // Par défaut : le premier jour qui a des matchs.
+  const activeDay = day ?? weekDays.find((d) => countByDay.get(d)) ?? weekDays[0];
+
   const byLeagueDay = useMemo(
     () =>
       leagues
         .map((l) => {
           const days = new Map<string, Fixture[]>();
-          for (const f of [...(byLeague[l]?.fixtures ?? [])].sort((a, b) =>
+          for (const f of [...(byLeague[l]?.fixtures ?? [])].filter((x) => x.date === activeDay).sort((a, b) =>
             (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")),
           )) {
             days.set(f.date, [...(days.get(f.date) ?? []), f]);
@@ -361,7 +375,7 @@ function App() {
           return [l, [...days.entries()]] as const;
         })
         .filter(([, days]) => days.length > 0),
-    [leagues, byLeague],
+    [leagues, byLeague, activeDay],
   );
 
   // Le coupon puise dans les analyses de la session et dans celles des dernières 48 heures.
@@ -829,6 +843,36 @@ function App() {
               </div>
             )}
 
+            {allFixtures.length > 0 && (
+              <div className="sticky top-[4.25rem] z-20 -mx-4 mb-5 bg-bg/95 px-4 py-2 backdrop-blur">
+                <ScrollRow className="gap-2">
+                  {weekDays.map((d) => {
+                    const date = new Date(`${d}T12:00:00`);
+                    const n = countByDay.get(d) ?? 0;
+                    const on = d === activeDay;
+                    return (
+                      <button
+                        key={d}
+                        onClick={() => setDay(d)}
+                        disabled={n === 0}
+                        className={`flex w-16 shrink-0 flex-col items-center rounded-2xl border py-2 transition active:scale-95 disabled:opacity-35 ${
+                          on ? "border-accent bg-accent text-on-accent" : "border-border bg-surface"
+                        }`}
+                      >
+                        <span className="text-[11px] font-semibold uppercase">
+                          {new Intl.DateTimeFormat("fr-FR", { weekday: "short" }).format(date).replace(".", "")}
+                        </span>
+                        <span className="font-display text-2xl leading-none">{date.getDate()}</span>
+                        <span className={`text-[10px] ${on ? "text-on-accent/80" : "text-muted"}`}>
+                          {n} match{n > 1 ? "s" : ""}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </ScrollRow>
+              </div>
+            )}
+
             {searching && allFixtures.length === 0 ? (
               <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 6 }, (_, i) => (
@@ -837,8 +881,7 @@ function App() {
               </ul>
             ) : byLeagueDay.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted">
-                Aucun match trouvé pour ces championnats dans les 7 prochains
-                jours.
+                {allFixtures.length ? "Aucun match ce jour-là dans ces championnats." : "Aucun match trouvé pour ces championnats dans les 7 prochains jours."}
               </div>
             ) : (
               <div className="space-y-10">
@@ -847,7 +890,7 @@ function App() {
                   const allOn = ids.every((id) => selected.has(id));
                   return (
                     <section key={league} className="fade-in">
-                      <div className="sticky top-[4.25rem] z-20 -mx-4 mb-3 flex items-center gap-3 border-b-2 border-accent bg-bg/95 px-4 py-2.5 backdrop-blur">
+                      <div className="sticky top-[9.6rem] z-10 -mx-4 mb-3 flex items-center gap-3 border-b-2 border-accent bg-bg/95 px-4 py-2.5 backdrop-blur">
                         <LeagueLogo name={league} size={32} />
                         <div className="min-w-0 flex-1">
                           <h2 className="font-display text-[1.65rem] leading-none sm:text-3xl">
@@ -876,9 +919,6 @@ function App() {
                       <div className="space-y-5">
                         {days.map(([day, fixtures]) => (
                           <div key={day}>
-                            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">
-                              {dayLabel(day)}
-                            </h3>
                             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                               {fixtures.map((f) => (
                                 <MatchCard
