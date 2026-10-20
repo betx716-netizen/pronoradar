@@ -15,6 +15,7 @@ import {
   loadHistory,
   profit,
   removeBet,
+  removeBets,
   syncHistory,
   updateBet,
   type BetStatus,
@@ -500,6 +501,15 @@ export function BetTracker() {
       )}
 
       <p className="text-center text-xs text-muted">{syncNote}</p>
+      <button
+        onClick={() =>
+          confirm(`Effacer les ${bets.length} coupons du suivi, sur tous vos appareils ?`) &&
+          removeBets(bets.map((b) => b.id))
+        }
+        className="mx-auto block text-xs font-semibold text-muted underline hover:text-danger"
+      >
+        Tout effacer le suivi
+      </button>
     </div>
   );
 }

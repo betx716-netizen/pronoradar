@@ -19,6 +19,23 @@ export type SavedBet = {
 export type SyncState = "local" | "synced" | "error";
 
 const KEY = "pronoradar.history.v1";
+// Coupons supprimés (à effacer aussi en ligne) et coupons déjà vus en ligne : sans ça, un coupon supprimé
+// revenait à la synchronisation suivante, renvoyé par cet appareil ou par un autre qui en gardait une copie.
+const DELETED_KEY = "pronoradar.history.deleted.v1";
+const SYNCED_KEY = "pronoradar.history.synced.v1";
+const readIds = (key: string) => {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(key) ?? "[]") as string[]);
+  } catch {
+    return new Set<string>();
+  }
+};
+const writeIds = (key: string, ids: Set<string>) => {
+  try {
+    localStorage.setItem(key, JSON.stringify([...ids].slice(-2000)));
+  } catch {}
+};
+
 const isBet = (b: unknown): b is SavedBet => Array.isArray((b as SavedBet)?.legs) && typeof (b as SavedBet).id === "string";
 
 export function loadHistory(): SavedBet[] {
@@ -50,10 +67,22 @@ export async function syncHistory(): Promise<SyncState> {
     const res = await api();
     if (res.status === 503) return "local";
     if (!res.ok) return "error";
-    const remote = ((await res.json()).bets as unknown[]).filter(isBet);
+    const deleted = readIds(DELETED_KEY);
+    // Supprimés sur cet appareil mais encore en ligne (suppression précédente échouée) : on réessaie.
+    const pending = ((await res.json()).bets as unknown[]).filter(isBet);
+    const stillDeleted = new Set<string>();
+    for (const b of pending.filter((b) => deleted.has(b.id))) {
+      const r = await api({ method: "DELETE" }, `?id=${encodeURIComponent(b.id)}`).catch(() => null);
+      if (!r?.ok) stillDeleted.add(b.id);
+    }
+    writeIds(DELETED_KEY, stillDeleted);
+    const remote = pending.filter((b) => !deleted.has(b.id));
     const remoteIds = new Set(remote.map((b) => b.id));
-    const localOnly = loadHistory().filter((b) => !remoteIds.has(b.id));
-    if (localOnly.length) await pushRemote(localOnly);
+    const synced = readIds(SYNCED_KEY);
+    // Un coupon déjà vu en ligne et qui n'y est plus a été supprimé depuis un autre appareil : on ne le renvoie pas.
+    const localOnly = loadHistory().filter((b) => !remoteIds.has(b.id) && !synced.has(b.id) && !deleted.has(b.id));
+    const pushed = localOnly.length ? Boolean((await pushRemote(localOnly))?.ok) : true;
+    writeIds(SYNCED_KEY, new Set([...remoteIds, ...(pushed ? localOnly.map((b) => b.id) : [])]));
     storeLocal([...localOnly, ...remote].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
     return "synced";
   } catch {
@@ -75,8 +104,25 @@ export function updateBet(id: string, changes: Partial<SavedBet>) {
 }
 
 export function removeBet(id: string) {
-  storeLocal(loadHistory().filter((b) => b.id !== id));
-  api({ method: "DELETE" }, `?id=${encodeURIComponent(id)}`).catch(() => null);
+  removeBets([id]);
+}
+
+/** Supprime des coupons ici et en ligne ; en cas d'échec réseau, la suppression est retentée à la synchronisation. */
+export function removeBets(ids: string[]) {
+  const gone = new Set(ids);
+  storeLocal(loadHistory().filter((b) => !gone.has(b.id)));
+  const deleted = readIds(DELETED_KEY);
+  ids.forEach((id) => deleted.add(id));
+  writeIds(DELETED_KEY, deleted);
+  for (const id of ids)
+    api({ method: "DELETE" }, `?id=${encodeURIComponent(id)}`)
+      .then((r) => {
+        if (!r.ok) return;
+        const d = readIds(DELETED_KEY);
+        d.delete(id);
+        writeIds(DELETED_KEY, d);
+      })
+      .catch(() => null);
 }
 
 /** Gain net d'un pari terminé (0 s'il est en cours ou remboursé). */
