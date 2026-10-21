@@ -14,7 +14,8 @@ import {
   todayInParis,
   writeWithoutSearch,
 } from "./gemini";
-import { AnalysisSchema, type AnalysisResult, type AnalyzeRequest } from "./schemas";
+import { fetchMatchHistory } from "./espn";
+import { AnalysisSchema, type PastGame, type AnalysisResult, type AnalyzeRequest } from "./schemas";
 
 // Façon de raisonner imposée à Gemini : partir du marché, ne s'en écarter qu'avec une raison précise, chercher les pièges.
 const PHILOSOPHY = `Méthode de raisonnement (obligatoire) :
@@ -39,7 +40,7 @@ ${PHILOSOPHY}
 
 Rédige ensuite un dossier en français avec :
 1. Les sources trouvées sur le web, une par ligne (nom, type : tipster / media / stats_model, issue pronostiquée, probabilités, autres pronostics, argument, date).
-2. Le contexte (forme, absences, confrontations directes, faits marquants) et, au football, la composition probable de chaque équipe : système (ex. 4-3-3), gardien, puis les joueurs de champ ligne par ligne, de la défense à l'attaque, avec le numéro de maillot de chaque joueur (« 10 Ousmane Dembélé »), et les couleurs habituelles du maillot de chaque équipe.
+2. Le contexte (forme, absences, confrontations directes, faits marquants) ; au football, liste aussi les 5 derniers matchs joués par chaque équipe et les 5 dernières confrontations directes, chacun avec sa date, l'équipe à domicile, l'équipe à l'extérieur, le score et la compétition (uniquement des résultats réels trouvés ou fournis, jamais inventés) et, au football, la composition probable de chaque équipe : système (ex. 4-3-3), gardien, puis les joueurs de champ ligne par ligne, de la défense à l'attaque, avec le numéro de maillot de chaque joueur (« 10 Ousmane Dembélé »), et les couleurs habituelles du maillot de chaque équipe.
 3. Ce qui ressort de l'ensemble des pronostics, cotes comprises : où ils convergent, où ils divergent.
 4. TA propre analyse : probabilités en % pour chaque issue, issue la plus probable, score ou sets probables, niveau de confiance (faible / moyenne / élevée), facteurs clés, risques, et en quoi tu rejoins ou contredis le consensus. Sois honnête sur l'incertitude.
 5. Les marchés secondaires, chacun avec une probabilité en % et la moyenne attendue : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (ligne la plus pertinente entre 8,5 et 10,5), fautes (entre 20,5 et 24,5), cartons (3,5 ou 4,5). Ajoute aussi : résultat à la mi-temps, mi-temps/fin de match, handicap (-1 ou +1), les 2 ou 3 scores exacts les plus probables, le nombre de buts de chaque équipe, les combinés résultat + plus/moins 2,5 buts et résultat + les deux marquent, les tirs cadrés et les hors-jeu, et les 3 buteurs les plus probables (joueurs titulaires probables uniquement, en tenant compte des blessés : forme récente, buts cette saison, tireur de penalty), les 2 passeurs décisifs les plus probables (passes décisives cette saison, tireur de coups de pied arrêtés) et les 2 joueurs les plus probables pour « buteur ou passeur décisif ». Au tennis : nombre de sets et de jeux, vainqueur du 1er set, handicap jeux, score exact en sets et tie-break oui/non. Appuie-toi sur les moyennes de la saison des deux équipes (buts, corners, fautes, cartons), le style de jeu et l'arbitre si connu.`;
@@ -51,6 +52,7 @@ const STRUCTURE_SYSTEM = `Tu convertis un dossier d'analyse sportive en JSON. Re
 - Dans "sources", mets uniquement les sources trouvées sur le web (pas les cotes ni API-Football, déjà comptées). Leurs cotes sont à null. Si l'URL d'une source n'est pas connue, mets une chaîne vide.
 - Dans "markets", recopie les marchés secondaires du dossier (buts, les deux marquent, corners, fautes, cartons, mi-temps, mi-temps/fin, handicap, score exact, buts par équipe, buteurs, passeurs, buteur ou passeur, combinés résultat + buts ou + les deux marquent, tirs cadrés, hors-jeu, sets, jeux, 1er set, handicap jeux, score en sets, tie-break), un pari par ligne avec la catégorie correspondante et sa fiabilité (fiable, moyenne ou fragile) avec sa probabilité.
 - Dans "lineups", recopie les compositions du dossier avec leur statut (officielle ou probable) et leur source. Mets null si le dossier n'en cite aucune publiée par une source, ou au tennis : n'en reconstitue jamais une toi-même. Le nombre de joueurs par ligne doit correspondre au système (4-3-3 : 4, 3, 3). Chaque joueur au format « numéro nom ». Dans "kit", les couleurs du maillot en hexadécimal (null si inconnues).
+- Dans "recent_home", "recent_away" et "h2h_games", recopie les derniers matchs et confrontations listés dans le dossier (score au format domicile-extérieur, ex. "2-1") ; laisse vide ce que le dossier ne donne pas.
 - Rédige tous les textes en français.`;
 
 // Utilisé quand la recherche Google n'est plus disponible : Gemini analyse sans pouvoir citer de pronostiqueurs.
@@ -69,8 +71,14 @@ const MODE_SETTINGS = {
 } as const;
 
 // Les données des API, présentées à Gemini comme des faits établis.
-function knownFacts(req: AnalyzeRequest, insight: ApiFootballInsight | null): string {
+type History = Awaited<ReturnType<typeof fetchMatchHistory>>;
+const gameLine = (g: PastGame) => `${g.date ?? "?"} ${g.home} ${g.score} ${g.away}${g.competition ? ` (${g.competition})` : ""}`;
+
+function knownFacts(req: AnalyzeRequest, insight: ApiFootballInsight | null, history: History = null): string {
   const lines: string[] = [];
+  if (history?.home.length) lines.push(`Derniers matchs de ${req.home} : ${history.home.map(gameLine).join(" ; ")}.`);
+  if (history?.away.length) lines.push(`Derniers matchs de ${req.away} : ${history.away.map(gameLine).join(" ; ")}.`);
+  if (history?.h2h.length) lines.push(`Dernières confrontations directes : ${history.h2h.map(gameLine).join(" ; ")}.`);
   const o = req.odds;
   if (o) {
     lines.push(
@@ -90,6 +98,21 @@ function knownFacts(req: AnalyzeRequest, insight: ApiFootballInsight | null): st
 }
 
 export async function analyzeMatch(req: AnalyzeRequest, onProgress: (message: string) => void): Promise<AnalysisResult> {
+  let history: History = null;
+  if (req.sport === "football" && req.competition) {
+    onProgress("Récupération des derniers matchs et des confrontations…");
+    history = await fetchMatchHistory(req.competition, req.home, req.away, req.date ?? null).catch(() => null);
+  }
+  const result = await analyzeCore(req, onProgress, history);
+  // Les résultats officiels priment sur ceux recopiés par l'IA.
+  const c = result.analysis.context;
+  if (history?.home.length) c.recent_home = history.home;
+  if (history?.away.length) c.recent_away = history.away;
+  if (history?.h2h.length) c.h2h_games = history.h2h;
+  return result;
+}
+
+async function analyzeCore(req: AnalyzeRequest, onProgress: (message: string) => void, history: History): Promise<AnalysisResult> {
   const usage = emptyUsage();
   const settings = MODE_SETTINGS[req.mode];
 
@@ -135,7 +158,7 @@ export async function analyzeMatch(req: AnalyzeRequest, onProgress: (message: st
   }
 
   try {
-    return await analyzeWithGemini(req, insight, usage, onProgress, settings.sourcesTarget);
+    return await analyzeWithGemini(req, insight, history, usage, onProgress, settings.sourcesTarget);
   } catch (e) {
     // Quota ou clé Gemini en défaut : on continue avec les autres sources plutôt que d'échouer.
     if (e instanceof AnalysisError && e.geminiUnavailable && hasData) {
@@ -149,6 +172,7 @@ export async function analyzeMatch(req: AnalyzeRequest, onProgress: (message: st
 async function analyzeWithGemini(
   req: AnalyzeRequest,
   insight: ApiFootballInsight | null,
+  history: History,
   usage: AnalysisResult["usage"],
   onProgress: (message: string) => void,
   sourcesTarget: string,
@@ -161,7 +185,7 @@ async function analyzeWithGemini(
     `Match de ${req.sport} : ${match}.`,
     req.competition ? `Compétition : ${req.competition}.` : "",
     req.date ? `Date : ${req.date}.` : "Si la date n'est pas précisée, prends la prochaine rencontre entre eux.",
-    knownFacts(req, insight),
+    knownFacts(req, insight, history),
     "Recense les pronostics publiés sur ce match, puis donne ton analyse.",
   ]
     .filter(Boolean)

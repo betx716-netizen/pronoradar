@@ -105,6 +105,23 @@ export async function demoAnalysis(req: AnalyzeRequest, onProgress: (m: string) 
       absences: ["Défenseur central (blessure, démo)", "Milieu offensif incertain (démo)"],
       head_to_head: "2 victoires chacun lors des 5 dernières confrontations (démo).",
       key_facts: ["Données fictives générées pour la démonstration."],
+      ...(tennis
+        ? {}
+        : {
+            recent_home: [
+              { date: "2026-10-18", home: req.home, away: "Équipe X", score: "2-0", competition: "Démo" },
+              { date: "2026-10-11", home: "Équipe Y", away: req.home, score: "1-1", competition: "Démo" },
+              { date: "2026-10-04", home: req.home, away: "Équipe Z", score: "0-1", competition: "Démo" },
+            ],
+            recent_away: [
+              { date: "2026-10-18", home: "Équipe W", away: req.away, score: "0-3", competition: "Démo" },
+              { date: "2026-10-11", home: req.away, away: "Équipe V", score: "2-2", competition: "Démo" },
+            ],
+            h2h_games: [
+              { date: "2026-03-02", home: req.away, away: req.home, score: "1-2", competition: "Démo" },
+              { date: "2025-10-20", home: req.home, away: req.away, score: "1-1", competition: "Démo" },
+            ],
+          }),
     },
     ai_analysis: {
       prob_home: tennis ? 54 : 47,

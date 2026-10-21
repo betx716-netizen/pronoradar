@@ -100,6 +100,15 @@ export const LineupSchema = z.object({
 });
 export type Lineup = z.infer<typeof LineupSchema>;
 
+export const PastGameSchema = z.object({
+  date: z.string().nullable().describe("AAAA-MM-JJ"),
+  home: z.string(),
+  away: z.string(),
+  score: z.string().describe("Ex : '2-1' (buts domicile-extérieur)"),
+  competition: z.string().nullable(),
+});
+export type PastGame = z.infer<typeof PastGameSchema>;
+
 export const AnalysisSchema = z.object({
   match: z.object({
     sport: SportSchema,
@@ -125,6 +134,15 @@ export const AnalysisSchema = z.object({
     absences: z.array(z.string()).describe("Blessés, suspendus, incertains"),
     head_to_head: z.string(),
     key_facts: z.array(z.string()).describe("Statistiques et faits marquants"),
+    recent_home: z
+      .array(PastGameSchema)
+      .describe("Football : les 5 derniers matchs joués par l'équipe à domicile, du plus récent au plus ancien ; vide si inconnus")
+      .optional(),
+    recent_away: z.array(PastGameSchema).describe("Idem pour l'équipe à l'extérieur").optional(),
+    h2h_games: z
+      .array(PastGameSchema)
+      .describe("Les 5 dernières confrontations directes entre les deux, du plus récent au plus ancien ; vide si inconnues")
+      .optional(),
   }),
   ai_analysis: z.object({
     prob_home: z.number().describe("Probabilité en % estimée par l'IA"),

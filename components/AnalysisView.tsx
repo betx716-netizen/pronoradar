@@ -8,6 +8,7 @@ import {
   type Distribution,
 } from "@/lib/consensus";
 import type {
+  PastGame,
   AnalysisResult,
   Outcome,
   Source,
@@ -17,7 +18,7 @@ import { MarketsPanel } from "./MarketsPanel";
 import { useEffect, useState } from "react";
 import { Pitch } from "./Pitch";
 import { LiveDot } from "./LiveBoard";
-import { findLive, useLiveScores } from "@/lib/live";
+import { findLive, sameTeam, useLiveScores } from "@/lib/live";
 import { TeamLogo } from "./TeamLogo";
 
 const TYPE_LABELS: Record<SourceType, string> = {
@@ -533,6 +534,20 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
             )}
           </Card>
 
+          {((context.recent_home?.length ?? 0) > 0 ||
+            (context.recent_away?.length ?? 0) > 0 ||
+            (context.h2h_games?.length ?? 0) > 0) && (
+            <Card title="Derniers matchs et confrontations">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <GameList title={`Derniers matchs · ${match.home}`} team={match.home} games={context.recent_home} />
+                <GameList title={`Derniers matchs · ${match.away}`} team={match.away} games={context.recent_away} />
+              </div>
+              <div className="mt-4">
+                <GameList title="Confrontations directes" team={match.home} games={context.h2h_games} h2h />
+              </div>
+            </Card>
+          )}
+
           <Card title="Comparaison des probabilités">
             <ProbBar
               label="Bookmakers"
@@ -698,6 +713,73 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
         . Aide à la réflexion, pas une garantie : aucun pronostic n&apos;est
         sûr. Pariez de façon responsable.
       </p>
+    </div>
+  );
+}
+
+const plain = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+// Côté de l'équipe dans le match : nom identique d'abord, puis nom approchant si un seul côté correspond.
+function teamSide(team: string, g: PastGame): "home" | "away" | null {
+  if (plain(g.home) === plain(team)) return "home";
+  if (plain(g.away) === plain(team)) return "away";
+  const h = sameTeam(g.home, team);
+  const a = sameTeam(g.away, team);
+  return h && !a ? "home" : a && !h ? "away" : null;
+}
+
+// Résultat d'un match du point de vue d'une équipe : V (victoire), N (nul), D (défaite).
+function gameResult(team: string, g: PastGame): "V" | "N" | "D" | null {
+  const [h, a] = g.score.split("-").map((x) => Number(x.trim()));
+  if (!Number.isFinite(h) || !Number.isFinite(a)) return null;
+  if (h === a) return "N";
+  const side = teamSide(team, g);
+  if (!side) return null;
+  const isHome = side === "home";
+  return (h > a) === isHome ? "V" : "D";
+}
+
+const RESULT_STYLE = { V: "bg-success text-white", N: "bg-draw text-white", D: "bg-danger text-white" } as const;
+
+/** Liste des derniers matchs d'une équipe (avec V/N/D) ou des confrontations directes. */
+function GameList({ title, team, games, h2h = false }: { title: string; team: string; games?: PastGame[]; h2h?: boolean }) {
+  const list = games ?? [];
+  const results = list.map((g) => gameResult(team, g));
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold">{title}</p>
+        {!h2h && (
+          <div className="flex gap-1">
+            {results.map((r, i) =>
+              r ? (
+                <span key={i} className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold ${RESULT_STYLE[r]}`}>
+                  {r}
+                </span>
+              ) : null,
+            )}
+          </div>
+        )}
+      </div>
+      {list.length === 0 ? (
+        <p className="text-sm text-muted">Non disponibles.</p>
+      ) : (
+        <ul className="divide-y divide-border overflow-hidden rounded-xl bg-surface-2 text-sm">
+          {list.map((g, i) => {
+            const r = results[i];
+            return (
+              <li key={`${g.date}-${g.home}-${i}`} className="flex items-center gap-2 px-3 py-2">
+                <span className="w-12 shrink-0 text-xs text-muted">
+                  {g.date ? new Date(g.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"}
+                </span>
+                <span className={`min-w-0 flex-1 truncate text-right ${teamSide(team, g) === "home" ? "font-semibold" : ""}`}>{g.home}</span>
+                <span className="shrink-0 rounded-md bg-surface px-2 py-0.5 font-display text-base tabular-nums">{g.score}</span>
+                <span className={`min-w-0 flex-1 truncate ${teamSide(team, g) === "away" ? "font-semibold" : ""}`}>{g.away}</span>
+                {!h2h && r && <span className={`h-2 w-2 shrink-0 rounded-full ${RESULT_STYLE[r].split(" ")[0]}`} />}
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 // Programme des matchs via l'annuaire public d'ESPN (gratuit, sans clé ni quota connu) :
 // secours quand les cotes et les statistiques ne sont plus disponibles. Pas de cotes.
-import type { Fixture } from "./schemas";
+import type { Fixture, PastGame } from "./schemas";
 
 export const SLUGS: Record<string, string> = {
   "Ligue des Champions": "uefa.champions",
@@ -101,6 +101,74 @@ const sameTeam = (a: string, b: string) => {
   const y = n(b);
   return x === y || (Math.min(x.length, y.length) >= 4 && (x.includes(y) || y.includes(x)));
 };
+
+type FormEvent = {
+  gameDate?: string;
+  atVs?: string;
+  score?: string;
+  homeTeamScore?: string;
+  awayTeamScore?: string;
+  homeTeamId?: string;
+  opponent?: { displayName?: string };
+  leagueName?: string;
+};
+type FormBlock = { team?: { id?: string; displayName?: string }; events?: FormEvent[] };
+
+// Résumé ESPN du match (pour l'historique) : trouvé via le tableau des scores du jour du match.
+async function findSummary(competition: string, home: string, away: string, date: string | null) {
+  const slug = SLUGS[competition];
+  if (!slug) return null;
+  const day = date && /^\d{4}-\d{2}-\d{2}/.test(date) ? date.slice(0, 10).replace(/-/g, "") : ymd(new Date());
+  const board = await fetch(scoreboardUrl(slug, day), { next: { revalidate: 3600 }, signal: AbortSignal.timeout(6000) });
+  if (!board.ok) return null;
+  const events: (EspnEvent & { id?: string })[] = (await board.json())?.events ?? [];
+  const event = events.find((e) => {
+    const c = e.competitions?.[0]?.competitors ?? [];
+    const h = c.find((x) => x.homeAway === "home")?.team?.displayName ?? "";
+    const a = c.find((x) => x.homeAway === "away")?.team?.displayName ?? "";
+    return sameTeam(h, home) && sameTeam(a, away);
+  });
+  if (!event?.id) return null;
+  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/summary?event=${event.id}`, {
+    next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(6000),
+  });
+  return res.ok ? res.json() : null;
+}
+
+// Un match de la liste de forme ESPN, remis au format domicile-extérieur.
+function toPastGame(team: string, e: FormEvent): PastGame | null {
+  const opp = e.opponent?.displayName;
+  if (!opp) return null;
+  const atHome = e.atVs !== "@";
+  const [a, b] = (e.score ?? "").split("-").map((x) => x.trim());
+  const hs = e.homeTeamScore ?? (atHome ? a : b);
+  const as = e.awayTeamScore ?? (atHome ? b : a);
+  if (hs == null || as == null || hs === "" || as === "") return null;
+  return {
+    date: e.gameDate ? e.gameDate.slice(0, 10) : null,
+    home: atHome ? team : opp,
+    away: atHome ? opp : team,
+    score: `${hs}-${as}`,
+    competition: e.leagueName ?? null,
+  };
+}
+
+/** Derniers matchs de chaque équipe et dernières confrontations, d'après ESPN ; null si introuvables. */
+export async function fetchMatchHistory(competition: string, home: string, away: string, date: string | null) {
+  const data = await findSummary(competition, home, away, date).catch(() => null);
+  if (!data) return null;
+  const form: FormBlock[] = data?.boxscore?.form ?? [];
+  const games = (name: string) => {
+    const block = form.find((f) => sameTeam(f.team?.displayName ?? "", name));
+    return (block?.events ?? []).flatMap((e) => toPastGame(name, e) ?? []).slice(0, 5);
+  };
+  const h2hBlock: FormBlock | undefined = (data?.headToHeadGames ?? [])[0];
+  const h2hTeam = h2hBlock?.team?.displayName ?? home;
+  const h2h = (h2hBlock?.events ?? []).flatMap((e) => toPastGame(h2hTeam, e) ?? []).slice(0, 5);
+  const result = { home: games(home), away: games(away), h2h };
+  return result.home.length || result.away.length || result.h2h.length ? result : null;
+}
 
 /** Onze de départ officiels du match s'ils sont publiés, sinon null. */
 export async function fetchOfficialLineups(competition: string, home: string, away: string, date: string | null) {
