@@ -1,3 +1,3 @@
-# Site vitrine Blessing Logistics et Services
+# Ancienne copie du site BLS
 
-Site statique (index.html). Branche séparée : la branche main (Prono Radar) n'est pas modifiée.
+Le site Blessing Logistics et Services a déménagé sur https://bls-rho.vercel.app/ (dépôt bls-). Cette branche ne fait plus que rediriger.
