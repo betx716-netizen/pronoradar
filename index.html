@@ -106,9 +106,8 @@ header.solid{background:rgba(12,29,54,.86);backdrop-filter:blur(14px);box-shadow
 
 /* Marquee compagnies */
 .marquee{background:var(--night);color:#fff;overflow:hidden;border-top:1px solid rgba(255,255,255,.08)}
-.marquee .row{display:flex;gap:56px;width:max-content;padding-block:22px;animation:slide 28s linear infinite}
-.marquee b{font-family:var(--f-display);font-weight:800;font-size:1.25rem;letter-spacing:.12em;color:rgba(255,255,255,.55);white-space:nowrap;display:inline-flex;align-items:center;gap:56px}
-.marquee b::after{content:"";width:8px;height:8px;border-radius:2px;background:var(--lime);transform:rotate(45deg);opacity:.7}
+.marquee .row{display:flex;flex-wrap:wrap;justify-content:center;gap:14px 44px;padding-block:22px;max-width:1180px;margin:0 auto}
+.marquee b{font-family:var(--f-display);font-weight:800;font-size:1.15rem;letter-spacing:.12em;color:rgba(255,255,255,.6);white-space:nowrap}
 @keyframes slide{to{transform:translateX(-50%)}}
 
 section.block{padding-block:100px}
@@ -203,7 +202,7 @@ section.block{padding-block:100px}
 .case dl{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:6px 0 0;font-size:.93rem;padding-top:14px;border-top:1px dashed var(--line)}
 .case dt{color:var(--muted)}
 .case dd{margin:0;font-weight:600;color:var(--ink)}
-.gallery{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:18px;margin-top:22px;perspective:1200px}
+.gallery{display:grid;grid-template-columns:repeat(2,minmax(0,360px));justify-content:center;gap:18px;margin-top:22px;perspective:1200px}
 .shot{margin:0;position:relative;border-radius:20px;overflow:hidden;aspect-ratio:2/3;max-width:100%;transform-style:preserve-3d;transition:transform .15s ease-out}
 .shot.wide{aspect-ratio:auto}
 .shot img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s}
@@ -310,8 +309,8 @@ footer .f{display:flex;align-items:center;gap:12px}
   <div class="scroll-hint" aria-hidden="true"><span></span>DÉFILER</div>
 </section>
 
-<div class="marquee" aria-label="Compagnies maritimes avec lesquelles nous travaillons">
-  <div class="row"><b>HAPAG-LLOYD</b><b>MSC</b><b>MAERSK</b><b>CMA CGM</b><b>PIL</b><b>GRIMALDI</b><b>OMA</b><b>SOGENA</b><b>GMT</b><b>HMM</b><b aria-hidden="true">HAPAG-LLOYD</b><b aria-hidden="true">MSC</b><b aria-hidden="true">MAERSK</b><b aria-hidden="true">CMA CGM</b><b aria-hidden="true">PIL</b><b aria-hidden="true">GRIMALDI</b><b aria-hidden="true">OMA</b><b aria-hidden="true">SOGENA</b><b aria-hidden="true">GMT</b><b aria-hidden="true">HMM</b></div>
+<div class="marquee band" aria-label="Compagnies maritimes avec lesquelles nous travaillons">
+  <div class="row"><b>HAPAG-LLOYD</b><b>MSC</b><b>MAERSK</b><b>CMA CGM</b><b>PIL</b><b>GRIMALDI</b><b>OMA</b><b>SOGENA</b><b>GMT</b><b>HMM</b></div>
 </div>
 
 <div class="band"><div class="wrap stats" style="margin-top:40px">
@@ -329,7 +328,7 @@ footer .f{display:flex;align-items:center;gap:12px}
       <p class="lead">De la cotation à la livraison, BLS gère les étapes administratives et logistiques pour que vous vous concentriez sur votre activité.</p>
     </div>
     <div class="svc">
-      <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-stamp"/></svg></div><span class="code">IMPORT · EXPORT</span><h3>Dédouanement</h3><p>Déclarations, calcul des droits et taxes, visite douane et obtention du BAE.</p></article>
+      <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-stamp"/></svg></div><span class="code">IMPORT</span><h3>Dédouanement</h3><p>Déclarations, calcul des droits et taxes, visite douane et obtention du BAE.</p></article>
       <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-route"/></svg></div><span class="code">D3 · D25 · T1 · B9</span><h3>Transit vers le Mali</h3><p>Déclarations de transit D3 et D25, balises, passage B9 et transport routier jusqu'à destination.</p></article>
       <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-ship"/></svg></div><span class="code">FCL · LCL</span><h3>Transit maritime</h3><p>Échange de BL, endossement, relation avec les compagnies maritimes, les acconiers et le terminal.</p></article>
       <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-calc"/></svg></div><span class="code">COTATION</span><h3>Cotations &amp; évaluation</h3><p>Estimation détaillée avant l'arrivée : droits, frais portuaires, acconage, transport.</p></article>
@@ -379,15 +378,11 @@ footer .f{display:flex;align-items:center;gap:12px}
 <section class="block band alt" id="documents">
   <div class="wrap">
     <div class="head">
-      <span class="eyebrow">Catalogue · documents requis</span>
+      <span class="eyebrow">Documents requis · importation</span>
       <h2>Ce qu'il faut nous transmettre</h2>
-      <p class="lead">Préparez ces pièces dès l'expédition : un dossier complet, c'est un dédouanement plus rapide et moins de frais au terminal.</p>
+      <p class="lead">Pour une importation, préparez ces pièces dès l'expédition : un dossier complet, c'est un dédouanement plus rapide et moins de frais au terminal.</p>
     </div>
-    <div class="tabs" role="tablist" aria-label="Type d'opération">
-      <button class="tab" role="tab" id="t-imp" aria-selected="true" aria-controls="p-imp">Importation</button>
-      <button class="tab" role="tab" id="t-exp" aria-selected="false" aria-controls="p-exp">Exportation</button>
-    </div>
-    <div class="docs" id="p-imp" role="tabpanel" aria-labelledby="t-imp">
+    <div class="docs">
       <ul>
         <li><span class="n">01</span><div><b>Facture commerciale</b><span>Valeur, devise et incoterm</span></div></li>
         <li><span class="n">02</span><div><b>Connaissement (BL)</b><span>Original, télex release ou SWB</span></div></li>
@@ -404,23 +399,7 @@ footer .f{display:flex;align-items:center;gap:12px}
         <a class="btn btn-primary" href="#contact" style="justify-self:start">Envoyer mon dossier</a>
       </div>
     </div>
-    <div class="docs" id="p-exp" role="tabpanel" aria-labelledby="t-exp" hidden>
-      <ul>
-        <li><span class="n">01</span><div><b>Facture commerciale</b><span>Valeur, devise et incoterm</span></div></li>
-        <li><span class="n">02</span><div><b>Liste de colisage</b><span>Colis, poids et volumes</span></div></li>
-        <li><span class="n">03</span><div><b>Réservation de fret</b><span>Booking de la compagnie</span></div></li>
-        <li><span class="n">04</span><div><b>Certificat d'origine</b><span>Demandé par la destination</span></div></li>
-        <li><span class="n">05</span><div><b>Certificats spécifiques</b><span>Phytosanitaire, fumigation…</span></div></li>
-        <li><span class="n">06</span><div><b>Identification exportateur</b><span>NCC et registre de commerce</span></div></li>
-      </ul>
-      <div class="note">
-        <h3><svg class="i"><use href="#i-bulb"/></svg>Le bon réflexe</h3>
-        <p>Contactez-nous avant la clôture du navire : nous préparons la déclaration export et coordonnons l'empotage et l'embarquement.</p>
-        <p class="small">Liste indicative : les pièces exactes dépendent du produit et de la destination.</p>
-        <a class="btn btn-primary" href="#contact" style="justify-self:start">Préparer mon export</a>
-      </div>
-    </div>
-  </div>
+</div>
 </section>
 
 <section class="block band">
@@ -468,11 +447,10 @@ footer .f{display:flex;align-items:center;gap:12px}
         <dl><dt>Volume</dt><dd>32 × 40'</dd><dt>Compagnies</dt><dd>Hapag-Lloyd, MSC, CMA CGM, PIL</dd><dt>Destination</dt><dd>Bamako, Mali</dd></dl></article>
       <article class="card3d case tilt reveal"><span class="tag">IMPORT · ÉNERGIE</span><h3>Équipements énergétiques</h3><p>Cinq dossiers pour une société de l'énergie, suivis conteneur par conteneur jusqu'au retour des vides.</p>
         <dl><dt>Volume</dt><dd>40' HC et 20' Dry</dd><dt>Délai</dt><dd>Sortie 12 jours après déclaration</dd><dt>Franchise</dt><dd>23 à 32 jours, suivie</dd></dl></article>
-      <article class="card3d case tilt reveal"><span class="tag">IMPORT · VÉHICULES</span><h3>Véhicules et engins</h3><p>Véhicules légers, tracteurs routiers, engins, porte-chars, bateaux, jet-skis et autres engins roulants : éclatement de lignes par VIN et enlèvement au terminal roulier.</p>
+      <article class="card3d case tilt reveal"><span class="tag">IMPORT · VÉHICULES</span><h3>Véhicules et engins</h3><p>Plusieurs véhicules sur un même BL : une ligne par véhicule (VIN) pour un dédouanement sans blocage, puis enlèvement au terminal roulier.</p>
         <dl><dt>Opération</dt><dd>RoRo et conteneur</dd><dt>Démarches</dt><dd>Éclatement, procurations</dd><dt>Terminal</dt><dd>Abidjan</dd></dl></article>
     </div>
     <div class="gallery">
-      <figure class="shot wide tilt"><img src="img/port-quai.webp" alt="Terminal à conteneurs du Port d'Abidjan" loading="lazy"><figcaption>Port d'Abidjan · terminal à conteneurs</figcaption></figure>
       <figure class="shot tilt"><img src="img/affiche-monde.webp" alt="Affiche BLS : Nous relions le monde à Abidjan" loading="lazy"><figcaption>Campagne · Nous relions le monde à Abidjan</figcaption></figure>
       <figure class="shot tilt"><img src="img/affiche-partenariat.webp" alt="Affiche BLS : Un partenariat solide pour une logistique de qualité" loading="lazy"><figcaption>Campagne · Un partenariat solide</figcaption></figure>
     </div>
@@ -496,7 +474,7 @@ footer .f{display:flex;align-items:center;gap:12px}
       <h3>Demande de cotation</h3>
       <div class="two">
         <label for="q-nom">Nom / Société<input id="q-nom" autocomplete="organization" placeholder="ex. Société Kouassi Import"><span class="err" id="e-nom" hidden>Indiquez votre nom ou votre société.</span></label>
-        <label for="q-op">Opération<select id="q-op"><option>Importation</option><option>Exportation</option><option>Transit Mali</option></select></label>
+        <label for="q-op">Opération<select id="q-op"><option>Importation</option><option>Transit Mali</option></select></label>
       </div>
       <div class="two">
         <label for="q-type">Conteneur<select id="q-type"><option>20'</option><option selected>40'</option><option>40' HC</option><option>Groupage (LCL)</option><option>Véhicule</option><option>Autre</option></select></label>
@@ -523,10 +501,6 @@ const hdr=document.getElementById('top');
 const onScroll=()=>hdr.classList.toggle('solid',scrollY>40);
 addEventListener('scroll',onScroll,{passive:true});onScroll();
 
-/* Onglets documents */
-document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
-  document.querySelectorAll('.tab').forEach(x=>{x.setAttribute('aria-selected',x===t);document.getElementById(x.getAttribute('aria-controls')).hidden=x!==t});
-}));
 
 /* Copier */
 function sel(el){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r)}
