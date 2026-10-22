@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Blessing Logistics et Services (BLS) : transit, commission en douane et suivi de conteneurs au Port d'Abidjan, transit vers le Mali.">
+<meta name="description" content="Blessing Logistics et Services (BLS) : transit, commission en douane et suivi de conteneurs au Port d'Abidjan, transit vers le Mali et l'hinterland.">
 <title>Blessing Logistics et Services</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -125,7 +125,7 @@ section.block{padding-block:100px}
 @media (max-width:900px){.stats{grid-template-columns:1fr 1fr;margin-top:-40px}}
 
 /* Services en relief */
-.svc{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;perspective:1200px}
+.svc{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;perspective:1200px}
 .card3d{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:26px;display:grid;gap:12px;align-content:start;transform-style:preserve-3d;transition:transform .15s ease-out,box-shadow .3s,border-color .3s;position:relative;overflow:hidden}
 .card3d::before{content:"";position:absolute;inset:0;background:radial-gradient(400px circle at var(--mx,50%) var(--my,0%),rgba(111,154,74,.14),transparent 45%);opacity:0;transition:opacity .3s;pointer-events:none}
 .card3d:hover{box-shadow:var(--shadow);border-color:transparent}
@@ -311,14 +311,14 @@ footer .f{display:flex;align-items:center;gap:12px}
 </section>
 
 <div class="marquee" aria-label="Compagnies maritimes avec lesquelles nous travaillons">
-  <div class="row"><b>HAPAG-LLOYD</b><b>MSC</b><b>MAERSK</b><b>CMA CGM</b><b>PIL</b><b>GRIMALDI</b><b>OMA</b><b aria-hidden="true">HAPAG-LLOYD</b><b aria-hidden="true">MSC</b><b aria-hidden="true">MAERSK</b><b aria-hidden="true">CMA CGM</b><b aria-hidden="true">PIL</b><b aria-hidden="true">GRIMALDI</b><b aria-hidden="true">OMA</b></div>
+  <div class="row"><b>HAPAG-LLOYD</b><b>MSC</b><b>MAERSK</b><b>CMA CGM</b><b>PIL</b><b>GRIMALDI</b><b>OMA</b><b>SOGENA</b><b>GMT</b><b>HMM</b><b aria-hidden="true">HAPAG-LLOYD</b><b aria-hidden="true">MSC</b><b aria-hidden="true">MAERSK</b><b aria-hidden="true">CMA CGM</b><b aria-hidden="true">PIL</b><b aria-hidden="true">GRIMALDI</b><b aria-hidden="true">OMA</b><b aria-hidden="true">SOGENA</b><b aria-hidden="true">GMT</b><b aria-hidden="true">HMM</b></div>
 </div>
 
 <div class="band"><div class="wrap stats" style="margin-top:40px">
   <div class="stat reveal"><b><span class="count" data-to="582">582</span></b><span>conteneurs suivis en endossement</span></div>
   <div class="stat reveal"><b><span class="count" data-to="217">217</span></b><span>BL Hapag-Lloyd traités</span></div>
   <div class="stat reveal"><b><span class="count" data-to="121">121</span></b><span>importateurs accompagnés</span></div>
-  <div class="stat reveal"><b><span class="count" data-to="7">7</span></b><span>compagnies maritimes partenaires</span></div>
+  <div class="stat reveal"><b><span class="count" data-to="10">10</span></b><span>compagnies maritimes partenaires</span></div>
 </div></div>
 
 <section class="block band" id="services">
@@ -330,13 +330,12 @@ footer .f{display:flex;align-items:center;gap:12px}
     </div>
     <div class="svc">
       <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-stamp"/></svg></div><span class="code">IMPORT · EXPORT</span><h3>Dédouanement</h3><p>Déclarations, calcul des droits et taxes, visite douane et obtention du BAE.</p></article>
-      <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-route"/></svg></div><span class="code">D25 · T1 · B9</span><h3>Transit vers le Mali</h3><p>Déclaration de transit, balises, passage B9 et transport routier jusqu'à destination.</p></article>
-      <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-ship"/></svg></div><span class="code">FCL · LCL</span><h3>Transit maritime</h3><p>Échange de BL, endossement, relation avec les compagnies et le terminal.</p></article>
+      <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-route"/></svg></div><span class="code">D3 · D25 · T1 · B9</span><h3>Transit vers le Mali</h3><p>Déclarations de transit D3 et D25, balises, passage B9 et transport routier jusqu'à destination.</p></article>
+      <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-ship"/></svg></div><span class="code">FCL · LCL</span><h3>Transit maritime</h3><p>Échange de BL, endossement, relation avec les compagnies maritimes, les acconiers et le terminal.</p></article>
       <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-calc"/></svg></div><span class="code">COTATION</span><h3>Cotations &amp; évaluation</h3><p>Estimation détaillée avant l'arrivée : droits, frais portuaires, acconage, transport.</p></article>
       <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-clock"/></svg></div><span class="code">SUIVI</span><h3>Suivi des conteneurs</h3><p>Entrée, sortie terminal et retour du vide suivis, alertes avant la fin de franchise.</p></article>
-      <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-doc"/></svg></div><span class="code">COURRIERS</span><h3>Démarches &amp; litiges</h3><p>Exonérations de magasinage, remboursements de trop-perçus et cautions, autorisations.</p></article>
-      <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-car"/></svg></div><span class="code">RORO</span><h3>Véhicules &amp; engins</h3><p>Véhicules légers, tracteurs, semi-remorques : éclatement par VIN et enlèvement.</p></article>
-      <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-truck"/></svg></div><span class="code">LIVRAISON</span><h3>Livraison</h3><p>Dépotage à quai ou livraison en remorque ou auto-chargeuse jusqu'à votre site.</p></article>
+      <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-car"/></svg></div><span class="code">RORO</span><h3>Véhicules &amp; engins</h3><p>Véhicules légers, tracteurs routiers, engins, porte-chars, bateaux, jet-skis et autres engins roulants : éclatement par VIN et enlèvement.</p></article>
+      <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-truck"/></svg></div><span class="code">INLAND · HINTERLAND</span><h3>Transport &amp; livraison</h3><p>Transport inland en Côte d'Ivoire et vers l'hinterland (Mali, Burkina Faso…) : dépotage à quai, remorque ou auto-chargeuse jusqu'à votre site.</p></article>
     </div>
   </div>
 </section>
@@ -349,7 +348,7 @@ footer .f{display:flex;align-items:center;gap:12px}
       <p class="lead" style="margin-top:16px">Un exemple réel : 32 conteneurs de 40' pour un distributeur malien, arrivés par quatre compagnies et suivis jusqu'à destination.</p>
       <div class="legs">
         <div class="leg"><span class="n"><svg class="i"><use href="#i-ship"/></svg></span><div><b>Chargement en Asie</b><small>Facture, colisage et BL vérifiés à l'avance</small></div><span class="d">MER</span></div>
-        <div class="leg"><span class="n"><svg class="i"><use href="#i-stamp"/></svg></span><div><b>Port d'Abidjan</b><small>Échange BL, déclaration D25, T1, balises</small></div><span class="d">DOUANE</span></div>
+        <div class="leg"><span class="n"><svg class="i"><use href="#i-stamp"/></svg></span><div><b>Port d'Abidjan · D3 &amp; D25</b><small>Échange BL, déclarations D3 et D25, T1, balises</small></div><span class="d">DOUANE</span></div>
         <div class="leg"><span class="n"><svg class="i"><use href="#i-truck"/></svg></span><div><b>Corridor routier</b><small>Passage B9 et transport jusqu'au Mali</small></div><span class="d">ROUTE</span></div>
       </div>
     </div>
@@ -469,7 +468,7 @@ footer .f{display:flex;align-items:center;gap:12px}
         <dl><dt>Volume</dt><dd>32 × 40'</dd><dt>Compagnies</dt><dd>Hapag-Lloyd, MSC, CMA CGM, PIL</dd><dt>Destination</dt><dd>Bamako, Mali</dd></dl></article>
       <article class="card3d case tilt reveal"><span class="tag">IMPORT · ÉNERGIE</span><h3>Équipements énergétiques</h3><p>Cinq dossiers pour une société de l'énergie, suivis conteneur par conteneur jusqu'au retour des vides.</p>
         <dl><dt>Volume</dt><dd>40' HC et 20' Dry</dd><dt>Délai</dt><dd>Sortie 12 jours après déclaration</dd><dt>Franchise</dt><dd>23 à 32 jours, suivie</dd></dl></article>
-      <article class="card3d case tilt reveal"><span class="tag">IMPORT · VÉHICULES</span><h3>Véhicules et engins</h3><p>Véhicules légers, tracteurs et semi-remorques : éclatement de lignes par VIN et enlèvement au terminal roulier.</p>
+      <article class="card3d case tilt reveal"><span class="tag">IMPORT · VÉHICULES</span><h3>Véhicules et engins</h3><p>Véhicules légers, tracteurs routiers, engins, porte-chars, bateaux, jet-skis et autres engins roulants : éclatement de lignes par VIN et enlèvement au terminal roulier.</p>
         <dl><dt>Opération</dt><dd>RoRo et conteneur</dd><dt>Démarches</dt><dd>Éclatement, procurations</dd><dt>Terminal</dt><dd>Abidjan</dd></dl></article>
     </div>
     <div class="gallery">
