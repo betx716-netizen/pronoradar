@@ -3,7 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Blessing Logistics et Services (BLS) : transit, commission en douane et suivi de conteneurs au Port d'Abidjan, transit vers le Mali et l'hinterland.">
+<meta name="description" content="Transitaire au Port d'Abidjan : dédouanement, transit vers le Mali (D3, D25), suivi de conteneurs et transport vers l'hinterland.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Blessing Logistics et Services">
+<meta property="og:title" content="Blessing Logistics et Services · Transit et dédouanement à Abidjan">
+<meta property="og:description" content="Transitaire au Port d'Abidjan : dédouanement, transit vers le Mali (D3, D25), suivi de conteneurs et transport vers l'hinterland.">
+<meta property="og:image" content="https://dj-mixer-ivoire-git-bls-site-betx716-9408.vercel.app/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://dj-mixer-ivoire-git-bls-site-betx716-9408.vercel.app/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0c1d36">
 <title>Blessing Logistics et Services</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,7 +45,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:17
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--night)}
 a{color:inherit}
 :focus-visible{outline:3px solid var(--lime);outline-offset:3px;border-radius:6px}
-.skip{position:absolute;left:-999px}.skip:focus{left:16px;top:16px;z-index:40;background:#fff;color:#000;padding:10px 14px}
+.skip{position:absolute;left:-999px;min-height:44px}.skip:focus{left:16px;top:16px;z-index:40;background:#fff;color:#000;padding:10px 14px}
 .band{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .wrap{max-width:1180px;margin:0 auto}
 h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.02em}
@@ -66,24 +77,32 @@ header.solid{background:rgba(12,29,54,.86);backdrop-filter:blur(14px);box-shadow
 .links{display:flex;gap:4px;font-weight:600;font-size:.95rem}
 .links a{text-decoration:none;color:rgba(255,255,255,.78);padding:10px 13px;border-radius:9px;transition:background .2s,color .2s}
 .links a:hover{color:#fff;background:rgba(255,255,255,.1)}
-@media (max-width:900px){.links{display:none}.nav .btn{padding:10px 14px;font-size:.92rem;min-height:44px}}
+.menu-btn{display:none;width:46px;height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;align-items:center;justify-content:center;cursor:pointer}
+.nav-right{display:flex;align-items:center;gap:10px}
+.short{display:none}
+.mnav{position:fixed;left:0;right:0;top:calc(76px + env(safe-area-inset-top,0px));z-index:19;background:rgba(12,29,54,.97);backdrop-filter:blur(14px);padding:8px max(16px,env(safe-area-inset-right,0px)) 18px max(16px,env(safe-area-inset-left,0px));display:grid;gap:2px;box-shadow:0 20px 30px rgba(0,0,0,.3)}
+.mnav[hidden]{display:none}
+.mnav a{color:#fff;text-decoration:none;font-weight:600;font-size:1.05rem;padding:14px 8px;border-bottom:1px solid rgba(255,255,255,.08)}
+.mnav a.call{color:var(--lime);border:0}
+@media (max-width:900px){.links{display:none}.menu-btn{display:inline-flex}.nav .btn{padding:10px 14px;font-size:.92rem;min-height:44px}.long{display:none}.short{display:inline}}
+@media (min-width:901px){.mnav{display:none!important}}
 @media (max-width:420px){.brand small{display:none}.brand span{font-size:.95rem}}
 
 /* Hero 3D */
-.hero{position:relative;min-height:min(860px,100svh);background:#0c1d36 url(img/port.webp) center/cover no-repeat;color:#fff;overflow:hidden;display:flex;align-items:center}
+.hero{position:relative;min-height:min(820px,100svh);background:#0c1d36 url(img/port.webp) center/cover no-repeat;color:#fff;overflow:hidden;display:flex;align-items:center}
 .hero canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(12,29,54,.94) 0%,rgba(12,29,54,.78) 36%,rgba(12,29,54,.15) 70%,rgba(12,29,54,0) 100%),linear-gradient(0deg,rgba(12,29,54,.9) 0%,rgba(12,29,54,0) 30%);pointer-events:none}
-.hero .wrap{position:relative;z-index:2;width:100%;display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center;padding-block:140px 90px}
+.hero .wrap{position:relative;z-index:2;width:100%;display:grid;grid-template-columns:1.35fr .65fr;gap:40px;align-items:center;padding-block:116px 72px}
 .hero .tag{display:inline-flex;align-items:center;gap:10px;font-family:var(--f-mono);font-size:.78rem;letter-spacing:.14em;color:var(--lime);background:rgba(169,212,111,.1);border:1px solid rgba(169,212,111,.35);padding:7px 12px;border-radius:999px}
 .hero .tag i{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(169,212,111,.7);animation:pulse 2s infinite}
 @keyframes pulse{70%{box-shadow:0 0 0 10px rgba(169,212,111,0)}100%{box-shadow:0 0 0 0 rgba(169,212,111,0)}}
-.hero h1{font-size:clamp(2.6rem,6.2vw,4.7rem);font-weight:800;line-height:1.02;margin-top:20px;color:#fff}
+.hero h1{font-size:clamp(2.2rem,4.4vw,3.7rem);font-weight:800;line-height:1.02;margin-top:20px;color:#fff}
 .hero h1 .line{display:block;overflow:hidden;padding-bottom:.06em}
 .hero h1 .line > span{display:inline-block}
 .hero h1 em{font-style:normal;background:linear-gradient(90deg,#a9d46f,#7fc6e8);-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero .sub{color:rgba(255,255,255,.78);font-size:1.18rem;max-width:52ch;margin-top:22px}
-.hero .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
-.hero .proof{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:34px;color:rgba(255,255,255,.75);font-size:.93rem}
+.hero .sub{color:rgba(255,255,255,.78);font-size:1.12rem;max-width:56ch;margin-top:18px}
+.hero .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+.hero .proof{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:26px;color:rgba(255,255,255,.75);font-size:.93rem}
 .hero .proof span{display:inline-flex;align-items:center;gap:8px}
 .hero .proof svg.i{width:20px;height:20px;color:var(--lime)}
 .track{perspective:1000px}
@@ -102,11 +121,14 @@ header.solid{background:rgba(12,29,54,.86);backdrop-filter:blur(14px);box-shadow
 .scroll-hint span{width:22px;height:34px;border:1.5px solid rgba(255,255,255,.5);border-radius:12px;position:relative}
 .scroll-hint span::after{content:"";position:absolute;left:50%;top:7px;width:3px;height:7px;margin-left:-1.5px;border-radius:2px;background:#fff;animation:wheel 1.6s infinite}
 @keyframes wheel{to{transform:translateY(10px);opacity:0}}
-@media (max-width:900px){.hero .wrap{grid-template-columns:1fr;padding-block:120px 80px}.hero::after{background:linear-gradient(0deg,rgba(12,29,54,.96) 0%,rgba(12,29,54,.7) 60%,rgba(12,29,54,.35) 100%)}.scroll-hint{display:none}}
+@media (max-width:900px){.hero{min-height:0;background-position:70% center}.hero canvas{display:none}.hero .wrap{grid-template-columns:1fr;padding-block:104px 56px}.hero::after{background:linear-gradient(0deg,rgba(12,29,54,.97) 0%,rgba(12,29,54,.86) 55%,rgba(12,29,54,.45) 100%)}.scroll-hint{display:none}.track{display:none}}
+@media (max-width:900px) and (prefers-reduced-motion:no-preference){.hero{animation:drift 24s ease-in-out infinite alternate}}
+@keyframes drift{from{background-position:60% center}to{background-position:85% center}}
 
 /* Marquee compagnies */
 .marquee{background:var(--night);color:#fff;overflow:hidden;border-top:1px solid rgba(255,255,255,.08)}
-.marquee .row{display:flex;flex-wrap:wrap;justify-content:center;gap:14px 44px;padding-block:22px;max-width:1180px;margin:0 auto}
+.marquee .row{display:grid;grid-template-columns:repeat(5,auto);justify-content:center;justify-items:center;gap:14px 48px;padding-block:24px;max-width:1180px;margin:0 auto}
+@media (max-width:640px){.marquee .row{grid-template-columns:repeat(2,1fr);gap:12px 16px}.marquee b{font-size:1rem}}
 .marquee b{font-family:var(--f-display);font-weight:800;font-size:1.15rem;letter-spacing:.12em;color:rgba(255,255,255,.6);white-space:nowrap}
 @keyframes slide{to{transform:translateX(-50%)}}
 
@@ -120,11 +142,12 @@ section.block{padding-block:100px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:26px;box-shadow:var(--shadow);display:grid;gap:6px}
 .stat b{font-family:var(--f-display);font-size:clamp(2.2rem,4vw,3rem);font-weight:800;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
 .stat b small{font-size:.5em;color:var(--sage-deep)}
-.stat span{color:var(--muted);font-size:.95rem}
+.stat > span{color:var(--muted);font-size:.95rem}
 @media (max-width:900px){.stats{grid-template-columns:1fr 1fr;margin-top:-40px}}
 
 /* Services en relief */
-.svc{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;perspective:1200px}
+.svc{display:flex;flex-wrap:wrap;justify-content:center;gap:18px;perspective:1200px}
+.svc > .card3d{flex:0 1 calc((100% - 54px)/4);min-width:0}
 .card3d{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:26px;display:grid;gap:12px;align-content:start;transform-style:preserve-3d;transition:transform .15s ease-out,box-shadow .3s,border-color .3s;position:relative;overflow:hidden}
 .card3d::before{content:"";position:absolute;inset:0;background:radial-gradient(400px circle at var(--mx,50%) var(--my,0%),rgba(111,154,74,.14),transparent 45%);opacity:0;transition:opacity .3s;pointer-events:none}
 .card3d:hover{box-shadow:var(--shadow);border-color:transparent}
@@ -134,8 +157,9 @@ section.block{padding-block:100px}
 .card3d h3{transform:translateZ(20px)}
 .card3d p{color:var(--muted);font-size:.97rem}
 .code{font-family:var(--f-mono);font-size:.7rem;color:var(--muted);letter-spacing:.1em}
-@media (max-width:1000px){.svc{grid-template-columns:1fr 1fr}}
-@media (max-width:560px){.svc{grid-template-columns:1fr}}
+@media (max-width:1000px){.svc > .card3d{flex-basis:calc((100% - 18px)/2)}}
+@media (max-width:640px){.svc{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:14px;margin-inline:-16px;padding-inline:16px;scroll-padding-inline:16px;perspective:none}.svc > .card3d{flex:0 0 82%;scroll-snap-align:start}.swipe{display:flex}}
+.swipe{display:none;align-items:center;gap:8px;font-size:.85rem;color:var(--muted);margin-top:6px}
 
 /* Route */
 .route{background:var(--night);color:#fff;overflow:hidden;position:relative}
@@ -152,6 +176,7 @@ section.block{padding-block:100px}
 .mapbox{position:relative;min-width:0}
 .mapbox svg{width:100%;height:auto;display:block}
 @media (max-width:900px){.route .wrap{grid-template-columns:1fr}}
+@media (max-width:640px){.mapbox{margin-inline:-8px}.mapbox text{font-size:24px;font-weight:600}.mapbox text.rl{display:none}}
 
 /* Documents */
 .alt{background:var(--surface);border-block:1px solid var(--line)}
@@ -161,6 +186,7 @@ section.block{padding-block:100px}
 .docs{display:grid;grid-template-columns:1.3fr .7fr;gap:28px;align-items:start}
 .docs ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .docs li{display:grid;grid-template-columns:38px 1fr;gap:14px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--bg);transition:transform .25s,border-color .25s}
+.docs li:last-child:nth-child(odd){grid-column:1/-1}
 .docs li:hover{transform:translateY(-3px);border-color:var(--sage)}
 .docs li .n{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);font-family:var(--f-mono);font-size:.8rem;color:var(--sage-deep)}
 .docs li b{display:block;color:var(--ink)}
@@ -209,8 +235,8 @@ section.block{padding-block:100px}
 .shot:hover img{transform:scale(1.05)}
 .shot figcaption{position:absolute;left:12px;right:12px;bottom:12px;background:rgba(12,29,54,.78);backdrop-filter:blur(8px);color:#fff;font-size:.84rem;font-weight:600;padding:9px 13px;border-radius:11px}
 .confid{margin-top:16px}
-@media (max-width:900px){.cases{grid-template-columns:1fr}.gallery{grid-template-columns:1fr 1fr}.shot.wide{grid-column:1/-1;aspect-ratio:16/9}}
-@media (max-width:440px){.gallery{grid-template-columns:1fr}}
+@media (max-width:900px){.cases{grid-template-columns:1fr}.gallery{grid-template-columns:1fr 1fr}}
+@media (max-width:440px){.gallery{gap:10px}.shot figcaption{font-size:.72rem;padding:6px 8px;left:6px;right:6px;bottom:6px}}
 
 /* Contact */
 .contact .shell{background:radial-gradient(600px 300px at 90% 0%,rgba(169,212,111,.18),transparent 70%),linear-gradient(135deg,#0c1d36,#1f3f6b);color:#fff;border-radius:28px;display:grid;grid-template-columns:1fr 1fr;gap:44px;padding:56px;position:relative;overflow:hidden}
@@ -221,8 +247,10 @@ section.block{padding-block:100px}
 .coord > div{display:grid;grid-template-columns:46px 1fr;gap:14px;align-items:center;padding:13px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08)}
 .coord .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:rgba(169,212,111,.14);color:var(--lime)}
 .coord .k{display:block;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6)}
-.coord .v{font-weight:600;user-select:all;overflow-wrap:anywhere}
-.copy{margin-left:8px;font:600 .78rem var(--f-body);background:transparent;color:var(--lime);border:1px solid rgba(169,212,111,.6);border-radius:7px;padding:4px 10px;cursor:pointer;min-height:30px}
+.coord .v{display:block;font-weight:600;user-select:all;overflow-wrap:break-word}
+#mail{font-size:.95rem}
+@media (max-width:480px){#mail{font-size:.84rem}}
+.copy{margin-top:8px;font:600 .85rem var(--f-body);background:transparent;color:var(--lime);border:1px solid rgba(169,212,111,.6);border-radius:9px;padding:8px 14px;cursor:pointer;min-height:44px;min-width:88px}
 form{background:var(--surface);color:var(--fg);border-radius:22px;padding:30px;display:grid;gap:16px;min-width:0}
 label{display:grid;gap:6px;font-weight:600;font-size:.92rem;color:var(--ink)}
 input,select,textarea{font:inherit;font-weight:400;min-height:48px;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);color:var(--fg);width:100%;transition:border-color .2s,box-shadow .2s}
@@ -234,10 +262,20 @@ textarea{min-height:96px;resize:vertical}
 @media (max-width:900px){.contact .shell{grid-template-columns:1fr;padding:32px 22px}}
 @media (max-width:480px){.two{grid-template-columns:1fr}}
 
+.wa-float{position:fixed;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:25;display:inline-flex;align-items:center;gap:10px;min-height:56px;padding:0 20px 0 16px;border-radius:999px;background:#1fa855;color:#fff;font-weight:700;text-decoration:none;box-shadow:0 12px 30px -8px rgba(0,0,0,.45);transition:transform .2s}
+.wa-float:hover{transform:translateY(-2px)}
+.wa-float svg{width:26px;height:26px}
+@media (max-width:480px){.wa-float span{display:none}.wa-float{padding:0;width:58px;justify-content:center}}
 footer{background:var(--night);color:rgba(255,255,255,.7)}
-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px;padding-block:30px;font-size:.9rem}
+.fgrid{display:grid;grid-template-columns:1.4fr 1fr 1.2fr;gap:32px;padding-block:52px 34px;font-size:.93rem}
+.fcol{display:grid;gap:2px;align-content:start;min-width:0}
+.fcol b{color:#fff}
+.fcol a{color:rgba(255,255,255,.72);text-decoration:none;min-height:44px;display:flex;align-items:center}
+.fcol a:hover{color:var(--lime)}
+.fbottom{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;padding-block:20px 90px;border-top:1px solid rgba(255,255,255,.1);font-size:.85rem}
 footer img{width:42px;height:42px;border-radius:10px;background:#fff;padding:3px}
 footer .f{display:flex;align-items:center;gap:12px}
+@media (max-width:760px){.fgrid{grid-template-columns:1fr;gap:26px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 </style>
 <link rel="icon" href="img/logo.webp">
@@ -271,9 +309,16 @@ footer .f{display:flex;align-items:center;gap:12px}
     <nav class="links" aria-label="Menu principal">
       <a href="#services">Services</a><a href="#route">Transit Mali</a><a href="#documents">Documents</a><a href="#realisations">Réalisations</a><a href="#contact">Contact</a>
     </nav>
-    <a class="btn btn-lime" href="#contact">Demander une cotation</a>
+    <div class="nav-right">
+      <a class="btn btn-lime" href="#contact"><span class="long">Demander une cotation</span><span class="short">Cotation</span></a>
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mnav"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
   </div>
 </header>
+<nav class="mnav" id="mnav" aria-label="Menu" hidden>
+  <a href="#services">Services</a><a href="#route">Transit Mali</a><a href="#documents">Documents</a><a href="#realisations">Réalisations</a><a href="#contact">Contact</a>
+  <a class="call" href="tel:+2250504242474">Appeler le +225 05 04 24 24 74</a>
+</nav>
 
 <main>
 <section class="hero band" id="accueil">
@@ -326,6 +371,7 @@ footer .f{display:flex;align-items:center;gap:12px}
       <span class="eyebrow">Nos services</span>
       <h2>Tout votre dossier, pris en charge</h2>
       <p class="lead">De la cotation à la livraison, BLS gère les étapes administratives et logistiques pour que vous vous concentriez sur votre activité.</p>
+      <p class="swipe" aria-hidden="true"><svg class="i" style="width:18px;height:18px"><use href="#i-arrow"/></svg>Faites glisser pour voir les 7 services</p>
     </div>
     <div class="svc">
       <article class="card3d tilt reveal"><div class="ico"><svg class="i"><use href="#i-stamp"/></svg></div><span class="code">IMPORT</span><h3>Dédouanement</h3><p>Déclarations, calcul des droits et taxes, visite douane et obtention du BAE.</p></article>
@@ -366,8 +412,8 @@ footer .f{display:flex;align-items:center;gap:12px}
           <circle cx="300" cy="320" r="11" fill="#a9d46f"/><circle cx="300" cy="320" r="22" fill="none" stroke="#a9d46f" stroke-opacity=".4"/>
           <text x="318" y="350">ABIDJAN</text>
           <circle cx="230" cy="150" r="9" fill="#ffffff"/><text x="246" y="146">BAMAKO</text>
-          <text x="440" y="250" fill="#9fd4ee" font-size="12">VOIE MARITIME</text>
-          <text x="140" y="240" fill="#a9d46f" font-size="12">CORRIDOR ROUTIER</text>
+          <text class="rl" x="440" y="250" fill="#9fd4ee" font-size="12">VOIE MARITIME</text>
+          <text class="rl" x="140" y="240" fill="#a9d46f" font-size="12">CORRIDOR ROUTIER</text>
         </g>
         <g id="boat"><rect x="-12" y="-6" width="24" height="12" rx="3" fill="#ffffff"/><rect x="-7" y="-11" width="10" height="6" fill="#a9d46f"/></g>
       </svg>
@@ -466,7 +512,7 @@ footer .f{display:flex;align-items:center;gap:12px}
       <p class="lead" style="margin-top:14px">Décrivez votre marchandise, nous revenons vers vous avec une cotation.</p>
       <div class="coord">
         <div><span class="ic"><svg class="i"><use href="#i-phone"/></svg></span><div><span class="k">Téléphone / WhatsApp</span><span class="v" id="tel">+225 05 04 24 24 74</span><button class="copy" type="button" data-copy="tel">Copier</button></div></div>
-        <div><span class="ic"><svg class="i"><use href="#i-mail"/></svg></span><div><span class="k">Email</span><span class="v" id="mail">blessinglogisticsservices.info@gmail.com</span><button class="copy" type="button" data-copy="mail">Copier</button></div></div>
+        <div><span class="ic"><svg class="i"><use href="#i-mail"/></svg></span><div><span class="k">Email</span><span class="v" id="mail">blessinglogisticsservices.info<wbr>@gmail.com</span><button class="copy" type="button" data-copy="mail">Copier</button></div></div>
         <div><span class="ic"><svg class="i"><use href="#i-pin"/></svg></span><div><span class="k">Adresse</span><span class="v">Treichville, Abidjan – Côte d'Ivoire</span></div></div>
       </div>
     </div>
@@ -488,7 +534,15 @@ footer .f{display:flex;align-items:center;gap:12px}
 </section>
 </main>
 
-<footer class="band"><div class="wrap"><span class="f"><img src="img/logo.webp" alt="">© 2026 Blessing Logistics et Services · Treichville, Abidjan</span><span>Transit · Dédouanement · Logistique</span></div></footer>
+<footer class="band">
+  <div class="wrap fgrid">
+    <div class="fcol"><span class="f"><img src="img/logo.webp" alt=""><b style="color:#fff;font-family:var(--f-display);letter-spacing:.06em">BLESSING LOGISTICS &amp; SERVICES</b></span><p>Transit, commission en douane et logistique au Port d'Abidjan, vers le Mali et l'hinterland.</p></div>
+    <div class="fcol"><b>Navigation</b><a href="#services">Services</a><a href="#route">Transit Mali</a><a href="#documents">Documents requis</a><a href="#realisations">Réalisations</a></div>
+    <div class="fcol"><b>Contact</b><a href="tel:+2250504242474">+225 05 04 24 24 74</a><span>blessinglogisticsservices.info<wbr>@gmail.com</span><a href="https://www.google.com/maps/search/?api=1&amp;query=Treichville%2C%20Abidjan" target="_blank" rel="noopener">Treichville, Abidjan · voir sur la carte</a></div>
+  </div>
+  <div class="wrap fbottom"><span>© 2026 Blessing Logistics et Services</span><span>Transit · Dédouanement · Logistique</span></div>
+</footer>
+<a class="wa-float" href="https://wa.me/2250504242474?text=Bonjour%20BLS%2C%20je%20souhaite%20une%20cotation." target="_blank" rel="noopener" aria-label="Écrire sur WhatsApp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.4 7.9L3 21l1.2-4.4A9 9 0 1 1 21 12Z"/><path d="M9 9.5c.3 2.3 2.2 4.3 4.6 4.8l1.2-1.2 1.7.8"/></svg><span>WhatsApp</span></a>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -501,6 +555,12 @@ const hdr=document.getElementById('top');
 const onScroll=()=>hdr.classList.toggle('solid',scrollY>40);
 addEventListener('scroll',onScroll,{passive:true});onScroll();
 
+
+/* Menu téléphone */
+const mb=document.getElementById('menuBtn'),mn=document.getElementById('mnav');
+function setMenu(o){mn.hidden=!o;mb.setAttribute('aria-expanded',o);mb.setAttribute('aria-label',o?'Fermer le menu':'Ouvrir le menu');hdr.classList.toggle('solid',o||scrollY>40)}
+mb.addEventListener('click',()=>setMenu(mn.hidden));mn.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>setMenu(false)));
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!mn.hidden){setMenu(false);mb.focus()}});
 
 /* Copier */
 function sel(el){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r)}
@@ -532,7 +592,7 @@ if(!reduce&&matchMedia('(hover:hover)').matches){
 /* Scène 3D : terminal à conteneurs */
 (function(){
   const canvas=document.getElementById('scene');
-  if(!window.THREE||!canvas) return;
+  if(!window.THREE||!canvas||matchMedia('(max-width:900px)').matches||(navigator.connection&&navigator.connection.saveData)) return;
   let renderer;
   try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true})}catch(e){return}
   renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));
