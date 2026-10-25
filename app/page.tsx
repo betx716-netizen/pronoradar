@@ -377,7 +377,7 @@ export default function Home() {
         </ul>
       </nav>
 
-      {paywall && <Paywall signedIn={Boolean(session.email)} onClose={() => setPaywall(false)} />}
+      {paywall && <Paywall signedIn={Boolean(session.email)} email={session.email} onClose={() => { setPaywall(false); setAccountKey((k) => k + 1); }} />}
       {opened && (
         <MatchSheet
           match={opened}

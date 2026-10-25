@@ -11,6 +11,7 @@ export function GET() {
     demo: isDemo(),
     supabaseUrl: supabaseUrl(),
     supabaseKey: supabasePublishableKey(),
-    payments: isDemo() || cinetpayConfigured(),
+    payments: true,
+    cinetpay: !isDemo() && cinetpayConfigured(),
   });
 }

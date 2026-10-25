@@ -6,6 +6,7 @@ import { PLANS, fcfa } from "@/lib/plans";
 import { signOut } from "@/lib/session";
 import { Icon } from "../Icon";
 import { ThemeToggle } from "../ThemeToggle";
+import { AdminPayments } from "./AdminPayments";
 import { LoginForm } from "./LoginForm";
 
 type Me = {
@@ -17,7 +18,7 @@ type Me = {
 };
 
 const date = (iso: string) => new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" }).format(new Date(iso));
-const STATUS: Record<string, string> = { accepted: "Payé", pending: "En attente", refused: "Échoué" };
+const STATUS: Record<string, string> = { accepted: "Payé", pending: "En attente", review: "En vérification", refused: "Refusé" };
 
 /** Compte : connexion, offre en cours, renouvellement et historique des paiements. */
 export function AccountView({ email, refreshKey, onUnlock }: { email: string | null; refreshKey: number; onUnlock: () => void }) {
@@ -53,13 +54,17 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
         ) : (
           <p className="mt-1 text-[15px] text-muted">Tu vois le coupon sûr du jour et quelques pronostics.</p>
         )}
+        {!(me?.admin && !me.premiumUntil) && (
         <button
           onClick={onUnlock}
           className={`mt-4 w-full rounded-full py-3 font-semibold ${premiumActive ? "bg-white text-pitch" : "bg-orange text-white"}`}
         >
           {premiumActive ? "Prolonger mon abonnement" : `Passer en Premium dès ${fcfa(PLANS[0].price)}`}
         </button>
+        )}
       </section>
+
+      {me?.admin && <AdminPayments />}
 
       {me && me.payments.length > 0 && (
         <section className="rounded-3xl bg-surface p-5">

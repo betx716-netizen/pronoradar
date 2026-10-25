@@ -33,3 +33,14 @@ export const PREMIUM_PERKS = [
 ];
 
 export const fcfa = (n: number) => `${new Intl.NumberFormat("fr-FR").format(n)} F`;
+
+// Paiement manuel : le client envoie le montant sur ce numéro, puis saisit la référence reçue par SMS.
+export const MANUAL_PAYMENT = {
+  number: "07 59 35 86 62",
+  whatsapp: "2250759358662",
+  methods: [
+    { id: "wave", label: "Wave", hint: "Ouvre Wave, touche « Envoyer », saisis le numéro et le montant." },
+    { id: "orange", label: "Orange Money", hint: "Compose le #144#, choisis le transfert d'argent, saisis le numéro et le montant." },
+  ],
+} as const;
+export type ManualMethod = (typeof MANUAL_PAYMENT.methods)[number]["id"];

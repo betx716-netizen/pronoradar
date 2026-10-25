@@ -13,7 +13,11 @@ Application publique et payante de pronostics football. Chaque matin, l'IA trouv
 | Mon ticket : combiné personnalisé | | ✓ |
 | Analyse en direct | | ✓ |
 
-Prix (dans `lib/plans.ts`) : 1 000 F la semaine, 3 000 F le mois, 7 500 F les 3 mois. Paiement unique via CinetPay (Orange Money, MTN, Moov, Wave, carte), sans renouvellement automatique : l'abonnement se prolonge à chaque paiement.
+Prix (dans `lib/plans.ts`) : 1 000 F la semaine, 3 000 F le mois, 7 500 F les 3 mois. Paiement unique, sans renouvellement automatique : l'abonnement se prolonge à chaque paiement.
+
+**Paiement manuel (mode par défaut)** : le client envoie le montant par Wave ou Orange Money au 07 59 35 86 62 (numéro dans `lib/plans.ts`), puis saisit le numéro qui a payé et la référence du SMS. La demande apparaît dans **Compte → Paiements à valider** pour les emails listés dans `ADMIN_EMAILS` : comparer avec le SMS reçu, puis Valider ou Refuser. Une même référence ne peut servir qu'une fois. Le client peut aussi prévenir sur WhatsApp en un clic.
+
+**CinetPay (optionnel)** : dès que `CINETPAY_API_KEY` et `CINETPAY_SITE_ID` sont renseignés, un lien « payer en ligne » s'ajoute sous le paiement manuel.
 
 Le contenu Premium est retiré par le serveur avant l'envoi : un compte gratuit ne le reçoit jamais.
 
@@ -27,11 +31,11 @@ Le contenu Premium est retiré par le serveur avant l'envoi : un compte gratuit 
 
 ## Mise en ligne
 
-1. **Vercel → Variables d'environnement** : toutes celles de `.env.example`, en particulier `SUPABASE_SECRET_KEY`, `CRON_SECRET`, `APP_URL`, `CINETPAY_API_KEY`, `CINETPAY_SITE_ID`, `ADMIN_EMAILS`. Supprimez `APP_PASSWORD` s'il existe encore.
+1. **Vercel → Variables d'environnement** : toutes celles de `.env.example`, en particulier `SUPABASE_SECRET_KEY`, `CRON_SECRET`, `APP_URL` et `ADMIN_EMAILS` (votre email, pour valider les paiements). Les clés CinetPay sont facultatives. Supprimez `APP_PASSWORD` s'il existe encore.
 2. **Supabase → Authentication → URL Configuration** : Site URL = l'adresse de l'application.
 3. **Supabase → Authentication → Emails → Magic Link** : ajoutez `{{ .Token }}` au modèle pour que l'email contienne le code à 6 chiffres.
 4. **Supabase → Authentication → SMTP** : branchez un service d'envoi (Resend, Brevo…). L'envoi intégré de Supabase est limité à quelques emails par heure.
-5. **CinetPay** : renseignez l'adresse de notification `https://<votre-domaine>/api/pay/notify` si le tableau de bord la demande.
+5. **CinetPay (plus tard)** : renseignez l'adresse de notification `https://<votre-domaine>/api/pay/notify` si le tableau de bord la demande.
 6. Redéployez. Pour lancer la première journée sans attendre le cron : ouvrez l'application, la première visite démarre le moteur.
 
 ## Lancer en local
@@ -42,7 +46,7 @@ cp .env.example .env.local   # puis renseignez les clés
 npm run dev                  # http://localhost:3000
 ```
 
-Pour tester tout le parcours sans clé : `DEMO_MODE=1 npm run dev`. Connexion avec n'importe quel email et le code 123456 ; le paiement est simulé et active Premium directement.
+Pour tester tout le parcours sans clé : `DEMO_MODE=1 ADMIN_EMAILS=admin@test.ci npm run dev`. Connexion avec n'importe quel email et le code 123456 ; connectez-vous avec admin@test.ci pour valider les paiements.
 
 ## Consensus (`lib/consensus.ts`)
 

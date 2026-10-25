@@ -1,6 +1,6 @@
 import { isDemo } from "@/lib/http";
 import { db, supabaseConfigured } from "@/lib/supabase";
-import { getViewer, unauthorized } from "@/lib/user";
+import { demoStore, getViewer, unauthorized } from "@/lib/user";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,7 +10,12 @@ export async function GET(req: Request) {
   const viewer = await getViewer(req);
   if (!viewer) return unauthorized();
   let payments: unknown[] = [];
-  if (!isDemo() && supabaseConfigured()) {
+  if (isDemo()) {
+    payments = [...demoStore().payments.entries()]
+      .filter(([, p]) => p.user === viewer.email && p.plan)
+      .map(([id, p]) => ({ id, plan: p.plan, amount: p.amount, status: p.status, method: p.method, created_at: p.createdAt }))
+      .reverse();
+  } else if (supabaseConfigured()) {
     const { data } = await db()
       .from("payments")
       .select("id, plan, amount, status, method, created_at, paid_at")

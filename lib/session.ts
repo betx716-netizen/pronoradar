@@ -5,13 +5,13 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
-type Config = { demo: boolean; supabaseUrl: string; supabaseKey: string; payments: boolean };
+type Config = { demo: boolean; supabaseUrl: string; supabaseKey: string; payments: boolean; cinetpay: boolean };
 
 let configPromise: Promise<Config> | null = null;
 export const loadConfig = () =>
   (configPromise ??= fetch("/api/config")
     .then((r) => r.json())
-    .catch(() => ({ demo: false, supabaseUrl: "", supabaseKey: "", payments: false }))) as Promise<Config>;
+    .catch(() => ({ demo: false, supabaseUrl: "", supabaseKey: "", payments: false, cinetpay: false }))) as Promise<Config>;
 
 let sb: SupabaseClient | null = null;
 async function supabase(): Promise<SupabaseClient | null> {
