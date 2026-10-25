@@ -1,6 +1,7 @@
 // Identifie l'utilisateur d'une requête à partir du jeton de session Supabase (en-tête Authorization)
 // et calcule son offre. En mode démo, un faux compte en mémoire permet de tester tout le parcours.
 import { isDemo } from "./http";
+import { normalizePhone, phoneLogin } from "./phone";
 import { db, supabaseConfigured } from "./supabase";
 
 export type Viewer = {
@@ -13,16 +14,18 @@ export type Viewer = {
 
 // Stockage du mode démo, partagé entre les requêtes d'un même serveur.
 export type DemoPayment = { user: string; days: number; status: string; plan?: string; amount?: number; method?: string; reference?: string; payerPhone?: string; createdAt?: string };
-type DemoStore = { premium: Map<string, string>; bets: Map<string, unknown[]>; payments: Map<string, DemoPayment> };
+type DemoStore = { premium: Map<string, string>; bets: Map<string, unknown[]>; payments: Map<string, DemoPayment>; users: Map<string, string> };
 const g = globalThis as unknown as { __prDemo?: DemoStore };
-export const demoStore = (): DemoStore => (g.__prDemo ??= { premium: new Map(), bets: new Map(), payments: new Map() });
+export const demoStore = (): DemoStore => (g.__prDemo ??= { premium: new Map(), bets: new Map(), payments: new Map(), users: new Map() });
 
-const admins = () =>
-  (process.env.ADMIN_EMAILS ?? "")
-    .toLowerCase()
-    .split(",")
-    .map((e) => e.trim())
-    .filter(Boolean);
+// Administrateurs : numéros listés dans ADMIN_PHONES (et emails dans ADMIN_EMAILS, pour d'anciens comptes).
+const admins = () => [
+  ...(process.env.ADMIN_PHONES ?? "").split(",").flatMap((p) => {
+    const n = normalizePhone(p);
+    return n ? [phoneLogin(n)] : [];
+  }),
+  ...(process.env.ADMIN_EMAILS ?? "").toLowerCase().split(",").map((e) => e.trim()).filter(Boolean),
+];
 
 const bearer = (req: Request) => req.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1] ?? null;
 

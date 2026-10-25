@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { AdminPayment } from "@/app/api/admin/payments/route";
 import { api } from "@/lib/client";
 import { PLANS, fcfa } from "@/lib/plans";
+import { displayAccount } from "@/lib/phone";
 
 const when = (iso: string) =>
   iso ? new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Abidjan" }).format(new Date(iso)) : "";
@@ -61,7 +62,7 @@ export function AdminPayments() {
           <li key={p.id} className="rounded-2xl bg-surface-2 p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate font-semibold">{p.email ?? "Compte inconnu"}</p>
+                <p className="truncate font-semibold">{p.email ? displayAccount(p.email) : "Compte inconnu"}</p>
                 <p className="text-[13px] text-muted">
                   {PLANS.find((x) => x.id === p.plan)?.label ?? p.plan} · {p.method} · {when(p.created_at)}
                 </p>
@@ -99,7 +100,7 @@ export function AdminPayments() {
               {done.map((p) => (
                 <li key={p.id} className="flex justify-between gap-3 py-2">
                   <span className="min-w-0 truncate">
-                    {p.email} · {p.reference}
+                    {displayAccount(p.email)} · {p.reference}
                   </span>
                   <span className={p.status === "accepted" ? "text-success" : "text-danger"}>{p.status === "accepted" ? "Validé" : "Refusé"}</span>
                 </li>

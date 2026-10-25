@@ -7,7 +7,9 @@ import { signOut } from "@/lib/session";
 import { Icon } from "../Icon";
 import { ThemeToggle } from "../ThemeToggle";
 import { AdminPayments } from "./AdminPayments";
+import { AdminReset } from "./AdminReset";
 import { LoginForm } from "./LoginForm";
+import { displayAccount } from "@/lib/phone";
 
 type Me = {
   email: string;
@@ -33,7 +35,7 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
     return (
       <div className="mx-auto max-w-md rounded-3xl bg-surface p-5">
         <h2 className="mb-1 font-display text-3xl font-bold">Connexion</h2>
-        <LoginForm intro="Connecte-toi pour retrouver ton abonnement et ton suivi des paris sur tous tes appareils." />
+        <LoginForm defaultMode="login" intro="Ton numéro et ton mot de passe te permettent de retrouver ton abonnement et ton suivi sur tous tes appareils." />
       </div>
     );
   }
@@ -42,7 +44,7 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
   return (
     <div className="mx-auto max-w-md space-y-4">
       <section className={`rounded-3xl p-5 ${premiumActive ? "bg-pitch text-white" : "bg-surface"}`}>
-        <p className={`text-[14px] ${premiumActive ? "text-white/70" : "text-muted"}`}>{email}</p>
+        <p className={`text-[14px] ${premiumActive ? "text-white/70" : "text-muted"}`}>{displayAccount(email)}</p>
         <div className="mt-1 flex items-center gap-2">
           {premiumActive && <Icon name="crown" className="h-6 w-6 text-orange" />}
           <h2 className="font-display text-3xl font-bold">{premiumActive ? "Premium" : "Gratuit"}</h2>
@@ -65,6 +67,7 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
       </section>
 
       {me?.admin && <AdminPayments />}
+      {me?.admin && <AdminReset />}
 
       {me && me.payments.length > 0 && (
         <section className="rounded-3xl bg-surface p-5">

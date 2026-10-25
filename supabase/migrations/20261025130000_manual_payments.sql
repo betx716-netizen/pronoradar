@@ -40,3 +40,7 @@ end;
 $$;
 revoke execute on function public.activate_payment(text, text, jsonb) from public, anon, authenticated;
 grant execute on function public.activate_payment(text, text, jsonb) to service_role;
+
+-- Comptes par numéro de téléphone (sans SMS) : le numéro est gardé dans le profil pour l'administration.
+alter table public.profiles add column if not exists phone text;
+create unique index if not exists profiles_phone_uidx on public.profiles (phone) where phone is not null;

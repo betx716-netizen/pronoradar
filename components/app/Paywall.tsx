@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { MANUAL_PAYMENT, PLANS, PREMIUM_PERKS, fcfa, type ManualMethod, type PlanId } from "@/lib/plans";
 import { loadConfig } from "@/lib/session";
+import { displayAccount } from "@/lib/phone";
 import { Icon } from "../Icon";
 import { LoginForm } from "./LoginForm";
 import { Sheet } from "./Sheet";
@@ -15,7 +16,7 @@ import { Sheet } from "./Sheet";
 export function Paywall({ signedIn, email, onClose }: { signedIn: boolean; email: string | null; onClose: () => void }) {
   const [plan, setPlan] = useState<PlanId>("mois");
   const [method, setMethod] = useState<ManualMethod>("wave");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(() => (displayAccount(email).startsWith("0") ? displayAccount(email) : ""));
   const [reference, setReference] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +29,12 @@ export function Paywall({ signedIn, email, onClose }: { signedIn: boolean; email
   useEffect(() => {
     loadConfig().then((c) => setCinetpay(Boolean(c.cinetpay)));
   }, []);
+
+  // Connexion faite depuis cette fenêtre : le numéro du compte pré-remplit le numéro payeur.
+  useEffect(() => {
+    const own = displayAccount(email);
+    if (own.startsWith("0")) setPhone((p) => p || own);
+  }, [email]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -66,7 +73,7 @@ export function Paywall({ signedIn, email, onClose }: { signedIn: boolean; email
   }
 
   if (sent) {
-    const message = `Bonjour, je viens de payer PronoRadar Premium (${chosen.label}, ${fcfa(chosen.price)}) par ${how.label}. Référence : ${sent.reference}. Compte : ${email ?? ""}`;
+    const message = `Bonjour, je viens de payer PronoRadar Premium (${chosen.label}, ${fcfa(chosen.price)}) par ${how.label}. Référence : ${sent.reference}. Compte : ${displayAccount(email)}`;
     return (
       <Sheet title="Demande envoyée" onClose={onClose}>
         <div className="space-y-4 pb-2">
@@ -133,8 +140,8 @@ export function Paywall({ signedIn, email, onClose }: { signedIn: boolean; email
       <div className="mt-5">
         {!signedIn ? (
           <div className="rounded-2xl bg-surface p-4">
-            <p className="mb-3 font-semibold">Crée ton compte pour payer</p>
-            <LoginForm intro="Ton abonnement sera lié à ton email : tu le retrouves sur tous tes appareils." />
+            <p className="mb-3 font-semibold">Crée ton compte ou connecte-toi pour payer</p>
+            <LoginForm intro="Ton abonnement sera lié à ton numéro : tu le retrouves sur tous tes appareils." />
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4 rounded-2xl bg-surface p-4">
