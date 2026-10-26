@@ -405,7 +405,22 @@ function App() {
   // On affiche les matchs du jour (heure de Paris).
   const activeDay = weekDays[0];
   const todayCount = countByDay.get(activeDay) ?? 0;
-  const todayIn = (l: string) => (byLeague[l]?.fixtures ?? []).filter((f) => f.date === activeDay).length;
+  // Matchs du jour par championnat (annuaire gratuit) : ceux qui jouent aujourd'hui passent en tête de liste.
+  const [todayCounts, setTodayCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    fetch("/api/today-leagues")
+      .then((r) => r.json())
+      .then((d: { counts?: Record<string, number> }) => setTodayCounts(d.counts ?? {}))
+      .catch(() => {});
+  }, []);
+  const todayIn = (l: string) =>
+    byLeague[l]?.status === "done" ? (byLeague[l]?.fixtures ?? []).filter((f) => f.date === activeDay).length : todayCounts[l];
+  const orderedLeagues = useMemo(() => {
+    const list = LEAGUES[sport];
+    const n = (name: string) => (byLeague[name]?.status === "done" ? (byLeague[name]?.fixtures ?? []).filter((f) => f.date === activeDay).length : todayCounts[name] ?? 0);
+    // Stable : à nombre égal de matchs (ou sans match), l'ordre habituel des championnats est conservé.
+    return list.map((l, i) => ({ l, i, n: n(l.name) })).sort((a, b) => Number(b.n > 0) - Number(a.n > 0) || a.i - b.i).map((x) => x.l);
+  }, [sport, byLeague, todayCounts, activeDay]);
 
   const byLeagueDay = useMemo(
     () =>
@@ -857,9 +872,10 @@ function App() {
 
             <div className="mb-5">
               <ScrollRow className="-mx-4 gap-2 px-4 pb-1 sm:mx-0 sm:px-12">
-                {LEAGUES[sport].map(({ name: l }) => {
+                {orderedLeagues.map(({ name: l }) => {
                   const on = leagues.includes(l);
                   const lf = byLeague[l];
+                  const count = todayIn(l);
                   return (
                     <button
                       key={l}
@@ -876,9 +892,12 @@ function App() {
                     >
                       <LeagueLogo name={l} size={20} />
                       {l}
-                      {on && lf?.status === "done" && (
-                        <span className="ml-1 rounded-full bg-accent px-1.5 text-xs font-bold text-on-accent tabular-nums" title="Matchs aujourd'hui">
-                          {todayIn(l)}
+                      {!(on && lf?.status === "loading") && count !== undefined && (
+                        <span
+                          className={`ml-1 rounded-full px-1.5 text-xs font-bold tabular-nums ${count > 0 ? "bg-accent text-on-accent" : "bg-surface-3 text-muted"}`}
+                          title="Matchs aujourd'hui"
+                        >
+                          {count}
                         </span>
                       )}
                       {on && lf?.status === "loading" && (
