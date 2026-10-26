@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnalysisView } from "@/components/AnalysisView";
 import { CouponBuilder } from "@/components/CouponBuilder";
 import { AiCoupons } from "@/components/AiCoupons";
@@ -10,6 +10,7 @@ import { OddsButton } from "@/components/OddsButton";
 import { TopPicks } from "@/components/TopPicks";
 import { TopScorers } from "@/components/TopScorers";
 import { TopCoupons } from "@/components/TopCoupons";
+import { DailyCoupons, type DailyResult } from "@/components/DailyCoupons";
 import { TeamLogo } from "@/components/TeamLogo";
 import { LeagueLogo } from "@/components/LeagueLogo";
 import { useClubColors } from "@/lib/teamColors";
@@ -305,6 +306,28 @@ function App() {
             };
           }),
     );
+  }, []);
+  // Analyses faites le matin par le serveur pour les coupons du jour : versées dans l'onglet Analyses
+  // (et donc disponibles pour les coupons de l'IA et le générateur manuel), sans écraser une analyse plus récente.
+  const importDaily = useCallback((items: DailyResult[]) => {
+    const key = (r: AnalysisResult) => `${r.analysis.match.competition}|${r.analysis.match.home}|${r.analysis.match.away}`;
+    setJobs((prev) => {
+      const have = new Set(prev.map((j) => j.id));
+      const added = items.flatMap(({ fixture, result }) => {
+        const { sport: _sport, ...f } = fixture;
+        const id = fixtureId(f);
+        return have.has(id) ? [] : [{ id, fixture: f, status: "done" as const, message: "Analysé par l'IA ce matin", result }];
+      });
+      return added.length ? [...prev, ...added] : prev;
+    });
+    setHistory((prev) => {
+      const known = new Set(prev.map(key));
+      const fresh = items.map((i) => i.result).filter((r) => !known.has(key(r)));
+      if (!fresh.length) return prev;
+      const next = [...prev, ...fresh].slice(0, MAX_HISTORY);
+      saveHistory(next);
+      return next;
+    });
   }, []);
   // Date à laquelle le coupon a été vidé : les analyses plus anciennes n'y entrent plus (elles restent dans l'historique).
   const [couponClearedAt, setCouponClearedAt] = useState(0);
@@ -762,6 +785,7 @@ function App() {
               }
               loading={searching}
             />
+            <DailyCoupons onResults={importDaily} onOpen={setDetail} />
             <TopCoupons refreshKey={autoCoupons + (tab === "matchs" ? 1 : 0)} onOpen={() => goTo("coupon")} />
             <TopPicks results={visibleResults} onOpen={setDetail} />
             <TopScorers results={visibleResults} onOpen={setDetail} />

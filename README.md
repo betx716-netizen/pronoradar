@@ -37,3 +37,11 @@ Pour tester l'interface sans clé : `DEMO_MODE=1 npm run dev`.
 Ajoutez `GEMINI_API_KEY`, `ODDS_API_KEY`, `API_FOOTBALL_KEY` et `APP_PASSWORD` dans les variables d'environnement du projet, puis redéployez.
 
 Pour sauvegarder le suivi des paris dans Supabase : `SUPABASE_URL`, `SUPABASE_KEY` (clé publishable) et `HISTORY_SECRET` (le secret enregistré dans la table `private.settings` de la base). Sans elles, l'historique reste dans le navigateur.
+
+## Coupons du jour (préparés à l'avance)
+
+Chaque matin, le serveur trouve les matchs du jour dans 27 championnats européens, analyse ceux qu'il faut pour composer les coupons (20 au plus, grands championnats en priorité) puis l'IA compose six coupons, de la cote 2 à la cote 50. Ils s'affichent en haut de l'accueil ; les analyses de ces matchs arrivent dans l'onglet Analyses.
+
+- Variables nécessaires : `SUPABASE_SECRET_KEY` (clé secrète Supabase), `CRON_SECRET` (chaîne aléatoire) et `APP_URL` (adresse du site).
+- Le cron Vercel lance le travail à 5 h UTC (`vercel.json`) ; la première visite le relance s'il s'est arrêté.
+- Réglages facultatifs : `DAILY_LEAGUES`, `DAILY_MAX_MATCHES` (20), `DAILY_CONCURRENCY` (3), `DAILY_MODE` (`rapide`).
