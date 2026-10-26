@@ -372,19 +372,23 @@ function App() {
       .then(setServices)
       .catch(() => {});
   }, []);
-  // À l'ouverture : les matchs des championnats favoris se chargent tout seuls (affichage : ceux du jour).
+  // À l'ouverture : tout le programme de football de la semaine se charge d'un coup (affichage : le jour choisi).
   useEffect(() => {
-    const favorites = loadFavorites("football", DEFAULT_FAVORITES.football);
-    setLeagues(favorites);
-    findFixtures(favorites, "football");
+    loadWeek();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     document.body.style.overflow = detail ? "hidden" : "";
   }, [detail]);
 
-  const searching = Object.values(byLeague).some((l) => l.status === "loading");
-  const allFixtures = leagues.flatMap((l) => byLeague[l]?.fixtures ?? []);
+  // Football : programme de la semaine pour tous les championnats, sans sélection manuelle.
+  const [weekMode, setWeekMode] = useState(false);
+  const [weekLoading, setWeekLoading] = useState(false);
+  const auto = sport === "football" && weekMode;
+  const searching = weekLoading || Object.values(byLeague).some((l) => l.status === "loading");
+  const allFixtures = auto
+    ? LEAGUES.football.flatMap((l) => byLeague[l.name]?.fixtures ?? [])
+    : leagues.flatMap((l) => byLeague[l]?.fixtures ?? []);
   const selectedFixtures = allFixtures.filter((f) =>
     selected.has(fixtureId(f)),
   );
@@ -405,6 +409,11 @@ function App() {
   // Jour affiché : aujourd'hui par défaut, ou le jour touché dans la barre des jours.
   const [day, setDay] = useState<string | null>(null);
   const activeDay = day ?? weekDays[0];
+  // Les championnats qui jouent le jour choisi se sélectionnent tout seuls, dans l'ordre habituel.
+  useEffect(() => {
+    if (!auto) return;
+    setLeagues(LEAGUES.football.map((l) => l.name).filter((l) => (byLeague[l]?.fixtures ?? []).some((f) => f.date === activeDay)));
+  }, [auto, byLeague, activeDay]);
   // Nombre de matchs par championnat et par jour (annuaire gratuit, tous les championnats, même non choisis).
   const [dayCounts, setDayCounts] = useState<Record<string, Record<string, number>>>({});
   useEffect(() => {
@@ -494,6 +503,31 @@ function App() {
     }
   }
 
+  // Programme de la semaine (source gratuite, tous championnats). En cas d'échec : l'ancien chargement par championnat favori.
+  async function loadWeek() {
+    setWeekLoading(true);
+    setError(null);
+    setSelected(new Set());
+    try {
+      const res = await fetch("/api/week-fixtures");
+      const d = (await res.json().catch(() => null)) as { fixtures?: Fixture[] } | null;
+      const fixtures = res.ok ? d?.fixtures ?? [] : [];
+      if (fixtures.length === 0) throw new Error("vide");
+      setByLeague(
+        Object.fromEntries(
+          LEAGUES.football.map((l) => [l.name, { status: "done", fixtures: fixtures.filter((f) => f.competition === l.name) } as LeagueFixtures]),
+        ),
+      );
+      setWeekMode(true);
+    } catch {
+      setWeekMode(false);
+      const favorites = loadFavorites("football", DEFAULT_FAVORITES.football);
+      setLeagues(favorites);
+      findFixtures(favorites, "football");
+    }
+    setWeekLoading(false);
+  }
+
   async function findFixtures(
     list: string[] = leagues,
     forSport: Sport = sport,
@@ -542,13 +576,24 @@ function App() {
   function switchSport(next: Sport) {
     if (next === sport) return;
     setSport(next);
+    setByLeague({});
+    if (next === "football") {
+      setLeagues([]);
+      loadWeek();
+      return;
+    }
+    setWeekMode(false);
     const favorites = loadFavorites(next, DEFAULT_FAVORITES[next]);
     setLeagues(favorites);
-    setByLeague({});
     findFixtures(favorites, next);
   }
 
   function toggleLeague(l: string) {
+    // Football : tous les championnats du jour sont déjà affichés ; toucher un championnat amène à ses matchs.
+    if (auto) {
+      document.getElementById(`ligue-${l}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
     const next = leagues.includes(l)
       ? leagues.filter((x) => x !== l)
       : leagues.length < MAX_LEAGUES
@@ -853,7 +898,7 @@ function App() {
             <DailyCoupons onResults={importDaily} onOpen={setDetail} onUnlock={unlock} refreshKey={`${session.email}|${premium}`} />
             <TopCoupons refreshKey={autoCoupons + (tab === "matchs" ? 1 : 0)} onOpen={() => goTo("coupon")} />
             <TopPicks results={visibleResults} onOpen={setDetail} />
-            <TopScorers results={visibleResults} onOpen={setDetail} />
+            <TopScorers results={visibleResults} onOpen={setDetail} locked={!premium} onUnlock={unlock} />
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">
@@ -863,7 +908,8 @@ function App() {
                 <p className="text-sm text-muted">
                   {new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${activeDay}T12:00:00`))}
                   {" · "}
-                  {dayCount} match{dayCount > 1 ? "s" : ""} dans tes championnats. Sélectionnez les rencontres à analyser.
+                  {dayCount} match{dayCount > 1 ? "s" : ""}{" "}
+                  {auto ? `dans ${leagues.length} championnat${leagues.length > 1 ? "s" : ""}` : "dans tes championnats"}. Sélectionnez les rencontres à analyser.
                 </p>
               </div>
               <div className="flex rounded-xl border border-border bg-surface p-1">
@@ -910,7 +956,7 @@ function App() {
 
             <div className="mb-5">
               <ScrollRow className="-mx-4 gap-2 px-4 pb-1 sm:mx-0 sm:px-12">
-                {orderedLeagues.map(({ name: l }) => {
+                {orderedLeagues.filter(({ name }) => !auto || (countOn(name, activeDay) ?? 0) > 0).map(({ name: l }) => {
                   const on = leagues.includes(l);
                   const lf = byLeague[l];
                   const count = countOn(l, activeDay);
@@ -919,7 +965,7 @@ function App() {
                       key={l}
                       onClick={() => toggleLeague(l)}
                       disabled={
-                        (!on && leagues.length >= MAX_LEAGUES) || running
+                        !auto && ((!on && leagues.length >= MAX_LEAGUES) || running)
                       }
                       aria-pressed={on}
                       className={`flex shrink-0 items-center gap-2 rounded-full border py-1 pl-1.5 pr-3.5 text-sm font-medium transition disabled:opacity-40 ${
@@ -976,7 +1022,9 @@ function App() {
                   ? "Chargement des matchs…"
                   : playingElsewhere
                     ? `Aucun match ce jour-là dans tes championnats. ${playingElsewhere} autre${playingElsewhere > 1 ? "s" : ""} championnat${playingElsewhere > 1 ? "s jouent" : " joue"} : touche${playingElsewhere > 1 ? "-les" : "-le"} en tête de la liste ci-dessus.`
-                    : "Aucun match ce jour-là dans ces championnats."}
+                    : auto
+                      ? "Aucun match ce jour-là dans les championnats suivis."
+                      : "Aucun match ce jour-là dans ces championnats."}
               </div>
             ) : (
               <div className="space-y-10">
@@ -984,7 +1032,7 @@ function App() {
                   const ids = days.flatMap(([, fx]) => fx.map(fixtureId));
                   const allOn = ids.every((id) => selected.has(id));
                   return (
-                    <section key={league} className="fade-in">
+                    <section key={league} id={`ligue-${league}`} className="fade-in scroll-mt-40">
                       <div className="sticky top-[9.6rem] z-10 -mx-4 mb-3 flex items-center gap-3 border-b-2 border-accent bg-bg/95 px-4 py-2.5 backdrop-blur">
                         <LeagueLogo name={league} size={32} />
                         <div className="min-w-0 flex-1">

@@ -1,5 +1,7 @@
 import { analyzeMatch } from "@/lib/analyze";
 import { demoAnalysis } from "@/lib/demo";
+import { sameTeam } from "@/lib/espn";
+import { findFixtures } from "@/lib/fixtures";
 import { guardOpen, isDemo, streamTask } from "@/lib/http";
 import { AnalyzeRequestSchema } from "@/lib/schemas";
 import { getViewer, refundFreeAnalysis, unauthorized, useFreeAnalysis } from "@/lib/user";
@@ -29,6 +31,20 @@ export async function POST(req: Request) {
   }
   return streamTask(async (progress) => {
     try {
+      // Match venu du programme gratuit (sans cotes) : on récupère ses cotes et son identifiant maintenant (mis en cache 2 h).
+      if (!isDemo() && input.sport === "football" && !input.odds && input.competition) {
+        try {
+          progress("Récupération des cotes…");
+          const { fixtures } = await findFixtures(input.sport, input.competition, () => {});
+          const hit = fixtures.find((f) => sameTeam(f.home, input.home) && sameTeam(f.away, input.away));
+          if (hit) {
+            input.odds = hit.odds ?? input.odds;
+            input.apiFootballId = input.apiFootballId ?? hit.apiFootballId;
+          }
+        } catch {
+          // Sans cotes, l'analyse se fait quand même.
+        }
+      }
       return await (isDemo() ? demoAnalysis(input, progress) : analyzeMatch(input, progress));
     } catch (e) {
       if (free) await refundFreeAnalysis(viewer).catch(() => {});
