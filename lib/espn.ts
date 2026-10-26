@@ -404,7 +404,38 @@ export async function fetchSofaDetail(id: string) {
 // ——— Programme de la semaine, tous championnats ———
 // Une requête par jour sur le programme « tous les championnats » d'ESPN, puis tri par championnat de l'application.
 
-type AllEvent = EspnEvent & { id?: string; uid?: string };
+type Price = { close?: { odds?: string }; open?: { odds?: string } };
+type EspnOdds = {
+  moneyline?: { home?: Price; draw?: Price; away?: Price };
+  total?: { over?: Price & { close?: { line?: string } }; under?: Price };
+  overUnder?: number;
+};
+type AllEvent = EspnEvent & { id?: string; uid?: string; competitions?: { odds?: EspnOdds[] }[] };
+
+// Cote américaine (+150, -200) → cote décimale (2.50, 1.50).
+const decimal = (p?: Price) => {
+  const n = Number((p?.close?.odds ?? p?.open?.odds ?? "").replace("+", ""));
+  if (!Number.isFinite(n) || n === 0) return null;
+  return Math.round((n > 0 ? 1 + n / 100 : 1 + 100 / -n) * 100) / 100;
+};
+
+/** Cotes fournies avec le programme ESPN (DraftKings) : 1X2 et plus/moins de buts. Gratuites, sans quota. */
+function espnOdds(o?: EspnOdds): Fixture["odds"] {
+  if (!o?.moneyline) return null;
+  const home = decimal(o.moneyline.home);
+  const away = decimal(o.moneyline.away);
+  if (!home || !away) return null;
+  const over = decimal(o.total?.over);
+  const under = decimal(o.total?.under);
+  return {
+    bookmakers: 1,
+    home,
+    draw: decimal(o.moneyline.draw),
+    away,
+    exchange: null,
+    totals: o.overUnder && over && under ? { point: o.overUnder, over, under } : null,
+  };
+}
 
 /** Matchs d'aujourd'hui à J+7 (jours de Paris) des championnats de l'application, en cours et terminés compris. */
 export async function fetchWeekFixtures(): Promise<Fixture[]> {
@@ -435,7 +466,7 @@ export async function fetchWeekFixtures(): Promise<Fixture[]> {
     const away = c?.competitors?.find((x) => x.homeAway === "away")?.team?.displayName;
     const date = paris(e.date, "fr-CA", { year: "numeric", month: "2-digit", day: "2-digit" });
     if (!home || !away || date < today || date > last) continue;
-    out.push({ home, away, competition, date, time: paris(e.date, "en-GB", { hour: "2-digit", minute: "2-digit" }), stage: null, odds: null, apiFootballId: null });
+    out.push({ home, away, competition, date, time: paris(e.date, "en-GB", { hour: "2-digit", minute: "2-digit" }), stage: null, odds: espnOdds(e.competitions?.[0]?.odds?.[0]), apiFootballId: null });
   }
   return out.sort((a, b) => (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")));
 }
