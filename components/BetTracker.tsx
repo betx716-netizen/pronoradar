@@ -285,11 +285,11 @@ export function BetTracker() {
 
   const syncNote = {
     loading: "Synchronisation…",
-    synced: "Sauvegardé sur ton compte, disponible sur tous tes appareils.",
+    synced: "Sauvegardé en ligne, disponible sur tous vos appareils.",
     local:
-      "Connecte-toi pour retrouver ton suivi sur tous tes appareils. En attendant, il reste sur ce téléphone.",
+      "Sauvegarde en ligne non configurée : historique gardé sur cet appareil.",
     error:
-      "Sauvegarde injoignable : ton suivi sera envoyé à la prochaine synchronisation.",
+      "Sauvegarde en ligne injoignable : l'historique sera envoyé à la prochaine synchronisation.",
   }[sync];
 
   if (bets.length === 0) {
@@ -297,7 +297,7 @@ export function BetTracker() {
       <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted">
         {sync === "loading"
           ? "Chargement de l'historique…"
-          : "Aucun pari suivi. Ouvre un coupon ou ton ticket et touche « Je l'ai joué » pour suivre tes gains."}
+          : "Aucun coupon enregistré. Dans l'onglet Coupon, touchez « J'ai joué » pour commencer le suivi."}
       </div>
     );
   }

@@ -1,17 +1,8 @@
-import { cinetpayConfigured } from "@/lib/cinetpay";
-import { isDemo } from "@/lib/http";
-import { supabasePublishableKey, supabaseUrl } from "@/lib/supabase";
+import { servicesStatus } from "@/lib/http";
 
 export const dynamic = "force-dynamic";
 
-// Réglages publics pour le navigateur : adresse Supabase et clé publishable (faite pour être publique),
-// jamais les clés secrètes.
+// Indique au navigateur quels services sont configurés (jamais les clés elles-mêmes).
 export function GET() {
-  return Response.json({
-    demo: isDemo(),
-    supabaseUrl: supabaseUrl(),
-    supabaseKey: supabasePublishableKey(),
-    payments: true,
-    cinetpay: !isDemo() && cinetpayConfigured(),
-  });
+  return Response.json(servicesStatus());
 }

@@ -1,5 +1,5 @@
 import { describeKey, readKey } from "@/lib/env";
-import { getViewer } from "@/lib/user";
+import { isAuthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ async function probe(url: string, init?: RequestInit) {
 }
 
 export async function GET(req: Request) {
-  if (!(await getViewer(req))?.admin) return Response.json({ error: "Réservé à l'administrateur." }, { status: 403 });
+  if (!isAuthorized(req)) return Response.json({ error: "Connexion requise." }, { status: 401 });
   const odds = readKey("ODDS_API_KEY");
   const football = readKey("API_FOOTBALL_KEY");
   const gemini = readKey("GEMINI_API_KEY");
