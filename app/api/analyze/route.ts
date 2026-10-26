@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const maxDuration = 300; // une analyse complète prend 1 à 4 minutes
 
 export async function POST(req: Request) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
 
   const parsed = AnalyzeRequestSchema.safeParse(await req.json().catch(() => null));

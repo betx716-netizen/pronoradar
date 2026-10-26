@@ -1,6 +1,6 @@
 // Historique des coupons joués : copie locale pour un affichage immédiat, synchronisée avec Supabase
-// (via /api/history) pour le retrouver sur tous les appareils. Sans Supabase, seule la copie locale existe.
-import { getPassword } from "./client";
+// (via /api/history) sur le compte de l'utilisateur. Sans compte connecté, seule la copie locale existe.
+import { authFetch } from "./client";
 import type { CouponLeg } from "./coupon";
 
 export type BetStatus = "en_cours" | "gagne" | "perdu" | "rembourse";
@@ -54,10 +54,7 @@ function storeLocal(bets: SavedBet[]) {
 }
 
 const api = (init?: RequestInit, query = "") =>
-  fetch(`/api/history${query}`, {
-    ...init,
-    headers: { "Content-Type": "application/json", "x-app-password": getPassword() },
-  });
+  authFetch(`/api/history${query}`, { ...init, headers: { "Content-Type": "application/json" } });
 
 const pushRemote = (bets: SavedBet[]) => api({ method: "POST", body: JSON.stringify({ bets }) }).catch(() => null);
 
@@ -65,7 +62,7 @@ const pushRemote = (bets: SavedBet[]) => api({ method: "POST", body: JSON.string
 export async function syncHistory(): Promise<SyncState> {
   try {
     const res = await api();
-    if (res.status === 503) return "local";
+    if (res.status === 401 || res.status === 503) return "local";
     if (!res.ok) return "error";
     const deleted = readIds(DELETED_KEY);
     // Supprimés sur cet appareil mais encore en ligne (suppression précédente échouée) : on réessaie.

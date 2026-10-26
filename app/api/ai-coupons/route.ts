@@ -18,7 +18,7 @@ function demo(size: number | null, ids: string[][]): AiCoupons {
 }
 
 export async function POST(req: Request) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   const parsed = AiCouponsRequestSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Analyses invalides." }, { status: 400 });

@@ -1,0 +1,28 @@
+import { isDemo } from "@/lib/http";
+import { db, supabaseConfigured } from "@/lib/supabase";
+import { demoStore, getViewer, unauthorized } from "@/lib/user";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+// Compte connecté : offre en cours et derniers paiements.
+export async function GET(req: Request) {
+  const viewer = await getViewer(req);
+  if (!viewer) return unauthorized();
+  let payments: unknown[] = [];
+  if (isDemo()) {
+    payments = [...demoStore().payments.entries()]
+      .filter(([, p]) => p.user === viewer.email && p.plan)
+      .map(([id, p]) => ({ id, plan: p.plan, amount: p.amount, status: p.status, method: p.method, created_at: p.createdAt }))
+      .reverse();
+  } else if (supabaseConfigured()) {
+    const { data } = await db()
+      .from("payments")
+      .select("id, plan, amount, status, method, created_at, paid_at")
+      .eq("user_id", viewer.id)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    payments = data ?? [];
+  }
+  return Response.json({ email: viewer.email, premium: viewer.premium, premiumUntil: viewer.premiumUntil, admin: viewer.admin, payments });
+}
