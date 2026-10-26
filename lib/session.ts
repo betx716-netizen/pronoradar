@@ -70,6 +70,17 @@ export async function signIn(phoneInput: string, password: string) {
   if (error) throw new Error(error.status === 429 ? "Trop d'essais. Patiente une minute." : "Numéro ou mot de passe incorrect.");
 }
 
+/** Change le mot de passe du compte connecté. */
+export async function changePassword(password: string) {
+  if (password.length < 6) throw new Error("Choisis un mot de passe d'au moins 6 caractères.");
+  const c = await loadConfig();
+  if (c.demo) return;
+  const client = await supabase();
+  if (!client) throw new Error("La connexion n'est pas disponible.");
+  const { error } = await client.auth.updateUser({ password });
+  if (error) throw new Error(/different|same/i.test(error.message) ? "Choisis un mot de passe différent de l'actuel." : "Impossible de changer le mot de passe. Réessaie.");
+}
+
 export async function signOut() {
   const c = await loadConfig();
   if (c.demo) {
