@@ -8,7 +8,7 @@
 import { analyzeMatch } from "./analyze";
 import { composeDailyCoupons, computedCoupons, type DailyCoupon, type DayResult } from "./dailyCoupons";
 import { demoAnalysis, demoFixtures } from "./demo";
-import { espnCovers, fetchEspnFixtures } from "./espn";
+import { espnCovers, fetchWeekFixtures, sameTeam } from "./espn";
 import { findFixtures } from "./fixtures";
 import { isDemo } from "./http";
 import { fixtureId } from "./jobs";
@@ -59,30 +59,30 @@ async function findDayFixtures(day: string, log: (m: string) => void) {
   const notes: string[] = [];
   const found: DayFixture[] = [];
   const leagues = dailyLeagues();
-  // Tri gratuit avant de dépenser des requêtes : l'annuaire public d'ESPN dit quels championnats jouent aujourd'hui.
-  // On n'interroge les cotes que pour ceux-là (en cas de doute ou d'erreur ESPN, on interroge quand même).
-  const plays = await Promise.all(
-    leagues.map(async ({ sport, name }) => {
-      if (sport !== "football" || !espnCovers(name)) return true;
-      try {
-        return (await fetchEspnFixtures(name)).some((f) => f.date === day);
-      } catch {
-        return true;
-      }
-    }),
+  // Programme gratuit du jour (ESPN, tous championnats, avec cotes DraftKings) : sert de base et de tri.
+  // On n'interroge les cotes payantes que pour les championnats qui jouent (en cas d'erreur ESPN, on interroge tout).
+  const espnDay = await fetchWeekFixtures()
+    .then((all) => all.filter((f) => f.date === day))
+    .catch(() => [] as Fixture[]);
+  const playing = leagues.filter(
+    ({ sport, name }) => sport !== "football" || !espnCovers(name) || espnDay.length === 0 || espnDay.some((f) => f.competition === name),
   );
-  const playing = leagues.filter((_, i) => plays[i]);
   log(`${playing.length} championnat(s) sur ${leagues.length} jouent aujourd'hui`);
   for (const { sport, name } of playing) {
+    const free = espnDay.filter((f) => f.competition === name);
+    let ofDay: Fixture[] = [];
     try {
       const r = await findFixtures(sport, name, () => {});
       notes.push(...r.notes.map((n) => `${name} : ${n}`));
-      const ofDay = r.fixtures.filter((f) => f.date === day).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
-      found.push(...ofDay.map((f) => ({ ...f, sport })));
-      log(`${name} : ${ofDay.length} match(s) aujourd'hui`);
+      ofDay = r.fixtures.filter((f) => f.date === day);
     } catch (e) {
       notes.push(`${name} : ${e instanceof Error ? e.message : String(e)}`);
     }
+    // Matchs absents de la source payante (championnat non couvert, quota épuisé…) : repris du programme gratuit.
+    const extra = free.filter((e) => !ofDay.some((f) => sameTeam(f.home, e.home) && sameTeam(f.away, e.away)));
+    const merged = [...ofDay, ...extra].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+    found.push(...merged.map((f) => ({ ...f, sport })));
+    log(`${name} : ${merged.length} match(s) aujourd'hui`);
     if (found.length >= MAX_MATCHES * 3) break;
   }
   // Les matchs avec des cotes passent devant : leurs analyses et leurs coupons sont plus fiables.
