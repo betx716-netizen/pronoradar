@@ -874,7 +874,7 @@ function App() {
                       <LeagueLogo name={l} size={20} />
                       {l}
                       {on && lf?.status === "done" && (
-                        <span className="ml-1.5 text-xs opacity-80">
+                        <span className="ml-1 rounded-full bg-accent px-1.5 text-xs font-bold text-on-accent tabular-nums" title="Matchs cette semaine">
                           {lf.fixtures.length}
                         </span>
                       )}
@@ -958,9 +958,16 @@ function App() {
                             {league}
                           </h2>
                           <p className="text-xs text-muted">
-                            {ids.length} match{ids.length > 1 ? "s" : ""}
+                            {ids.length} match{ids.length > 1 ? "s" : ""} ce jour-là
                           </p>
                         </div>
+                        {/* Nombre total de matchs de ce championnat sur les 7 jours. */}
+                        <span className="shrink-0 rounded-full bg-accent px-2.5 py-1 text-center text-xs font-bold leading-tight text-on-accent tabular-nums">
+                          {byLeague[league]?.fixtures.length ?? ids.length}
+                          <span className="block text-[10px] font-semibold opacity-80">
+                            cette sem.
+                          </span>
+                        </span>
                         <button
                           onClick={() =>
                             setSelected((prev) => {
