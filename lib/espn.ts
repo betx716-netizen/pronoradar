@@ -20,7 +20,6 @@ export const SLUGS: Record<string, string> = {
   "Bundesliga (Autriche)": "aut.1",
   "Super League (Grèce)": "gre.1",
   "Superliga (Danemark)": "den.1",
-  "Ekstraklasa (Pologne)": "pol.1",
   "Allsvenskan (Suède)": "swe.1",
   "Eliteserien (Norvège)": "nor.1",
   "Ligue 2": "fra.2",
@@ -31,6 +30,41 @@ export const SLUGS: Record<string, string> = {
 };
 
 export const espnCovers = (competition: string) => competition in SLUGS;
+
+// Identifiants ESPN des championnats (relevés le 26/10/2026), pour reconnaître leurs matchs dans le programme « tous les championnats ».
+export const ESPN_IDS: Record<string, string> = {
+  "Ligue des Champions": "775",
+  "Ligue Europa": "776",
+  "Ligue Conférence": "20296",
+  "Ligue 1": "710",
+  "Premier League": "700",
+  LaLiga: "740",
+  "Serie A": "730",
+  Bundesliga: "720",
+  "Liga Portugal": "715",
+  Eredivisie: "725",
+  "Jupiler Pro League (Belgique)": "3901",
+  "Süper Lig (Turquie)": "3946",
+  "Premiership (Écosse)": "735",
+  "Super League (Suisse)": "3944",
+  "Bundesliga (Autriche)": "3907",
+  "Super League (Grèce)": "3955",
+  "Superliga (Danemark)": "3913",
+  "Allsvenskan (Suède)": "3945",
+  "Eliteserien (Norvège)": "3960",
+  "Ligue 2": "3926",
+  "Championship (Angleterre)": "3914",
+  "LaLiga 2": "3921",
+  "Serie B": "3931",
+  "2. Bundesliga": "3927",
+};
+const NAME_BY_ID = Object.fromEntries(Object.entries(ESPN_IDS).map(([name, id]) => [id, name]));
+
+/** Jours au format ESPN (AAAAMMJJ), de `from` à `to` jours par rapport à aujourd'hui. ESPN refuse désormais les plages : un jour par requête. */
+export const espnDays = (from: number, to: number) => {
+  const now = Date.now();
+  return Array.from({ length: to - from + 1 }, (_, i) => ymd(new Date(now + (from + i) * 86400000)));
+};
 
 export const ymd = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, "");
 // fr-CA donne AAAA-MM-JJ, en-GB donne HH:MM.
@@ -46,13 +80,16 @@ type EspnEvent = {
 export async function fetchEspnFixtures(competition: string): Promise<Fixture[]> {
   const slug = SLUGS[competition];
   if (!slug) return [];
-  const now = new Date();
-  const end = new Date(now.getTime() + 7 * 86400000);
-  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard?dates=${ymd(now)}-${ymd(end)}&limit=200`, {
-    next: { revalidate: 7200 },
-  });
-  if (!res.ok) throw new Error(`Programme de secours indisponible (erreur ${res.status}).`);
-  const events: EspnEvent[] = (await res.json())?.events ?? [];
+  // Un jour par requête (ESPN refuse les plages de dates), d'aujourd'hui à J+7.
+  const pages = await Promise.all(
+    espnDays(0, 7).map(async (d) => {
+      const res = await fetch(scoreboardUrl(slug, d), { next: { revalidate: 7200 }, signal: AbortSignal.timeout(6000) });
+      if (!res.ok) throw new Error(`Programme de secours indisponible (erreur ${res.status}).`);
+      return ((await res.json())?.events ?? []) as (EspnEvent & { id?: string })[];
+    }),
+  );
+  const seen = new Set<string>();
+  const events = pages.flat().filter((e) => (e.id ? !seen.has(e.id) && seen.add(e.id) : true));
   return events.flatMap((e) => {
     const c = e.competitions?.[0];
     const home = c?.competitors?.find((x) => x.homeAway === "home")?.team?.displayName;
@@ -297,7 +334,10 @@ export async function fetchLiveScores(competition: string): Promise<LiveMatch[]>
   const slug = SLUGS[competition];
   if (!slug) return [];
   const now = Date.now();
-  return fetchSlug(slug, `${ymd(new Date(now - 86400000))}-${ymd(new Date(now + 86400000))}`, 30).catch(() => []);
+  // Hier, aujourd'hui et demain : une requête par jour (ESPN refuse les plages de dates).
+  const days = [ymd(new Date(now - 86400000)), ymd(new Date(now)), ymd(new Date(now + 86400000))];
+  const all = (await Promise.all(days.map((d) => fetchSlug(slug, d, 30).catch(() => [] as LiveMatch[])))).flat();
+  return all.filter((m, i) => all.findIndex((x) => x.id === m.id) === i);
 }
 
 /** Tous les matchs en cours en ce moment, dans tous les championnats suivis. */
@@ -358,4 +398,44 @@ export async function fetchSofaDetail(id: string) {
   const res = await fetch(`https://api.sofascore.com/api/v1/event/${id}/statistics`, { headers: SOFA_HEADERS, cache: "no-store" });
   if (!res.ok) return { stats: [] as string[], events: [] as string[] };
   return { stats: parseSofaStats(await res.json()), events: [] as string[] };
+}
+
+
+// ——— Programme de la semaine, tous championnats ———
+// Une requête par jour sur le programme « tous les championnats » d'ESPN, puis tri par championnat de l'application.
+
+type AllEvent = EspnEvent & { id?: string; uid?: string };
+
+/** Matchs d'aujourd'hui à J+7 (jours de Paris) des championnats de l'application, en cours et terminés compris. */
+export async function fetchWeekFixtures(): Promise<Fixture[]> {
+  const today = paris(new Date().toISOString(), "fr-CA", { year: "numeric", month: "2-digit", day: "2-digit" });
+  const last = paris(new Date(Date.now() + 7 * 86400000).toISOString(), "fr-CA", { year: "numeric", month: "2-digit", day: "2-digit" });
+  const pages = await Promise.all(
+    espnDays(-1, 8).map(async (d) => {
+      try {
+        const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/all/scoreboard?dates=${d}&limit=500`, {
+          next: { revalidate: 1800 },
+          signal: AbortSignal.timeout(8000),
+        });
+        return res.ok ? (((await res.json())?.events ?? []) as AllEvent[]) : [];
+      } catch {
+        return [] as AllEvent[];
+      }
+    }),
+  );
+  const seen = new Set<string>();
+  const out: Fixture[] = [];
+  for (const e of pages.flat()) {
+    const leagueId = e.uid?.match(/~l:(\d+)~/)?.[1];
+    const competition = leagueId ? NAME_BY_ID[leagueId] : undefined;
+    if (!competition || !e.date || (e.id && seen.has(e.id))) continue;
+    if (e.id) seen.add(e.id);
+    const c = e.competitions?.[0];
+    const home = c?.competitors?.find((x) => x.homeAway === "home")?.team?.displayName;
+    const away = c?.competitors?.find((x) => x.homeAway === "away")?.team?.displayName;
+    const date = paris(e.date, "fr-CA", { year: "numeric", month: "2-digit", day: "2-digit" });
+    if (!home || !away || date < today || date > last) continue;
+    out.push({ home, away, competition, date, time: paris(e.date, "en-GB", { hour: "2-digit", minute: "2-digit" }), stage: null, odds: null, apiFootballId: null });
+  }
+  return out.sort((a, b) => (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")));
 }

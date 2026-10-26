@@ -55,14 +55,17 @@ export function useLiveScores(leagues: string[], world = false) {
     };
     const phoneFallback = () => {
       const now = Date.now();
-      const range = `${ymd(new Date(now - 86400000))}-${ymd(new Date(now + 86400000))}`;
+      // ESPN refuse les plages de dates : hier, aujourd'hui et demain, un jour par requête.
+      const days = [-1, 0, 1].map((k) => ymd(new Date(now + k * 86400000)));
       const mine = key ? key.split(",").map((l) => SLUGS[l]).filter(Boolean) : [];
       const extra = world ? PHONE_WORLD.filter((s) => !mine.includes(s)) : [];
-      const get = (slug: string) =>
-        fetch(scoreboardUrl(slug, range))
+      const getDay = (slug: string, d: string) =>
+        fetch(scoreboardUrl(slug, d))
           .then((r) => (r.ok ? r.json() : Promise.reject()))
           .then((data) => parseScoreboard(data, slug))
           .catch(() => [] as LiveMatch[]);
+      const get = (slug: string) =>
+        Promise.all(days.map((d) => getDay(slug, d))).then((all) => all.flat().filter((m, i, a) => a.findIndex((x) => x.id === m.id) === i));
       Promise.all([Promise.all(mine.map(get)), Promise.all(extra.map(get))]).then(([a, b]) => {
         if (!alive) return;
         const own = a.flat();
