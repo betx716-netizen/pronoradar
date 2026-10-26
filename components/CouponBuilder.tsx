@@ -345,14 +345,9 @@ export function CouponBuilder({
                 {coupon.totalOdds.toFixed(2)}
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-xs uppercase tracking-wide text-muted">
-                Probabilité estimée
-              </p>
-              <p className="font-display text-5xl leading-none tabular-nums">
-                {coupon.probability.toFixed(1)} %
-              </p>
-            </div>
+            <p className="self-end text-right text-xs text-muted">
+              {"L'analyse est faite par IA, aucun coupon n'est garanti à 100 %."}
+            </p>
             {coupon.estimatedOddsCount > 0 && (
               <p className="col-span-2 text-xs text-muted">
                 {coupon.estimatedOddsCount} cote
