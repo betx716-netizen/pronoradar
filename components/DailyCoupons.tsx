@@ -143,7 +143,7 @@ export function DailyCoupons({
       {c.comment && <p className="border-t border-border px-4 py-2 text-xs leading-relaxed text-muted">{c.comment}</p>}
       <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-2.5">
         <span className="text-xs text-muted">
-          Chance {c.probability.toFixed(0)} % · mise {c.stakePercent} %
+          {"L'analyse est faite par IA, aucun coupon n'est garanti à 100 %."}
         </span>
         <span className="rounded-xl bg-accent px-3 py-1 font-display text-2xl leading-none text-on-accent tabular-nums">{c.totalOdds.toFixed(2)}</span>
       </div>

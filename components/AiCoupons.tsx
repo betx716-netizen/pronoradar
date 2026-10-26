@@ -421,8 +421,7 @@ export function AiCoupons({
                         <p className="mb-1 text-sm">{c.comment}</p>
                         <p className="mb-3 text-xs text-muted">
                           {c.legs.length} sélection
-                          {c.legs.length > 1 ? "s" : ""} · chances estimées {prob.toFixed(prob < 10 ? 1 : 0)} % · mise conseillée{" "}
-                          {odds >= 10 || c.legs.length >= 8 ? "1 % max (pari plaisir)" : `${c.stakePercent} % de la bankroll`}
+                          {c.legs.length > 1 ? "s" : ""} · {"L'analyse est faite par IA, aucun coupon n'est garanti à 100 %."}
                         </p>
                         <div className="mt-auto flex gap-2">
                           <button
