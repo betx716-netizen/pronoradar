@@ -5,7 +5,7 @@ import { hasGroq, hasTavily } from "./backup";
 import { OddsApiError, hasOddsApi } from "./odds";
 import type { ServicesStatus, StreamEvent } from "./schemas";
 import { maskProviders } from "./mask";
-import { isAuthorized } from "./auth";
+import { getViewer, premiumRequired, unauthorized } from "./user";
 
 export const isDemo = () => process.env.DEMO_MODE === "1";
 
@@ -19,9 +19,8 @@ export const servicesStatus = (): ServicesStatus => ({
   backupSearch: hasTavily(),
 });
 
-// Si APP_PASSWORD est défini, seules les requêtes portant ce mot de passe passent :
-// évite qu'un inconnu consomme votre crédit API.
-export function guard(req: Request): Response | null {
+/** Services non configurés : refuse tout de suite. */
+function notConfigured(): Response | null {
   const s = servicesStatus();
   if (!s.demo && !s.gemini && !s.odds && !s.apiFootball) {
     return Response.json(
@@ -29,8 +28,22 @@ export function guard(req: Request): Response | null {
       { status: 500 },
     );
   }
-  if (isAuthorized(req)) return null;
-  return Response.json({ error: "Connexion requise." }, { status: 401 });
+  return null;
+}
+
+/** Actions qui consomment l'IA et les API (analyses, coupons, coach, direct) : réservées aux membres Premium. */
+export async function guard(req: Request): Promise<Response | null> {
+  const nc = notConfigured();
+  if (nc) return nc;
+  const viewer = await getViewer(req);
+  if (!viewer) return unauthorized();
+  if (!viewer.premium) return premiumRequired();
+  return null;
+}
+
+/** Lecture ouverte à tous (programme des matchs, mis en cache 2 heures). */
+export function guardOpen(_req: Request): Response | null {
+  return notConfigured();
 }
 
 function errorEvent(err: unknown): StreamEvent {

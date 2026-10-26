@@ -34,9 +34,9 @@ Pour tester l'interface sans clé : `DEMO_MODE=1 npm run dev`.
 
 ## Mise en ligne (Vercel)
 
-Ajoutez `GEMINI_API_KEY`, `ODDS_API_KEY`, `API_FOOTBALL_KEY` et `APP_PASSWORD` dans les variables d'environnement du projet, puis redéployez.
+Ajoutez `GEMINI_API_KEY`, `ODDS_API_KEY`, `API_FOOTBALL_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SECRET_KEY`, `CRON_SECRET`, `APP_URL` et `ADMIN_PHONES` dans les variables d'environnement du projet, puis redéployez.
 
-Pour sauvegarder le suivi des paris dans Supabase : `SUPABASE_URL`, `SUPABASE_KEY` (clé publishable) et `HISTORY_SECRET` (le secret enregistré dans la table `private.settings` de la base). Sans elles, l'historique reste dans le navigateur.
+Le suivi des paris est enregistré sur le compte de chaque utilisateur (table `user_bets`).
 
 ## Coupons du jour (préparés à l'avance)
 
@@ -45,3 +45,10 @@ Chaque matin, le serveur trouve les matchs du jour dans 27 championnats europée
 - Variables nécessaires : `SUPABASE_SECRET_KEY` (clé secrète Supabase), `CRON_SECRET` (chaîne aléatoire) et `APP_URL` (adresse du site).
 - Le cron Vercel lance le travail à 5 h UTC (`vercel.json`) ; la première visite le relance s'il s'est arrêté.
 - Réglages facultatifs : `DAILY_LEAGUES`, `DAILY_MAX_MATCHES` (20), `DAILY_CONCURRENCY` (3), `DAILY_MODE` (`rapide`).
+
+## Comptes et Premium
+
+- Connexion par numéro de téléphone + mot de passe, sans SMS ni email. Le site est ouvert à tous en lecture.
+- **Gratuit** : le coupon « Le sûr » du jour et l'analyse de 3 matchs du jour. Les autres coupons sont verrouillés (le serveur n'envoie pas leur contenu).
+- **Premium** (`lib/plans.ts`) : les 6 coupons du jour et toutes leurs analyses, lancer ses propres analyses, coupons de l'IA et générateur manuel, analyse en direct. Ces routes renvoient 402 sans Premium.
+- Paiement manuel Wave / Orange Money au numéro de `lib/plans.ts` ; validation dans Mon compte → Paiements à valider, pour les numéros de `ADMIN_PHONES`.

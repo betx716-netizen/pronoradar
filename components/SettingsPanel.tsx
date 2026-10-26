@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { setPassword } from "@/lib/client";
+import { signOut } from "@/lib/session";
 import type { ServicesStatus } from "@/lib/schemas";
 import { PalettePicker } from "./PalettePicker";
 
@@ -148,8 +148,7 @@ export function SettingsPanel({
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Compte</h3>
               <button
                 onClick={async () => {
-                  await fetch("/api/auth", { method: "DELETE" }).catch(() => {});
-                  setPassword("");
+                  await signOut();
                   window.location.reload();
                 }}
                 className="w-full rounded-xl border border-border py-2.5 font-semibold text-danger hover:border-danger"

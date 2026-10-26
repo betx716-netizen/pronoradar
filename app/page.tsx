@@ -19,7 +19,10 @@ import { HeroBanner } from "@/components/HeroBanner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ScrollRow } from "@/components/ScrollRow";
-import { Landing } from "@/components/Landing";
+import { Paywall } from "@/components/app/Paywall";
+import { AccountView } from "@/components/app/AccountView";
+import { Sheet } from "@/components/app/Sheet";
+import { useSession } from "@/lib/session";
 import { LiveBoard, LiveDot } from "@/components/LiveBoard";
 import { findLive, sameTeam, useLiveScores, type LiveMatch } from "@/lib/live";
 
@@ -27,8 +30,10 @@ const findPriorAnalysis = (history: AnalysisResult[], home: string, away: string
   history.find((r) => sameTeam(r.analysis.match.home, home) && sameTeam(r.analysis.match.away, away)) ?? null;
 import { isValueBet } from "@/lib/value";
 import {
+  PremiumError,
   QuotaError,
   UnauthorizedError,
+  api,
   callStreaming,
   loadFavorites,
   loadHistory,
@@ -251,6 +256,21 @@ function App() {
     date: "",
   });
   const [needPassword, setNeedPassword] = useState(false);
+  // Comptes et Premium.
+  const session = useSession();
+  const [me, setMe] = useState<{ premium: boolean; admin: boolean; premiumUntil: string | null } | null>(null);
+  const [paywall, setPaywall] = useState(false);
+  const [account, setAccount] = useState(false);
+  const [accountKey, setAccountKey] = useState(0);
+  useEffect(() => {
+    if (!session.ready) return;
+    if (!session.email) return setMe(null);
+    api<{ premium: boolean; admin: boolean; premiumUntil: string | null }>("/api/me")
+      .then(setMe)
+      .catch(() => setMe(null));
+  }, [session.ready, session.email, accountKey]);
+  const premium = me?.premium ?? false;
+  const unlock = () => (session.email ? setPaywall(true) : setAccount(true));
   const [error, setError] = useState<string | null>(null);
   const [quotas, setQuotas] = useState<Quotas>({
     odds: null,
@@ -434,7 +454,11 @@ function App() {
 
   function handleError(e: unknown) {
     if (e instanceof UnauthorizedError) {
-      setNeedPassword(true);
+      // Pas connecté : on propose de se connecter ou de créer un compte.
+      setAccount(true);
+      stopRef.current = true;
+    } else if (e instanceof PremiumError) {
+      setPaywall(true);
       stopRef.current = true;
     } else if (e instanceof QuotaError) {
       stopRef.current = true;
@@ -571,10 +595,12 @@ function App() {
           }
           handleError(e);
           updateJob(job.id, {
-            status: e instanceof UnauthorizedError ? "pending" : "error",
+            status: e instanceof UnauthorizedError || e instanceof PremiumError ? "pending" : "error",
             message:
               e instanceof UnauthorizedError
-                ? "En attente du mot de passe"
+                ? "Connecte-toi pour lancer l'analyse"
+                : e instanceof PremiumError
+                ? "Réservé aux membres Premium"
                 : e instanceof Error
                   ? e.message
                   : String(e),
@@ -745,8 +771,21 @@ function App() {
                 </button>
               ))}
             </nav>
+            {premium ? (
+              <button onClick={() => setAccount(true)} className="flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-2 text-sm font-semibold text-white">
+                <Icon name="crown" className="h-4 w-4" />
+                Premium
+              </button>
+            ) : (
+              <button onClick={unlock} className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-accent shadow">
+                Passer Premium
+              </button>
+            )}
+            <button onClick={() => setAccount(true)} aria-label="Mon compte" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white">
+              <Icon name="compte" className="h-5 w-5" />
+            </button>
             <ThemeToggle />
-            <SettingsPanel services={services} quotas={quotas} />
+            {me?.admin && <SettingsPanel services={services} quotas={quotas} />}
           </div>
         </div>
       </header>
@@ -785,7 +824,7 @@ function App() {
               }
               loading={searching}
             />
-            <DailyCoupons onResults={importDaily} onOpen={setDetail} />
+            <DailyCoupons onResults={importDaily} onOpen={setDetail} onUnlock={unlock} refreshKey={`${session.email}|${premium}`} />
             <TopCoupons refreshKey={autoCoupons + (tab === "matchs" ? 1 : 0)} onOpen={() => goTo("coupon")} />
             <TopPicks results={visibleResults} onOpen={setDetail} />
             <TopScorers results={visibleResults} onOpen={setDetail} />
@@ -1145,6 +1184,16 @@ function App() {
             </div>
             {/* Les deux restent montés pour que la génération automatique de l'IA se fasse même sur l'autre onglet. */}
             <div className={couponTab === "ia" ? "" : "hidden"}>
+              {tab === "coupon" && (
+                <DailyCoupons
+                  title="Coupons du jour préparés par l'IA"
+                  onResults={importDaily}
+                  onOpen={setDetail}
+                  onUnlock={unlock}
+                  refreshKey={`${session.email}|${premium}`}
+                />
+              )}
+              <h2 className="mb-2 font-display text-3xl leading-none">Coupons sur tes analyses</h2>
               <AiCoupons
                 results={couponResults}
                 autoKey={autoCoupons}
@@ -1237,6 +1286,31 @@ function App() {
         </div>
       )}
 
+      {paywall && (
+        <Paywall
+          signedIn={Boolean(session.email)}
+          email={session.email}
+          onClose={() => {
+            setPaywall(false);
+            setAccountKey((k) => k + 1);
+          }}
+        />
+      )}
+      {account && (
+        <Sheet title={session.email ? "Mon compte" : "Connexion"} onClose={() => setAccount(false)}>
+          <div className="pb-4">
+            <AccountView
+              email={session.email}
+              refreshKey={accountKey}
+              onUnlock={() => {
+                setAccount(false);
+                setPaywall(true);
+              }}
+            />
+          </div>
+        </Sheet>
+      )}
+
       {detail && (
         <div className="fixed inset-0 z-40 flex justify-end">
           <button
@@ -1262,25 +1336,7 @@ function App() {
   );
 }
 
-// Écran d'accueil et connexion avant l'application, quand elle est protégée par un identifiant.
+// Accès libre : tout le monde voit l'application ; les actions payantes demandent un compte Premium.
 export default function Home() {
-  const [state, setState] = useState<"loading" | "in" | "out">("loading");
-  useEffect(() => {
-    fetch("/api/auth")
-      .then((r) => r.json())
-      .then((d: { required: boolean; authenticated: boolean }) =>
-        setState(!d.required || d.authenticated ? "in" : "out"),
-      )
-      .catch(() => setState("in"));
-  }, []);
-  if (state === "loading")
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex h-14 w-14 -skew-x-6 animate-pulse items-center justify-center rounded-xl bg-accent font-display text-3xl text-white">
-          P
-        </div>
-      </div>
-    );
-  if (state === "out") return <Landing onLogin={() => setState("in")} />;
   return <App />;
 }

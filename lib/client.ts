@@ -2,9 +2,29 @@
 
 import type { StreamEvent } from "./schemas";
 import { maskProviders } from "./mask";
+import { getToken } from "./session";
 
 export class UnauthorizedError extends Error {}
 export class QuotaError extends Error {}
+export class PremiumError extends Error {}
+
+/** fetch avec le jeton du compte connecté. */
+export async function authFetch(url: string, init: RequestInit = {}) {
+  const token = await getToken();
+  const headers = new Headers(init.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  return fetch(url, { ...init, headers, cache: "no-store" });
+}
+
+/** Appel JSON avec les erreurs courantes (connexion requise, réservé Premium). */
+export async function api<T>(url: string, init: RequestInit = {}): Promise<T> {
+  const res = await authFetch(url, init);
+  const data = await res.json().catch(() => null);
+  if (res.status === 401) throw new UnauthorizedError(data?.error ?? "Connecte-toi pour continuer.");
+  if (res.status === 402) throw new PremiumError(data?.error ?? "Réservé aux membres Premium.");
+  if (!res.ok) throw new Error(data?.error ?? `Erreur ${res.status}`);
+  return data as T;
+}
 
 const PASSWORD_KEY = "pronoradar:password";
 const HISTORY_KEY = "pronoradar:history";
@@ -62,13 +82,14 @@ export async function callStreaming<T>(
   onProgress: (message: string) => void,
   signal?: AbortSignal,
 ): Promise<T> {
-  const res = await fetch(url, {
+  const res = await authFetch(url, {
     signal,
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-app-password": getPassword() },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (res.status === 401) throw new UnauthorizedError("Mot de passe requis.");
+  if (res.status === 401) throw new UnauthorizedError("Connecte-toi pour continuer.");
+  if (res.status === 402) throw new PremiumError("Réservé aux membres Premium.");
   if (!res.ok || !res.body) {
     const data = await res.json().catch(() => null);
     throw new Error(data?.error ?? `Erreur ${res.status}`);
