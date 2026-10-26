@@ -5,7 +5,6 @@ import { hasGroq, hasTavily } from "./backup";
 import { OddsApiError, hasOddsApi } from "./odds";
 import type { ServicesStatus, StreamEvent } from "./schemas";
 import { maskProviders } from "./mask";
-import { isAuthorized } from "./auth";
 
 export const isDemo = () => process.env.DEMO_MODE === "1";
 
@@ -19,9 +18,8 @@ export const servicesStatus = (): ServicesStatus => ({
   backupSearch: hasTavily(),
 });
 
-// Si APP_PASSWORD est défini, seules les requêtes portant ce mot de passe passent :
-// évite qu'un inconnu consomme votre crédit API.
-export function guard(req: Request): Response | null {
+/** Refuse la requête si aucun service n'est configuré sur le serveur. */
+export function guard(_req: Request): Response | null {
   const s = servicesStatus();
   if (!s.demo && !s.gemini && !s.odds && !s.apiFootball) {
     return Response.json(
@@ -29,8 +27,7 @@ export function guard(req: Request): Response | null {
       { status: 500 },
     );
   }
-  if (isAuthorized(req)) return null;
-  return Response.json({ error: "Connexion requise." }, { status: 401 });
+  return null;
 }
 
 function errorEvent(err: unknown): StreamEvent {

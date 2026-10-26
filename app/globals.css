@@ -1,84 +1,105 @@
 @import "tailwindcss";
 
-/* Thème premium sombre, identique quel que soit le réglage du système. */
+/* PronoRadar : fond craie, vert terrain pour la marque, orange pour l'action, tickets en papier. */
 :root {
-  /* Thème rouge et blanc : fond clair, rouge vif pour la marque et les actions. */
   color-scheme: light;
-  --bg: #f6f6f8;
+  --bg: #eef1ec;
   --surface: #ffffff;
-  --surface-2: #f3f3f6;
-  --surface-3: #e9e9ee;
-  --border: #e3e3e9;
-  --text: #121216;
-  --muted: #5d6270;
-  --accent: #16a34a;
-  --accent-strong: #15803d;
-  --accent-soft: rgba(22, 163, 74, 0.1);
+  --surface-2: #f4f6f2;
+  --surface-3: #e6ebe4;
+  --border: #dbe2d8;
+  --text: #14211a;
+  --muted: #5a6b61;
+  --accent: #0b5d3b;
+  --accent-strong: #084a2f;
+  --accent-soft: rgba(11, 93, 59, 0.09);
   --on-accent: #ffffff;
-  --gold: #b45309;
-  --gold-soft: rgba(217, 119, 6, 0.12);
-  --success: #15803d;
-  --success-soft: rgba(21, 128, 61, 0.1);
+  --orange: #f26b1d;
+  --orange-strong: #d9560c;
+  --orange-soft: rgba(242, 107, 29, 0.12);
+  --pitch: #0b5d3b;
+  --pitch-deep: #073d27;
+  --paper: #fffdf7;
+  --paper-ink: #1b2620;
+  --paper-muted: #6b6a5f;
+  --paper-line: #e3dccb;
+  --gold: #a16207;
+  --gold-soft: rgba(202, 138, 4, 0.12);
+  --success: #1f9d55;
+  --success-soft: rgba(31, 157, 85, 0.11);
   --home: #1d4ed8;
   --draw: #64748b;
   --away: #c2410c;
-  --warn-bg: #fff7e6;
-  --warn-text: #92400e;
-  --danger: #b91c1c;
-  --header-from: #050505;
-  --header-to: #0f3a1e;
+  --warn-bg: #fff4e5;
+  --warn-text: #8a4b08;
+  --danger: #d7263d;
+  --header-from: #073d27;
+  --header-to: #0b5d3b;
 }
 
-/* Mode sombre rouge et noir : suit le réglage du téléphone, sauf choix manuel. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-  color-scheme: dark;
-  --bg: #0b0b0d;
-  --surface: #141417;
-  --surface-2: #1b1b1f;
-  --surface-3: #25252b;
-  --border: #2c2c33;
-  --text: #f4f4f6;
-  --muted: #9a9ca6;
-  --accent: #22c55e;
-  --accent-strong: #16a34a;
-  --accent-soft: rgba(34, 197, 94, 0.16);
-  --on-accent: #ffffff;
-  --gold: #f5b544;
-  --gold-soft: rgba(245, 181, 68, 0.14);
-  --success: #34d399;
-  --success-soft: rgba(52, 211, 153, 0.14);
-  --home: #60a5fa;
-  --draw: #94a3b8;
-  --away: #fb923c;
-  --warn-bg: rgba(245, 181, 68, 0.12);
-  --warn-text: #f5b544;
-  --danger: #f87171;
+    color-scheme: dark;
+    --bg: #0d1612;
+    --surface: #15211b;
+    --surface-2: #1b2a22;
+    --surface-3: #24362c;
+    --border: #2a3d32;
+    --text: #edf3ee;
+    --muted: #93a69a;
+    --accent: #3cc27f;
+    --accent-strong: #2aa468;
+    --accent-soft: rgba(60, 194, 127, 0.14);
+    --on-accent: #062114;
+    --orange: #ff7a2e;
+    --orange-strong: #f26b1d;
+    --orange-soft: rgba(255, 122, 46, 0.16);
+    --pitch: #0f4a31;
+    --pitch-deep: #08291b;
+    --paper: #f4efe2;
+    --paper-line: #d8cfba;
+    --gold: #f5b544;
+    --gold-soft: rgba(245, 181, 68, 0.14);
+    --success: #3cc27f;
+    --success-soft: rgba(60, 194, 127, 0.14);
+    --home: #60a5fa;
+    --draw: #94a3b8;
+    --away: #fb923c;
+    --warn-bg: rgba(245, 181, 68, 0.12);
+    --warn-text: #f5b544;
+    --danger: #ff5a6e;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0b0b0d;
-  --surface: #141417;
-  --surface-2: #1b1b1f;
-  --surface-3: #25252b;
-  --border: #2c2c33;
-  --text: #f4f4f6;
-  --muted: #9a9ca6;
-  --accent: #22c55e;
-  --accent-strong: #16a34a;
-  --accent-soft: rgba(34, 197, 94, 0.16);
-  --on-accent: #ffffff;
+  --bg: #0d1612;
+  --surface: #15211b;
+  --surface-2: #1b2a22;
+  --surface-3: #24362c;
+  --border: #2a3d32;
+  --text: #edf3ee;
+  --muted: #93a69a;
+  --accent: #3cc27f;
+  --accent-strong: #2aa468;
+  --accent-soft: rgba(60, 194, 127, 0.14);
+  --on-accent: #062114;
+  --orange: #ff7a2e;
+  --orange-strong: #f26b1d;
+  --orange-soft: rgba(255, 122, 46, 0.16);
+  --pitch: #0f4a31;
+  --pitch-deep: #08291b;
+  --paper: #f4efe2;
+  --paper-line: #d8cfba;
   --gold: #f5b544;
   --gold-soft: rgba(245, 181, 68, 0.14);
-  --success: #34d399;
-  --success-soft: rgba(52, 211, 153, 0.14);
+  --success: #3cc27f;
+  --success-soft: rgba(60, 194, 127, 0.14);
   --home: #60a5fa;
   --draw: #94a3b8;
   --away: #fb923c;
   --warn-bg: rgba(245, 181, 68, 0.12);
   --warn-text: #f5b544;
-  --danger: #f87171;
+  --danger: #ff5a6e;
 }
 
 @theme inline {
@@ -93,6 +114,15 @@
   --color-accent-strong: var(--accent-strong);
   --color-accent-soft: var(--accent-soft);
   --color-on-accent: var(--on-accent);
+  --color-orange: var(--orange);
+  --color-orange-strong: var(--orange-strong);
+  --color-orange-soft: var(--orange-soft);
+  --color-pitch: var(--pitch);
+  --color-pitch-deep: var(--pitch-deep);
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
+  --color-paper-muted: var(--paper-muted);
+  --color-paper-line: var(--paper-line);
   --color-header-from: var(--header-from);
   --color-header-to: var(--header-to);
   --color-success: var(--success);
@@ -105,24 +135,23 @@
   --color-warn-bg: var(--warn-bg);
   --color-warn-text: var(--warn-text);
   --color-danger: var(--danger);
-  --font-sans: var(--font-geist-sans);
-  --font-display: var(--font-bebas);
+  --font-sans: var(--font-barlow);
+  --font-display: var(--font-barlow-condensed);
 }
 
 body {
-  background:
-    radial-gradient(1000px 420px at 50% -220px, rgba(22, 163, 74, 0.07), transparent 70%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   overflow-x: clip;
   max-width: 100vw;
+  font-feature-settings: "tnum" 1;
 }
 
 html {
   overflow-x: clip;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  touch-action: manipulation; /* supprime le zoom au double tap */
+  touch-action: manipulation;
 }
 
 /* iOS zoome sur tout champ dont le texte fait moins de 16 px. */
@@ -132,10 +161,19 @@ textarea {
   font-size: 16px !important;
 }
 
-@media (min-width: 1024px) {
-  body {
-    background-attachment: fixed;
-  }
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+
+h1 {
+  font-family: var(--font-barlow-condensed), sans-serif;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .scrollbar-none {
@@ -143,6 +181,30 @@ textarea {
 }
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+/* Ticket papier : bord perforé en haut et en bas, comme un ticket imprimé au kiosque. */
+.ticket {
+  --notch: 7px;
+  background: var(--paper);
+  color: var(--paper-ink);
+  -webkit-mask:
+    radial-gradient(circle var(--notch) at 50% 0, transparent 98%, #000) top / calc(var(--notch) * 2.6) 51% repeat-x,
+    radial-gradient(circle var(--notch) at 50% 100%, transparent 98%, #000) bottom / calc(var(--notch) * 2.6) 51% repeat-x;
+  mask:
+    radial-gradient(circle var(--notch) at 50% 0, transparent 98%, #000) top / calc(var(--notch) * 2.6) 51% repeat-x,
+    radial-gradient(circle var(--notch) at 50% 100%, transparent 98%, #000) bottom / calc(var(--notch) * 2.6) 51% repeat-x;
+  filter: drop-shadow(0 6px 14px rgba(7, 61, 39, 0.16));
+}
+.ticket-rule {
+  border-top: 2px dashed var(--paper-line);
+}
+
+/* Contenu Premium masqué : le texte affiché est factice, le vrai contenu n'est jamais envoyé. */
+.locked-blur {
+  filter: blur(5px);
+  user-select: none;
+  pointer-events: none;
 }
 
 @keyframes shimmer {
@@ -153,19 +215,6 @@ textarea {
   background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%);
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite linear;
-}
-
-@keyframes slide-in {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
-}
-.drawer {
-  animation: slide-in 0.25s ease-out;
-}
-
-/* Interactions façon application mobile. */
-button {
-  -webkit-tap-highlight-color: transparent;
 }
 
 @keyframes fade-in {
@@ -186,40 +235,27 @@ button {
 
 @keyframes slip-pulse {
   0% { transform: scale(1); }
-  40% { transform: scale(1.12); }
+  40% { transform: scale(1.08); }
   100% { transform: scale(1); }
 }
 .slip-pulse {
   animation: slip-pulse 0.45s ease-out;
 }
 
+/* Une seule entrée orchestrée : les tickets du jour se posent l'un après l'autre. */
+@keyframes deal {
+  from { opacity: 0; transform: translateY(18px) rotate(-1.5deg); }
+  to { opacity: 1; transform: none; }
+}
+.deal {
+  animation: deal 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .fade-in, .sheet, .slip-pulse, .drawer { animation: none; }
+  .fade-in, .sheet, .slip-pulse, .deal, .skeleton { animation: none; }
 }
 
-/* Titres en capitales condensées, façon affiche sportive. */
-h1 {
-  font-family: var(--font-bebas), sans-serif;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  font-size: 2.25rem;
-  line-height: 1;
-}
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* Cartes : légère ombre pour détacher le blanc du fond. */
-.bg-surface {
-  box-shadow: 0 1px 2px rgba(18, 18, 22, 0.04), 0 4px 16px -8px rgba(18, 18, 22, 0.08);
-}
-:root[data-theme="dark"] .bg-surface {
-  box-shadow: none;
-}
-
-/* Terrain de la composition en perspective : le terrain bascule vers l'arrière, les joueurs restent debout. */
+/* Terrain de la composition en perspective (analyse détaillée). */
 .pitch-scene {
   perspective: 900px;
 }
@@ -231,151 +267,4 @@ h1 {
 .pitch-player {
   transform: rotateX(-24deg);
   transform-origin: 50% 100%;
-}
-
-/* Page d'accueil : scène 3D et cartes flottantes. */
-.landing-scene {
-  perspective: 1000px;
-}
-.landing-stage {
-  transform: rotateX(52deg) rotateZ(-18deg);
-  transform-style: preserve-3d;
-}
-@keyframes landing-float {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50% { transform: translateY(-12px) rotate(1deg); }
-}
-.landing-float {
-  animation: landing-float 6s ease-in-out infinite;
-}
-.landing-float.left-1\/2 {
-  animation: none;
-}
-.landing-tilt {
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-.landing-tilt:hover {
-  transform: perspective(700px) rotateX(4deg) rotateY(-6deg) translateY(-4px);
-  box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.35);
-}
-@media (prefers-reduced-motion: reduce) {
-  .landing-float, .landing-tilt:hover { animation: none; transform: none; }
-}
-
-/* Palettes au choix (Paramètres → Couleurs). Ardoise & corail est la palette par défaut. */
-:root[data-palette="ardoise"] {
-  --accent: #d9464f;
-  --accent-strong: #b8343c;
-  --accent-soft: rgba(217, 70, 79, 0.1);
-  --header-from: #1f2430;
-  --header-to: #2d3340;
-}
-:root[data-palette="ardoise"][data-theme="dark"] {
-  --accent: #ef5b63;
-  --accent-strong: #c9404a;
-  --accent-soft: rgba(239, 91, 99, 0.16);
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-palette="ardoise"]:not([data-theme="light"]) {
-    --accent: #ef5b63;
-    --accent-strong: #c9404a;
-    --accent-soft: rgba(239, 91, 99, 0.16);
-  }
-}
-:root[data-palette="nuit"] {
-  --accent: #2563eb;
-  --accent-strong: #1d4ed8;
-  --accent-soft: rgba(37, 99, 235, 0.1);
-  --header-from: #0f1f3d;
-  --header-to: #173468;
-}
-:root[data-palette="nuit"][data-theme="dark"] {
-  --accent: #4f86f7;
-  --accent-strong: #2f6ae8;
-  --accent-soft: rgba(79, 134, 247, 0.16);
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-palette="nuit"]:not([data-theme="light"]) {
-    --accent: #4f86f7;
-    --accent-strong: #2f6ae8;
-    --accent-soft: rgba(79, 134, 247, 0.16);
-  }
-}
-:root[data-palette="emeraude"] {
-  --accent: #059669;
-  --accent-strong: #047857;
-  --accent-soft: rgba(5, 150, 105, 0.1);
-  --header-from: #0b3b2e;
-  --header-to: #0f5c43;
-}
-:root[data-palette="emeraude"][data-theme="dark"] {
-  --accent: #10b981;
-  --accent-strong: #059669;
-  --accent-soft: rgba(16, 185, 129, 0.16);
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-palette="emeraude"]:not([data-theme="light"]) {
-    --accent: #10b981;
-    --accent-strong: #059669;
-    --accent-soft: rgba(16, 185, 129, 0.16);
-  }
-}
-:root[data-palette="rouge"] {
-  --accent: #e10a17;
-  --accent-strong: #b8000c;
-  --accent-soft: rgba(225, 10, 23, 0.08);
-  --header-from: #b8000c;
-  --header-to: #e10a17;
-}
-:root[data-palette="rouge"][data-theme="dark"] {
-  --accent: #ff2d3a;
-  --accent-strong: #c8000e;
-  --accent-soft: rgba(255, 45, 58, 0.14);
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-palette="rouge"]:not([data-theme="light"]) {
-    --accent: #ff2d3a;
-    --accent-strong: #c8000e;
-    --accent-soft: rgba(255, 45, 58, 0.14);
-  }
-}
-:root[data-palette="violet"] {
-  --accent: #7c3aed;
-  --accent-strong: #6d28d9;
-  --accent-soft: rgba(124, 58, 237, 0.1);
-  --header-from: #1e1b4b;
-  --header-to: #312e81;
-}
-:root[data-palette="violet"][data-theme="dark"] {
-  --accent: #9b6bff;
-  --accent-strong: #7c3aed;
-  --accent-soft: rgba(155, 107, 255, 0.16);
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-palette="violet"]:not([data-theme="light"]) {
-    --accent: #9b6bff;
-    --accent-strong: #7c3aed;
-    --accent-soft: rgba(155, 107, 255, 0.16);
-  }
-}
-
-/* Ancienne palette par défaut. */
-:root[data-palette="corail"] {
-  --accent: #e2563f;
-  --accent-strong: #c4442f;
-  --accent-soft: rgba(226, 86, 63, 0.1);
-  --header-from: #1e293b;
-  --header-to: #334155;
-}
-:root[data-palette="corail"][data-theme="dark"] {
-  --accent: #f0705a;
-  --accent-strong: #e2563f;
-  --accent-soft: rgba(240, 112, 90, 0.16);
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-palette="corail"]:not([data-theme="light"]) {
-    --accent: #f0705a;
-    --accent-strong: #e2563f;
-    --accent-soft: rgba(240, 112, 90, 0.16);
-  }
 }
