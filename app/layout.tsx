@@ -1,32 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
+import { Bebas_Neue, Geist } from "next/font/google";
 import "./globals.css";
 
-// Polices hébergées avec l'application (licence OFL) : rien à télécharger chez Google au chargement.
-const barlow = localFont({
-  variable: "--font-barlow",
-  display: "swap",
-  src: [
-    { path: "./fonts/barlow-latin-400-normal.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/barlow-latin-500-normal.woff2", weight: "500", style: "normal" },
-    { path: "./fonts/barlow-latin-600-normal.woff2", weight: "600", style: "normal" },
-    { path: "./fonts/barlow-latin-700-normal.woff2", weight: "700", style: "normal" },
-  ],
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
 });
-const barlowCondensed = localFont({
-  variable: "--font-barlow-condensed",
-  display: "swap",
-  src: [
-    { path: "./fonts/barlow-condensed-latin-500-normal.woff2", weight: "500", style: "normal" },
-    { path: "./fonts/barlow-condensed-latin-600-normal.woff2", weight: "600", style: "normal" },
-    { path: "./fonts/barlow-condensed-latin-700-normal.woff2", weight: "700", style: "normal" },
-    { path: "./fonts/barlow-condensed-latin-800-normal.woff2", weight: "800", style: "normal" },
-  ],
-});
+
+const bebas = Bebas_Neue({ variable: "--font-bebas", weight: "400", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "PronoRadar",
-  description: "Chaque jour, l'IA analyse les matchs et prépare tes coupons. Paiement par Orange Money, MTN, Moov et Wave.",
+  description: "Recense les pronostics publiés sur le web, les compare et en tire une analyse.",
 };
 
 // Empêche le zoom automatique du navigateur mobile (double tap, focus d'un champ).
@@ -36,7 +21,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#073d27",
+  themeColor: "#050505",
 };
 
 export default function RootLayout({
@@ -50,11 +35,11 @@ export default function RootLayout({
         {/* Applique le thème choisi avant l'affichage, pour éviter un flash de la mauvaise couleur. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var d=document.documentElement,t=localStorage.getItem("pronoradar.theme");if(t)d.dataset.theme=t}catch(e){}`,
+            __html: `try{var d=document.documentElement,t=localStorage.getItem("pronoradar.theme"),p=localStorage.getItem("pronoradar.palette.v2");if(t)d.dataset.theme=t;if(p)d.dataset.palette=p}catch(e){}`,
           }}
         />
       </head>
-      <body className={`${barlow.variable} ${barlowCondensed.variable} font-sans antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} ${bebas.variable} font-sans antialiased`}>{children}</body>
     </html>
   );
 }

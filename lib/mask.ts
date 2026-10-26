@@ -15,10 +15,3 @@ const RULES: [RegExp, string][] = [
 ];
 
 export const maskProviders = (text: string) => RULES.reduce((t, [re, to]) => t.replace(re, to), text);
-
-/** Réponse JSON dont tous les textes (hors adresses web) passent par le masquage des noms de services. */
-export const maskedJson = (data: unknown, init?: ResponseInit) =>
-  new Response(JSON.stringify(data, (k, v) => (typeof v === "string" && k !== "url" ? maskProviders(v) : v)), {
-    ...init,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ...(init?.headers ?? {}) },
-  });
