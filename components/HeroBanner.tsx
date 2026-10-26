@@ -1,7 +1,7 @@
-/** Bannière d'accueil : l'essentiel de la semaine en trois chiffres. */
+/** Bannière d'accueil : l'essentiel du jour en trois chiffres. */
 export function HeroBanner({ matches, analyses, values, loading }: { matches: number; analyses: number; values: number; loading: boolean }) {
   const stats = [
-    { label: "Matchs cette semaine", value: loading && !matches ? "…" : matches },
+    { label: "Matchs aujourd'hui", value: loading && !matches ? "…" : matches },
     { label: "Analyses récentes", value: analyses },
     { label: "Value bets repérés", value: values },
   ];
@@ -10,7 +10,7 @@ export function HeroBanner({ matches, analyses, values, loading }: { matches: nu
       <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rotate-12 rounded-[3rem] bg-accent/90" />
       <div className="pointer-events-none absolute -right-6 top-20 h-20 w-20 rotate-12 rounded-3xl bg-accent/40" />
       <div className="relative max-w-[68%]">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/60">Cette semaine</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/60">Aujourd&apos;hui</p>
         <p className="mt-1 font-display text-[2rem] leading-[0.95] sm:text-5xl">
           Les cotes, les avis,
           <br />

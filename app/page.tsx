@@ -20,6 +20,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ScrollRow } from "@/components/ScrollRow";
 import { Paywall } from "@/components/app/Paywall";
+import { FREE_ANALYSES_LABEL } from "@/lib/plans";
 import { AccountView } from "@/components/app/AccountView";
 import { Sheet } from "@/components/app/Sheet";
 import { useSession } from "@/lib/session";
@@ -371,7 +372,7 @@ function App() {
       .then(setServices)
       .catch(() => {});
   }, []);
-  // À l'ouverture : les matchs de la semaine des championnats favoris s'affichent tout seuls.
+  // À l'ouverture : les matchs des championnats favoris se chargent tout seuls (affichage : ceux du jour).
   useEffect(() => {
     const favorites = loadFavorites("football", DEFAULT_FAVORITES.football);
     setLeagues(favorites);
@@ -396,14 +397,15 @@ function App() {
     const fmt = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" });
     return Array.from({ length: 8 }, (_, i) => fmt.format(new Date(Date.now() + i * 86400000)));
   }, []);
-  const [day, setDay] = useState<string | null>(null);
   const countByDay = useMemo(() => {
     const m = new Map<string, number>();
     for (const f of allFixtures) m.set(f.date, (m.get(f.date) ?? 0) + 1);
     return m;
   }, [allFixtures]);
-  // Par défaut : le premier jour qui a des matchs.
-  const activeDay = day ?? weekDays.find((d) => countByDay.get(d)) ?? weekDays[0];
+  // On affiche les matchs du jour (heure de Paris).
+  const activeDay = weekDays[0];
+  const todayCount = countByDay.get(activeDay) ?? 0;
+  const todayIn = (l: string) => (byLeague[l]?.fixtures ?? []).filter((f) => f.date === activeDay).length;
 
   const byLeagueDay = useMemo(
     () =>
@@ -600,7 +602,7 @@ function App() {
               e instanceof UnauthorizedError
                 ? "Connecte-toi pour lancer l'analyse"
                 : e instanceof PremiumError
-                ? "Réservé aux membres Premium"
+                ? e.message
                 : e instanceof Error
                   ? e.message
                   : String(e),
@@ -817,7 +819,7 @@ function App() {
         {tab === "matchs" && (
           <section className="fade-in">
             <HeroBanner
-              matches={allFixtures.length}
+              matches={todayCount}
               analyses={visibleResults.length}
               values={
                 visibleResults.filter((r) => r.picks?.some(isValueBet)).length
@@ -831,11 +833,12 @@ function App() {
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">
-                  Matchs de la semaine
+                  Matchs du jour
                 </h1>
                 <p className="text-sm text-muted">
-                  Sélectionnez les rencontres à analyser. Liste mise à jour
-                  toutes les 2 heures.
+                  {new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${activeDay}T12:00:00`))}
+                  {" · "}
+                  {todayCount} match{todayCount > 1 ? "s" : ""}. Sélectionnez les rencontres à analyser.
                 </p>
               </div>
               <div className="flex rounded-xl border border-border bg-surface p-1">
@@ -874,8 +877,8 @@ function App() {
                       <LeagueLogo name={l} size={20} />
                       {l}
                       {on && lf?.status === "done" && (
-                        <span className="ml-1 rounded-full bg-accent px-1.5 text-xs font-bold text-on-accent tabular-nums" title="Matchs cette semaine">
-                          {lf.fixtures.length}
+                        <span className="ml-1 rounded-full bg-accent px-1.5 text-xs font-bold text-on-accent tabular-nums" title="Matchs aujourd'hui">
+                          {todayIn(l)}
                         </span>
                       )}
                       {on && lf?.status === "loading" && (
@@ -904,36 +907,6 @@ function App() {
               </div>
             )}
 
-            {allFixtures.length > 0 && (
-              <div className="sticky top-[4.25rem] z-20 -mx-4 mb-5 bg-bg/95 px-4 py-2 backdrop-blur">
-                <ScrollRow className="gap-2">
-                  {weekDays.map((d) => {
-                    const date = new Date(`${d}T12:00:00`);
-                    const n = countByDay.get(d) ?? 0;
-                    const on = d === activeDay;
-                    return (
-                      <button
-                        key={d}
-                        onClick={() => setDay(d)}
-                        disabled={n === 0}
-                        className={`flex w-16 shrink-0 flex-col items-center rounded-2xl border py-2 transition active:scale-95 disabled:opacity-35 ${
-                          on ? "border-accent bg-accent text-on-accent" : "border-border bg-surface"
-                        }`}
-                      >
-                        <span className="text-[11px] font-semibold uppercase">
-                          {new Intl.DateTimeFormat("fr-FR", { weekday: "short" }).format(date).replace(".", "")}
-                        </span>
-                        <span className="font-display text-2xl leading-none">{date.getDate()}</span>
-                        <span className={`text-[10px] ${on ? "text-on-accent/80" : "text-muted"}`}>
-                          {n} match{n > 1 ? "s" : ""}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </ScrollRow>
-              </div>
-            )}
-
             {searching && allFixtures.length === 0 ? (
               <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 6 }, (_, i) => (
@@ -942,7 +915,7 @@ function App() {
               </ul>
             ) : byLeagueDay.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted">
-                {allFixtures.length ? "Aucun match ce jour-là dans ces championnats." : "Aucun match trouvé pour ces championnats dans les 7 prochains jours."}
+                Aucun match aujourd&apos;hui dans ces championnats. Choisissez-en d&apos;autres ci-dessus.
               </div>
             ) : (
               <div className="space-y-10">
@@ -951,21 +924,18 @@ function App() {
                   const allOn = ids.every((id) => selected.has(id));
                   return (
                     <section key={league} className="fade-in">
-                      <div className="sticky top-[9.6rem] z-10 -mx-4 mb-3 flex items-center gap-3 border-b-2 border-accent bg-bg/95 px-4 py-2.5 backdrop-blur">
+                      <div className="sticky top-[4.25rem] z-10 -mx-4 mb-3 flex items-center gap-3 border-b-2 border-accent bg-bg/95 px-4 py-2.5 backdrop-blur">
                         <LeagueLogo name={league} size={32} />
                         <div className="min-w-0 flex-1">
                           <h2 className="font-display text-[1.65rem] leading-none sm:text-3xl">
                             {league}
                           </h2>
-                          <p className="text-xs text-muted">
-                            {ids.length} match{ids.length > 1 ? "s" : ""} ce jour-là
-                          </p>
                         </div>
-                        {/* Nombre total de matchs de ce championnat sur les 7 jours. */}
+                        {/* Nombre de matchs de ce championnat aujourd'hui. */}
                         <span className="shrink-0 rounded-full bg-accent px-2.5 py-1 text-center text-xs font-bold leading-tight text-on-accent tabular-nums">
-                          {byLeague[league]?.fixtures.length ?? ids.length}
+                          {ids.length}
                           <span className="block text-[10px] font-semibold opacity-80">
-                            cette sem.
+                            match{ids.length > 1 ? "s" : ""}
                           </span>
                         </span>
                         <button
@@ -1267,6 +1237,11 @@ function App() {
               <strong className="text-accent">{selectedFixtures.length}</strong>{" "}
               match{selectedFixtures.length > 1 ? "s" : ""} sélectionné
               {selectedFixtures.length > 1 ? "s" : ""}
+              {!premium && (
+                <span className="block text-xs text-muted">
+                  {session.email ? `Compte gratuit : ${FREE_ANALYSES_LABEL}.` : "Crée un compte gratuit pour 1 analyse par jour."}
+                </span>
+              )}
             </p>
             <div className="flex items-center gap-2">
               <div className="flex rounded-xl border border-border bg-surface p-1">

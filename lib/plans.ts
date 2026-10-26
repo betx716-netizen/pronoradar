@@ -23,11 +23,13 @@ export const findPlan = (id: string) => PLANS.find((p) => p.id === id) ?? null;
 // Ce que voit un visiteur gratuit : le coupon le plus sûr du jour et le pronostic principal de quelques matchs.
 export const FREE_COUPONS = ["x2"] as const;
 export const FREE_MATCH_TIPS = 3;
+// Compte gratuit connecté : analyses qu'il peut lancer lui-même chaque jour (voir lib/user.ts).
+export const FREE_ANALYSES_LABEL = "1 analyse gratuite par jour";
 
 export const PREMIUM_PERKS = [
   "Les 6 coupons du jour préparés par l'IA, de la cote 2 à la cote 50",
   "L'analyse complète de tous les matchs du jour",
-  "Lance tes propres analyses sur les matchs de 27 championnats",
+  "Analyses illimitées sur les matchs de 27 championnats (gratuit : 1 par jour)",
   "Coupons de l'IA et générateur manuel sur tes analyses",
   "Analyse en direct pendant les matchs",
 ];
