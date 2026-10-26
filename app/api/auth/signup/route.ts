@@ -1,4 +1,8 @@
+import { after } from "next/server";
 import { isDemo } from "@/lib/http";
+import { appOrigin } from "@/lib/kick";
+import { notifyAdmin } from "@/lib/notify";
+import { formatPhone } from "@/lib/phone";
 import { normalizePhone, phoneLogin } from "@/lib/phone";
 import { db, supabaseConfigured } from "@/lib/supabase";
 import { demoStore } from "@/lib/user";
@@ -43,6 +47,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Impossible de créer le compte. Réessaie." }, { status: 502 });
   }
   await db().from("profiles").upsert({ id: data.user.id, email, phone }, { onConflict: "id" });
+  after(() => notifyAdmin("Nouvelle inscription", `${formatPhone(phone)} vient de créer son compte PronoRadar.`, { tags: "bust_in_silhouette", click: appOrigin(req) }));
   return Response.json({ ok: true });
 }
 
