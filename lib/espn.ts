@@ -13,8 +13,21 @@ export const SLUGS: Record<string, string> = {
   Bundesliga: "ger.1",
   "Liga Portugal": "por.1",
   Eredivisie: "ned.1",
+  "Jupiler Pro League (Belgique)": "bel.1",
+  "Süper Lig (Turquie)": "tur.1",
+  "Premiership (Écosse)": "sco.1",
+  "Super League (Suisse)": "sui.1",
+  "Bundesliga (Autriche)": "aut.1",
+  "Super League (Grèce)": "gre.1",
+  "Superliga (Danemark)": "den.1",
+  "Ekstraklasa (Pologne)": "pol.1",
+  "Allsvenskan (Suède)": "swe.1",
+  "Eliteserien (Norvège)": "nor.1",
   "Ligue 2": "fra.2",
   "Championship (Angleterre)": "eng.2",
+  "LaLiga 2": "esp.2",
+  "Serie B": "ita.2",
+  "2. Bundesliga": "ger.2",
 };
 
 export const espnCovers = (competition: string) => competition in SLUGS;

@@ -8,6 +8,7 @@
 import { analyzeMatch } from "./analyze";
 import { composeDailyCoupons, computedCoupons, type DailyCoupon, type DayResult } from "./dailyCoupons";
 import { demoAnalysis, demoFixtures } from "./demo";
+import { espnCovers, fetchEspnFixtures } from "./espn";
 import { findFixtures } from "./fixtures";
 import { isDemo } from "./http";
 import { fixtureId } from "./jobs";
@@ -29,19 +30,10 @@ export type DayData = {
   matches: DayMatch[];
 };
 
-const DEFAULT_LEAGUES = [
-  "Ligue des Champions",
-  "Ligue Europa",
-  "Ligue Conférence",
-  "Premier League",
-  "LaLiga",
-  "Serie A",
-  "Bundesliga",
-  "Ligue 1",
-  "Liga Portugal",
-  "Eredivisie",
-];
-const MAX_MATCHES = Number(process.env.DAILY_MAX_MATCHES) || 16;
+// Tous les championnats de football, dans l'ordre de priorité : quand il y a plus de matchs que la limite
+// du jour, les premiers de la liste passent devant (coupes d'Europe, grands championnats, puis les autres).
+const DEFAULT_LEAGUES = LEAGUES.football.map((l) => l.name);
+const MAX_MATCHES = Number(process.env.DAILY_MAX_MATCHES) || 20;
 const CONCURRENCY = Number(process.env.DAILY_CONCURRENCY) || 3;
 const MODE: AnalysisMode = process.env.DAILY_MODE === "rapide" ? "rapide" : "complete";
 const STALE_MINUTES = 8;
@@ -66,7 +58,22 @@ export const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/
 async function findDayFixtures(day: string, log: (m: string) => void) {
   const notes: string[] = [];
   const found: DayFixture[] = [];
-  for (const { sport, name } of dailyLeagues()) {
+  const leagues = dailyLeagues();
+  // Tri gratuit avant de dépenser des requêtes : l'annuaire public d'ESPN dit quels championnats jouent aujourd'hui.
+  // On n'interroge les cotes que pour ceux-là (en cas de doute ou d'erreur ESPN, on interroge quand même).
+  const plays = await Promise.all(
+    leagues.map(async ({ sport, name }) => {
+      if (sport !== "football" || !espnCovers(name)) return true;
+      try {
+        return (await fetchEspnFixtures(name)).some((f) => f.date === day);
+      } catch {
+        return true;
+      }
+    }),
+  );
+  const playing = leagues.filter((_, i) => plays[i]);
+  log(`${playing.length} championnat(s) sur ${leagues.length} jouent aujourd'hui`);
+  for (const { sport, name } of playing) {
     try {
       const r = await findFixtures(sport, name, () => {});
       notes.push(...r.notes.map((n) => `${name} : ${n}`));
@@ -76,9 +83,10 @@ async function findDayFixtures(day: string, log: (m: string) => void) {
     } catch (e) {
       notes.push(`${name} : ${e instanceof Error ? e.message : String(e)}`);
     }
-    if (found.length >= MAX_MATCHES * 2) break;
+    if (found.length >= MAX_MATCHES * 3) break;
   }
   // Les matchs avec des cotes passent devant : leurs analyses et leurs coupons sont plus fiables.
+  // À égalité, l'ordre des championnats (priorité) puis l'heure.
   const ranked = found.map((f, i) => ({ f, i })).sort((a, b) => Number(Boolean(b.f.odds)) - Number(Boolean(a.f.odds)) || a.i - b.i);
   return { fixtures: ranked.slice(0, MAX_MATCHES).map((x) => x.f), notes };
 }
