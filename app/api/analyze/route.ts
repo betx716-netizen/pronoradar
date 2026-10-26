@@ -32,13 +32,13 @@ export async function POST(req: Request) {
   return streamTask(async (progress) => {
     try {
       // Match venu du programme gratuit (sans cotes) : on récupère ses cotes et son identifiant maintenant (mis en cache 2 h).
-      if (!isDemo() && input.sport === "football" && !input.odds && input.competition) {
+      if (!isDemo() && input.sport === "football" && (!input.odds || input.odds.bookmakers <= 1) && input.competition) {
         try {
           progress("Récupération des cotes…");
           const { fixtures } = await findFixtures(input.sport, input.competition, () => {});
           const hit = fixtures.find((f) => sameTeam(f.home, input.home) && sameTeam(f.away, input.away));
           if (hit) {
-            input.odds = hit.odds ?? input.odds;
+            input.odds = hit.odds && hit.odds.bookmakers >= (input.odds?.bookmakers ?? 0) ? hit.odds : input.odds;
             input.apiFootballId = input.apiFootballId ?? hit.apiFootballId;
           }
         } catch {
