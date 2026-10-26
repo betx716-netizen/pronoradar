@@ -1,5 +1,9 @@
 import { newTransactionId } from "@/lib/cinetpay";
+import { after } from "next/server";
 import { isDemo } from "@/lib/http";
+import { appOrigin } from "@/lib/kick";
+import { notifyAdmin } from "@/lib/notify";
+import { displayAccount } from "@/lib/phone";
 import { MANUAL_PAYMENT, findPlan } from "@/lib/plans";
 import { db, supabaseConfigured } from "@/lib/supabase";
 import { demoStore, getViewer, unauthorized } from "@/lib/user";
@@ -50,5 +54,12 @@ export async function POST(req: Request) {
     console.error(error);
     return Response.json({ error: "Impossible d'enregistrer la demande. Réessaie." }, { status: 502 });
   }
+  after(() =>
+    notifyAdmin(
+      `Paiement à valider : ${plan.price.toLocaleString("fr-FR")} F`,
+      `${displayAccount(viewer.email)} · ${plan.label} · ${method.label}\nRéférence : ${reference}\nEnvoyé depuis : ${payerPhone}\nVérifie le SMS puis valide dans Mon compte.`,
+      { tags: "moneybag", priority: "high", click: appOrigin(req) },
+    ),
+  );
   return Response.json({ id, status: "review" });
 }
