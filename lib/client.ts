@@ -89,7 +89,10 @@ export async function callStreaming<T>(
     body: JSON.stringify(body),
   });
   if (res.status === 401) throw new UnauthorizedError("Connecte-toi pour continuer.");
-  if (res.status === 402) throw new PremiumError("Réservé aux membres Premium.");
+  if (res.status === 402) {
+    const data = await res.json().catch(() => null);
+    throw new PremiumError(data?.error ?? "Réservé aux membres Premium.");
+  }
   if (!res.ok || !res.body) {
     const data = await res.json().catch(() => null);
     throw new Error(data?.error ?? `Erreur ${res.status}`);

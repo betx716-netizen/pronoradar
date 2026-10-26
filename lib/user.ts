@@ -14,9 +14,9 @@ export type Viewer = {
 
 // Stockage du mode démo, partagé entre les requêtes d'un même serveur.
 export type DemoPayment = { user: string; days: number; status: string; plan?: string; amount?: number; method?: string; reference?: string; payerPhone?: string; createdAt?: string };
-type DemoStore = { premium: Map<string, string>; bets: Map<string, unknown[]>; payments: Map<string, DemoPayment>; users: Map<string, string> };
+type DemoStore = { premium: Map<string, string>; bets: Map<string, unknown[]>; payments: Map<string, DemoPayment>; users: Map<string, string>; free: Map<string, number> };
 const g = globalThis as unknown as { __prDemo?: DemoStore };
-export const demoStore = (): DemoStore => (g.__prDemo ??= { premium: new Map(), bets: new Map(), payments: new Map(), users: new Map() });
+export const demoStore = (): DemoStore => (g.__prDemo ??= { premium: new Map(), bets: new Map(), payments: new Map(), users: new Map(), free: new Map() });
 
 // Administrateurs : numéros listés dans ADMIN_PHONES (et emails dans ADMIN_EMAILS, pour d'anciens comptes).
 const admins = () => [
@@ -60,3 +60,31 @@ export async function getViewer(req: Request): Promise<Viewer | null> {
 
 export const unauthorized = () => Response.json({ error: "Connecte-toi pour continuer." }, { status: 401 });
 export const premiumRequired = () => Response.json({ error: "Réservé aux membres Premium.", code: "premium" }, { status: 402 });
+
+// ── Analyse gratuite du jour (comptes non Premium) ──
+export const FREE_ANALYSES_PER_DAY = 1;
+const usageDay = () => new Date().toISOString().slice(0, 10);
+
+/** Consomme une analyse gratuite du jour. Faux si la limite est déjà atteinte. */
+export async function useFreeAnalysis(viewer: Viewer): Promise<boolean> {
+  if (isDemo()) {
+    const k = `${viewer.id}|${usageDay()}`;
+    const n = demoStore().free.get(k) ?? 0;
+    if (n >= FREE_ANALYSES_PER_DAY) return false;
+    demoStore().free.set(k, n + 1);
+    return true;
+  }
+  const { data, error } = await db().rpc("use_free_analysis", { p_user: viewer.id, p_day: usageDay(), p_limit: FREE_ANALYSES_PER_DAY });
+  if (error) throw new Error(error.message);
+  return data === true;
+}
+
+/** Rend l'analyse gratuite quand l'analyse a échoué. */
+export async function refundFreeAnalysis(viewer: Viewer) {
+  if (isDemo()) {
+    const k = `${viewer.id}|${usageDay()}`;
+    demoStore().free.set(k, Math.max(0, (demoStore().free.get(k) ?? 1) - 1));
+    return;
+  }
+  await db().rpc("refund_free_analysis", { p_user: viewer.id, p_day: usageDay() });
+}

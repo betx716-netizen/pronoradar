@@ -49,6 +49,6 @@ Chaque matin, le serveur trouve les matchs du jour dans 27 championnats europée
 ## Comptes et Premium
 
 - Connexion par numéro de téléphone + mot de passe, sans SMS ni email. Le site est ouvert à tous en lecture.
-- **Gratuit** : le coupon « Le sûr » du jour et l'analyse de 3 matchs du jour. Les autres coupons sont verrouillés (le serveur n'envoie pas leur contenu).
+- **Gratuit** : le coupon « Le sûr » du jour, l'analyse de 3 matchs du jour et, avec un compte, 1 analyse lancée soi-même par jour (rendue si elle échoue). Les autres coupons sont verrouillés (le serveur n'envoie pas leur contenu).
 - **Premium** (`lib/plans.ts`) : les 6 coupons du jour et toutes leurs analyses, lancer ses propres analyses, coupons de l'IA et générateur manuel, analyse en direct. Ces routes renvoient 402 sans Premium.
 - Paiement manuel Wave / Orange Money au numéro de `lib/plans.ts` ; validation dans Mon compte → Paiements à valider, pour les numéros de `ADMIN_PHONES`.
