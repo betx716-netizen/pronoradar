@@ -8,6 +8,7 @@ import { Icon } from "../Icon";
 import { ThemeToggle } from "../ThemeToggle";
 import { AdminPayments } from "./AdminPayments";
 import { AdminReset } from "./AdminReset";
+import { ChangePassword } from "./ChangePassword";
 import { LoginForm } from "./LoginForm";
 import { displayAccount } from "@/lib/phone";
 
@@ -97,6 +98,8 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
           <ThemeToggle />
         </span>
       </section>
+
+      <ChangePassword />
 
       <button onClick={() => signOut()} className="w-full rounded-full border-2 border-border py-3 font-semibold text-muted">
         Me déconnecter

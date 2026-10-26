@@ -13,6 +13,8 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [forgot, setForgot] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,6 +33,68 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
 
   const input = "w-full rounded-2xl border-2 border-border bg-surface px-4 py-3 outline-none focus:border-accent";
   const help = `Bonjour, j'ai oublié le mot de passe de mon compte PronoRadar (numéro : ${phone || "…"}).`;
+
+  async function askReset(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/forgot", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone }) });
+      const d = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(d?.error ?? "Demande impossible. Réessaie.");
+      setForgotSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+    setBusy(false);
+  }
+
+  if (forgot) {
+    return (
+      <form onSubmit={askReset} className="space-y-3">
+        <p className="text-[15px] font-semibold">Mot de passe oublié</p>
+        {forgotSent ? (
+          <>
+            <p className="rounded-2xl bg-success-soft p-3 text-[15px] text-success">
+              Demande envoyée. Tu vas recevoir ton nouveau mot de passe sur WhatsApp au {phone}. Tu pourras ensuite le changer dans Mon compte.
+            </p>
+            <a
+              href={`https://wa.me/${MANUAL_PAYMENT.whatsapp}?text=${encodeURIComponent(help)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full rounded-full bg-[#1f9d55] py-3 text-center font-semibold text-white"
+            >
+              Nous écrire sur WhatsApp
+            </a>
+          </>
+        ) : (
+          <>
+            <p className="text-[14px] text-muted">Saisis le numéro de ton compte. On t&apos;envoie un nouveau mot de passe sur WhatsApp.</p>
+            <label className="block">
+              <span className="mb-1 block text-[14px] font-medium">Numéro de téléphone</span>
+              <input inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07 00 00 00 00" className={input} required />
+            </label>
+            {error && <p className="text-[14px] text-danger">{error}</p>}
+            <button disabled={busy} className="w-full rounded-full bg-accent py-3.5 font-semibold text-white disabled:opacity-60">
+              {busy ? "Envoi…" : "Recevoir un nouveau mot de passe"}
+            </button>
+          </>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            setForgot(false);
+            setForgotSent(false);
+            setMode("login");
+            setError(null);
+          }}
+          className="w-full py-2 text-[14px] font-medium text-muted"
+        >
+          Retour à la connexion
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form onSubmit={submit} className="space-y-3">
@@ -89,16 +153,16 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
       <button disabled={busy} className="w-full rounded-full bg-accent py-3.5 font-semibold text-white disabled:opacity-60">
         {busy ? "Un instant…" : mode === "signup" ? "Créer mon compte" : "Me connecter"}
       </button>
-      {mode === "login" && (
-        <a
-          href={`https://wa.me/${MANUAL_PAYMENT.whatsapp}?text=${encodeURIComponent(help)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block py-1 text-center text-[14px] font-medium text-muted"
-        >
-          Mot de passe oublié ? Écris-nous sur WhatsApp
-        </a>
-      )}
+      <button
+        type="button"
+        onClick={() => {
+          setForgot(true);
+          setError(null);
+        }}
+        className="w-full rounded-full border-2 border-border py-3 text-[15px] font-semibold text-muted"
+      >
+        Mot de passe oublié ?
+      </button>
     </form>
   );
 }
