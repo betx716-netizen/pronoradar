@@ -227,11 +227,9 @@ export function AiCoupons({
     }
   }
 
-  // Le nom du coupon donne la cote réellement obtenue, pas la cote visée.
+  // Le nom du coupon : seulement sa désignation (la cote totale s'affiche à part).
   const title = (odds: number, n: number) =>
-    n
-      ? `${n >= 8 ? "Grand combiné" : odds < 4 ? "Fiable" : odds < 10 ? "Équilibré" : "Grosse cote"} · cote ${odds.toFixed(2).replace(".", ",")}`
-      : "Fiable";
+    n ? (n >= 8 ? "Grand combiné" : odds < 4 ? "Fiable" : odds < 10 ? "Équilibré" : "Grosse cote") : "Fiable";
 
   async function copy(c: Built, odds: number) {
     const text = [
