@@ -402,25 +402,34 @@ function App() {
     for (const f of allFixtures) m.set(f.date, (m.get(f.date) ?? 0) + 1);
     return m;
   }, [allFixtures]);
-  // On affiche les matchs du jour (heure de Paris).
-  const activeDay = weekDays[0];
-  const todayCount = countByDay.get(activeDay) ?? 0;
-  // Matchs du jour par championnat (annuaire gratuit) : ceux qui jouent aujourd'hui passent en tête de liste.
-  const [todayCounts, setTodayCounts] = useState<Record<string, number>>({});
+  // Jour affiché : aujourd'hui par défaut, ou le jour touché dans la barre des jours.
+  const [day, setDay] = useState<string | null>(null);
+  const activeDay = day ?? weekDays[0];
+  // Nombre de matchs par championnat et par jour (annuaire gratuit, tous les championnats, même non choisis).
+  const [dayCounts, setDayCounts] = useState<Record<string, Record<string, number>>>({});
   useEffect(() => {
     fetch("/api/today-leagues")
       .then((r) => r.json())
-      .then((d: { counts?: Record<string, number> }) => setTodayCounts(d.counts ?? {}))
+      .then((d: { days?: Record<string, Record<string, number>> }) => setDayCounts(d.days ?? {}))
       .catch(() => {});
   }, []);
-  const todayIn = (l: string) =>
-    byLeague[l]?.status === "done" ? (byLeague[l]?.fixtures ?? []).filter((f) => f.date === activeDay).length : todayCounts[l];
+  // Matchs d'un championnat le jour choisi : ses matchs chargés s'il est sélectionné, sinon l'annuaire.
+  const countOn = (l: string, d: string) =>
+    byLeague[l]?.status === "done" ? (byLeague[l]?.fixtures ?? []).filter((f) => f.date === d).length : dayCounts[d]?.[l];
+  // Total du jour pour la barre des jours : tous les championnats de la liste.
+  const totalOn = (d: string) => {
+    const known = LEAGUES[sport].map((l) => countOn(l.name, d)).filter((n): n is number => n !== undefined);
+    return known.length ? known.reduce((a, b) => a + b, 0) : countByDay.get(d) ?? 0;
+  };
+  const dayCount = countByDay.get(activeDay) ?? 0;
+  // Les championnats qui jouent le jour choisi passent en tête ; ensuite l'ordre habituel.
   const orderedLeagues = useMemo(() => {
     const list = LEAGUES[sport];
-    const n = (name: string) => (byLeague[name]?.status === "done" ? (byLeague[name]?.fixtures ?? []).filter((f) => f.date === activeDay).length : todayCounts[name] ?? 0);
-    // Stable : à nombre égal de matchs (ou sans match), l'ordre habituel des championnats est conservé.
+    const n = (name: string) =>
+      byLeague[name]?.status === "done" ? (byLeague[name]?.fixtures ?? []).filter((f) => f.date === activeDay).length : dayCounts[activeDay]?.[name] ?? 0;
     return list.map((l, i) => ({ l, i, n: n(l.name) })).sort((a, b) => Number(b.n > 0) - Number(a.n > 0) || a.i - b.i).map((x) => x.l);
-  }, [sport, byLeague, todayCounts, activeDay]);
+  }, [sport, byLeague, dayCounts, activeDay]);
+  const playingElsewhere = orderedLeagues.filter((l) => !leagues.includes(l.name) && (countOn(l.name, activeDay) ?? 0) > 0).length;
 
   const byLeagueDay = useMemo(
     () =>
@@ -834,7 +843,7 @@ function App() {
         {tab === "matchs" && (
           <section className="fade-in">
             <HeroBanner
-              matches={todayCount}
+              matches={countByDay.get(weekDays[0]) ?? 0}
               analyses={visibleResults.length}
               values={
                 visibleResults.filter((r) => r.picks?.some(isValueBet)).length
@@ -848,12 +857,13 @@ function App() {
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">
-                  Matchs du jour
+                  {activeDay === weekDays[0] ? "Matchs du jour" : "Matchs du"}{" "}
+                  {activeDay === weekDays[0] ? "" : new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric" }).format(new Date(`${activeDay}T12:00:00`))}
                 </h1>
                 <p className="text-sm text-muted">
                   {new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${activeDay}T12:00:00`))}
                   {" · "}
-                  {todayCount} match{todayCount > 1 ? "s" : ""}. Sélectionnez les rencontres à analyser.
+                  {dayCount} match{dayCount > 1 ? "s" : ""} dans tes championnats. Sélectionnez les rencontres à analyser.
                 </p>
               </div>
               <div className="flex rounded-xl border border-border bg-surface p-1">
@@ -870,12 +880,40 @@ function App() {
               </div>
             </div>
 
+            <div className="sticky top-[4.25rem] z-20 -mx-4 mb-5 bg-bg/95 px-4 py-2 backdrop-blur">
+              <ScrollRow className="gap-2">
+                {weekDays.map((d) => {
+                  const date = new Date(`${d}T12:00:00`);
+                  const n = totalOn(d);
+                  const on = d === activeDay;
+                  return (
+                    <button
+                      key={d}
+                      onClick={() => setDay(d)}
+                      aria-pressed={on}
+                      className={`flex w-16 shrink-0 flex-col items-center rounded-2xl border py-2 transition active:scale-95 ${
+                        on ? "border-accent bg-accent text-on-accent" : n ? "border-border bg-surface" : "border-border bg-surface opacity-50"
+                      }`}
+                    >
+                      <span className="text-[11px] font-semibold uppercase">
+                        {d === weekDays[0] ? "Auj." : new Intl.DateTimeFormat("fr-FR", { weekday: "short" }).format(date).replace(".", "")}
+                      </span>
+                      <span className="font-display text-2xl leading-none">{date.getDate()}</span>
+                      <span className={`text-[10px] ${on ? "text-on-accent/80" : "text-muted"}`}>
+                        {n} match{n > 1 ? "s" : ""}
+                      </span>
+                    </button>
+                  );
+                })}
+              </ScrollRow>
+            </div>
+
             <div className="mb-5">
               <ScrollRow className="-mx-4 gap-2 px-4 pb-1 sm:mx-0 sm:px-12">
                 {orderedLeagues.map(({ name: l }) => {
                   const on = leagues.includes(l);
                   const lf = byLeague[l];
-                  const count = todayIn(l);
+                  const count = countOn(l, activeDay);
                   return (
                     <button
                       key={l}
@@ -895,7 +933,7 @@ function App() {
                       {!(on && lf?.status === "loading") && count !== undefined && (
                         <span
                           className={`ml-1 rounded-full px-1.5 text-xs font-bold tabular-nums ${count > 0 ? "bg-accent text-on-accent" : "bg-surface-3 text-muted"}`}
-                          title="Matchs aujourd'hui"
+                          title="Matchs ce jour-là"
                         >
                           {count}
                         </span>
@@ -934,7 +972,11 @@ function App() {
               </ul>
             ) : byLeagueDay.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted">
-                Aucun match aujourd&apos;hui dans ces championnats. Choisissez-en d&apos;autres ci-dessus.
+                {searching
+                  ? "Chargement des matchs…"
+                  : playingElsewhere
+                    ? `Aucun match ce jour-là dans tes championnats. ${playingElsewhere} autre${playingElsewhere > 1 ? "s" : ""} championnat${playingElsewhere > 1 ? "s jouent" : " joue"} : touche${playingElsewhere > 1 ? "-les" : "-le"} en tête de la liste ci-dessus.`
+                    : "Aucun match ce jour-là dans ces championnats."}
               </div>
             ) : (
               <div className="space-y-10">
@@ -943,7 +985,7 @@ function App() {
                   const allOn = ids.every((id) => selected.has(id));
                   return (
                     <section key={league} className="fade-in">
-                      <div className="sticky top-[4.25rem] z-10 -mx-4 mb-3 flex items-center gap-3 border-b-2 border-accent bg-bg/95 px-4 py-2.5 backdrop-blur">
+                      <div className="sticky top-[9.6rem] z-10 -mx-4 mb-3 flex items-center gap-3 border-b-2 border-accent bg-bg/95 px-4 py-2.5 backdrop-blur">
                         <LeagueLogo name={league} size={32} />
                         <div className="min-w-0 flex-1">
                           <h2 className="font-display text-[1.65rem] leading-none sm:text-3xl">
