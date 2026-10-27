@@ -208,7 +208,16 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
           )}
         </p>
       )}
-      {info && <p className="rounded-2xl bg-success-soft p-3 text-[15px] text-success">{info}</p>}
+      {info && (
+        <div className="rounded-2xl bg-success-soft p-3 text-[15px] text-success">
+          <p>{info}</p>
+          {byEmail && (
+            <button type="button" onClick={resend} disabled={busy} className="mt-2 font-semibold underline disabled:opacity-60">
+              Pas reçu ? Renvoyer le lien
+            </button>
+          )}
+        </div>
+      )}
       <button disabled={busy} className="w-full rounded-full bg-accent py-3.5 font-semibold text-white disabled:opacity-60">
         {busy ? "Un instant…" : mode === "signup" ? "Créer mon compte" : "Me connecter"}
       </button>
