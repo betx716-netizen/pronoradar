@@ -20,7 +20,8 @@ export function ShareCouponButton({ title, legs, totalOdds, className = "" }: { 
   async function share() {
     setBusy(true);
     try {
-      const code = await myRefCode();
+      // Parrainage en pause : lien simple vers l'app, sans code.
+      const code = FEATURES.referral ? await myRefCode() : "";
       const link = `${window.location.origin}/${code ? `?ref=${code}` : ""}`;
       const blob = await couponImage({ title, legs, totalOdds, link });
       const file = new File([blob], "coupon-pronoradar.png", { type: "image/png" });
