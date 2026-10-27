@@ -25,7 +25,7 @@ export function ShareCouponButton({ title, legs, totalOdds, className = "" }: { 
       const file = new File([blob], "coupon-pronoradar.png", { type: "image/png" });
       const text = `Mon coupon PronoRadar (cote ${totalOdds.toFixed(2)}), analysé par l'IA 👉 ${link}`;
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], text, title: "Coupon PronoRadar" }).catch(() => {});
+        await navigator.share({ files: [file], text, url: link, title: "Coupon PronoRadar" }).catch(() => {});
       } else {
         // Ordinateur ou navigateur sans partage de fichiers : on télécharge l'image.
         const url = URL.createObjectURL(blob);

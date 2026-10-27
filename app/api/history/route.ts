@@ -15,7 +15,15 @@ export async function GET(req: Request) {
   if (!viewer) return unauthorized();
   if (isDemo()) return Response.json({ bets: demoStore().bets.get(viewer.id) ?? [] });
   if (!supabaseConfigured()) return Response.json({ bets: [] });
-  const { data, error } = await db().from("user_bets").select("data").eq("user_id", viewer.id).order("created_at", { ascending: false }).limit(500);
+  // Remise à zéro du Suivi : les coupons d'avant HISTORY_RESET sont effacés du compte à sa première visite.
+  await db().from("user_bets").delete().eq("user_id", viewer.id).lt("created_at", HISTORY_RESET);
+  const { data, error } = await db()
+    .from("user_bets")
+    .select("data")
+    .eq("user_id", viewer.id)
+    .gte("created_at", HISTORY_RESET)
+    .order("created_at", { ascending: false })
+    .limit(500);
   if (error) return Response.json({ error: "Sauvegarde injoignable." }, { status: 502 });
   return Response.json({ bets: (data ?? []).map((r) => r.data) });
 }
