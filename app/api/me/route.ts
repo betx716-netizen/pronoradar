@@ -25,7 +25,16 @@ export async function GET(req: Request) {
       .limit(10);
     payments = data ?? [];
   }
-  return Response.json({ email: viewer.email, premium: viewer.premium, premiumUntil: viewer.premiumUntil, admin: viewer.admin, payments });
+  // Parrainage : code personnel, nombre d'amis inscrits et d'amis qui ont payé (7 jours offerts chacun).
+  let referral = { code: "", invited: 0, rewarded: 0 };
+  if (!isDemo() && supabaseConfigured()) {
+    const [{ data: p }, { data: friends }] = await Promise.all([
+      db().from("profiles").select("ref_code").eq("id", viewer.id).maybeSingle(),
+      db().from("profiles").select("referral_rewarded").eq("referred_by", viewer.id),
+    ]);
+    referral = { code: p?.ref_code ?? "", invited: friends?.length ?? 0, rewarded: (friends ?? []).filter((f) => f.referral_rewarded).length };
+  } else if (isDemo()) referral = { code: "DEMO42", invited: 0, rewarded: 0 };
+  return Response.json({ email: viewer.email, premium: viewer.premium, premiumUntil: viewer.premiumUntil, admin: viewer.admin, payments, referral });
 }
 
 // Suppression de son propre compte (définitive), demandée depuis Mon compte.

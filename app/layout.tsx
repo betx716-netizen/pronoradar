@@ -38,6 +38,8 @@ export const metadata: Metadata = {
   },
   twitter: { card: "summary_large_image", title: "PronoRadar · Pronostics foot analysés par l'IA", description: DESCRIPTION },
   robots: { index: true, follow: true },
+  // Vérification du site dans Google Search Console.
+  verification: { google: "IuIdDzzGIN9CwviKF3QGydKOExpJgSvnybTJDLI7Sbw" },
   category: "sports",
 };
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { ShareCouponButton } from "./ShareCoupon";
+
 import { useEffect, useRef, useState } from "react";
 import { callStreaming } from "@/lib/client";
 import type {
@@ -432,6 +434,7 @@ export function AiCoupons({
                               ? "Copié ✓"
                               : "Copier"}
                           </button>
+                          <ShareCouponButton title={title(odds, c.legs.length)} legs={c.legs} totalOdds={odds} className="flex-1" />
                           <button
                             onClick={() => play(c, odds, prob)}
                             className="flex-1 rounded-xl bg-accent py-2 text-sm font-bold text-on-accent active:scale-95"

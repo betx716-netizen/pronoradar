@@ -10,6 +10,7 @@ import {
 import type { AnalysisResult, MarketCategory } from "@/lib/schemas";
 import { addBet } from "@/lib/history";
 import { CouponCoach } from "./CouponCoach";
+import { ShareCouponButton } from "./ShareCoupon";
 import { fcfa, kellyStake } from "@/lib/value";
 
 const FOOTBALL_CATEGORIES: MarketCategory[] = [
@@ -391,6 +392,7 @@ export function CouponBuilder({
                 : `Pas d'avantage sur la cote d'après nos probabilités : le mieux est de passer, ou de jouer une mise plaisir (${fcfa(suggestedStake)}).`}
 
             </p>
+            <ShareCouponButton title="Mon coupon" legs={coupon.legs} totalOdds={coupon.totalOdds} className="mb-2 w-full" />
             <button
               onClick={save}
               className="w-full rounded-xl bg-accent py-2.5 font-semibold text-on-accent hover:bg-accent-strong"

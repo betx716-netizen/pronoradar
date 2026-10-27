@@ -26,6 +26,7 @@ import { Sheet } from "@/components/app/Sheet";
 import { usePasswordRecovery, useSession } from "@/lib/session";
 import { ChangePassword } from "@/components/app/ChangePassword";
 import { INFO_PAGES } from "@/lib/legal";
+import { useReferralCapture } from "@/components/app/Referral";
 import { LiveBoard, LiveDot } from "@/components/LiveBoard";
 import { findLive, sameTeam, useLiveScores, type LiveMatch } from "@/lib/live";
 
@@ -261,6 +262,8 @@ function App() {
   const [needPassword, setNeedPassword] = useState(false);
   // Comptes et Premium.
   const session = useSession();
+  // Lien de parrainage (?ref=…) : gardé jusqu'à la création du compte, puis transmis au serveur.
+  useReferralCapture(Boolean(session.email));
   // Arrivée par le lien « mot de passe oublié » reçu par email : on propose tout de suite le nouveau mot de passe.
   const [recovering, endRecovery] = usePasswordRecovery();
   const [me, setMe] = useState<{ premium: boolean; admin: boolean; premiumUntil: string | null } | null>(null);

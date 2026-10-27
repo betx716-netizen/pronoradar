@@ -9,6 +9,7 @@ import { addBet } from "@/lib/history";
 import type { AnalysisResult } from "@/lib/schemas";
 import { Icon } from "./Icon";
 import { ScrollRow } from "./ScrollRow";
+import { ShareCouponButton } from "./ShareCoupon";
 
 // Vrai si le pari nomme déjà son marché (« … (remboursé si nul) », « Plus de 2,5 buts »…).
 const repeats = (selection: string, market: string) =>
@@ -147,16 +148,19 @@ export function DailyCoupons({
         </span>
         <span className="rounded-xl bg-accent px-3 py-1 font-display text-2xl leading-none text-on-accent tabular-nums">{c.totalOdds.toFixed(2)}</span>
       </div>
-      <button
-        disabled={played.has(c.profile)}
-        onClick={() => {
-          addBet({ profile: `IA du jour · ${c.title}`, legs: c.legs, totalOdds: c.totalOdds, probability: c.probability, stake: 0 });
-          setPlayed((p) => new Set(p).add(c.profile));
-        }}
-        className="m-3 mt-0 rounded-xl border border-border py-2 text-sm font-semibold transition active:scale-95 disabled:text-success"
-      >
-        {played.has(c.profile) ? "Ajouté au suivi" : "J'ai joué ce coupon"}
-      </button>
+      <div className="m-3 mt-0 flex gap-2">
+        <button
+          disabled={played.has(c.profile)}
+          onClick={() => {
+            addBet({ profile: `IA du jour · ${c.title}`, legs: c.legs, totalOdds: c.totalOdds, probability: c.probability, stake: 0 });
+            setPlayed((p) => new Set(p).add(c.profile));
+          }}
+          className="flex-1 rounded-xl border border-border py-2 text-sm font-semibold transition active:scale-95 disabled:text-success"
+        >
+          {played.has(c.profile) ? "Ajouté au suivi" : "J'ai joué ce coupon"}
+        </button>
+        <ShareCouponButton title={c.title} legs={c.legs} totalOdds={c.totalOdds} className="px-4" />
+      </div>
     </article>
     );
 

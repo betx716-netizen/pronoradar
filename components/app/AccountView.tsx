@@ -11,6 +11,7 @@ import { AdminReset } from "./AdminReset";
 import { ChangePassword } from "./ChangePassword";
 import { LoginForm } from "./LoginForm";
 import { AdminDeleteAccount, DeleteMyAccount } from "./DeleteAccount";
+import { ReferralCard } from "./Referral";
 import { displayAccount } from "@/lib/phone";
 
 type Me = {
@@ -19,6 +20,7 @@ type Me = {
   premiumUntil: string | null;
   admin: boolean;
   payments: { id: string; plan: string; amount: number; status: string; created_at: string }[];
+  referral?: { code: string; invited: number; rewarded: number };
 };
 
 const date = (iso: string) => new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" }).format(new Date(iso));
@@ -67,6 +69,8 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
         </button>
         )}
       </section>
+
+      {me?.referral && <ReferralCard {...me.referral} />}
 
       {me?.admin && <AdminPayments />}
       {me?.admin && <AdminReset />}

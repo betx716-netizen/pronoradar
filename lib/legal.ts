@@ -22,6 +22,7 @@ export const SITE_URL = (
 ).replace(/\/$/, "");
 
 export const INFO_PAGES = [
+  { href: "/bilan", label: "Bilan de l'IA" },
   { href: "/faq", label: "FAQ" },
   { href: "/jeu-responsable", label: "Jeu responsable" },
   { href: "/cgu", label: "Conditions d'utilisation" },
