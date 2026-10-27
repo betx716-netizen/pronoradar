@@ -1453,33 +1453,17 @@ function App() {
 }
 
 // Accès libre : tout le monde voit l'application ; les actions payantes demandent un compte Premium.
-// Première visite sans compte : page d'accueil de présentation. Ensuite (ou une fois connecté), l'application directement.
-const SEEN_KEY = "pronoradar.welcomed";
+// Sans compte connecté : page d'accueil avec inscription (obligatoire). Une fois connecté : l'application.
 export default function Home() {
   const session = useSession();
-  const [welcomed, setWelcomed] = useState<boolean | null>(null);
-  useEffect(() => {
-    try {
-      // Lien de parrainage ou retour d'un lien email : on garde le parcours habituel.
-      setWelcomed(localStorage.getItem(SEEN_KEY) === "1" || /[#&](access_token|error)=/.test(window.location.hash));
-    } catch {
-      setWelcomed(true);
-    }
-  }, []);
-  const enter = () => {
-    try {
-      localStorage.setItem(SEEN_KEY, "1");
-    } catch {}
-    setWelcomed(true);
-    window.scrollTo(0, 0);
-  };
+  const enter = () => window.scrollTo(0, 0);
   // Pendant le chargement, la page d'accueil est déjà dans le HTML (lue par Google) mais invisible, pour éviter un flash.
-  if (welcomed === null || !session.ready)
+  if (!session.ready)
     return (
       <div className="opacity-0">
         <Landing onEnter={enter} />
       </div>
     );
-  if (!welcomed && !session.email) return <Landing onEnter={enter} />;
+  if (!session.email) return <Landing onEnter={enter} />;
   return <App />;
 }

@@ -57,7 +57,7 @@ function MockCard({ className, home, away, score, pct, tone }: { className: stri
   );
 }
 
-/** Page d'accueil publique, vue à la première visite : présentation, création de compte ou accès direct aux coupons. */
+/** Page d'accueil publique : présentation et création de compte, obligatoire pour ouvrir l'application. */
 export function Landing({ onEnter }: { onEnter: () => void }) {
   return (
     <div className="min-h-screen overflow-x-clip bg-[#050505] text-white">
@@ -93,9 +93,9 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
             <a href="#connexion" className="rounded-xl bg-[#16a34a] px-6 py-3 font-bold shadow-lg shadow-[#16a34a]/30 transition hover:bg-[#15803d]">
               Créer un compte gratuit
             </a>
-            <button onClick={onEnter} className="rounded-xl border border-white/20 px-6 py-3 font-semibold hover:border-white">
+            <a href="#connexion" className="rounded-xl border border-white/20 px-6 py-3 font-semibold hover:border-white">
               Voir les coupons du jour
-            </button>
+            </a>
           </div>
         </div>
 
@@ -149,13 +149,9 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
         <div className="pointer-events-none absolute right-0 top-0 h-80 w-80 rounded-full bg-[#16a34a]/20 blur-3xl" />
         <div className="relative mx-auto max-w-sm rounded-3xl bg-surface p-6 text-text shadow-2xl">
           <h2 className="mb-3 font-display text-4xl leading-none">Rejoindre PronoRadar</h2>
-          <LoginForm intro="Gratuit, sans engagement. Avec ton numéro ou ton email." onDone={onEnter} />
+          <LoginForm intro="Crée ton compte gratuit pour voir les coupons du jour. Avec ton numéro ou ton email." onDone={onEnter} />
         </div>
-        <p className="relative mt-5 text-center">
-          <button onClick={onEnter} className="text-sm font-semibold text-white/70 underline hover:text-white">
-            Continuer sans compte
-          </button>
-        </p>
+
       </section>
 
       <footer className="border-t border-white/10 py-6 text-center text-xs text-white/50">

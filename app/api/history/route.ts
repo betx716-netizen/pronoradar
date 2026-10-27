@@ -1,3 +1,4 @@
+import { HISTORY_RESET } from "@/lib/resets";
 import { isDemo } from "@/lib/http";
 import { db, supabaseConfigured } from "@/lib/supabase";
 import { demoStore, getViewer, unauthorized } from "@/lib/user";
@@ -23,7 +24,10 @@ export async function POST(req: Request) {
   const viewer = await getViewer(req);
   if (!viewer) return unauthorized();
   const body = (await req.json().catch(() => null)) as { bets?: Bet[] } | null;
-  const bets = (body?.bets ?? []).filter((b) => typeof b?.id === "string" && UUID.test(b.id)).slice(0, 200);
+  // Les coupons d'avant la remise à zéro du Suivi (restés sur un vieil appareil) ne sont plus acceptés.
+  const bets = (body?.bets ?? [])
+    .filter((b) => typeof b?.id === "string" && UUID.test(b.id) && (b.createdAt ?? "9") >= HISTORY_RESET)
+    .slice(0, 200);
   if (isDemo()) {
     const list = (demoStore().bets.get(viewer.id) ?? []) as Bet[];
     const ids = new Set(bets.map((b) => b.id));

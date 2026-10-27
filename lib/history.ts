@@ -2,6 +2,7 @@
 // (via /api/history) sur le compte de l'utilisateur. Sans compte connecté, seule la copie locale existe.
 import { authFetch } from "./client";
 import type { CouponLeg } from "./coupon";
+import { HISTORY_RESET } from "./resets";
 
 export type BetStatus = "en_cours" | "gagne" | "perdu" | "rembourse";
 
@@ -39,6 +40,7 @@ const writeIds = (key: string, ids: Set<string>) => {
 const isBet = (b: unknown): b is SavedBet => Array.isArray((b as SavedBet)?.legs) && typeof (b as SavedBet).id === "string";
 
 export function loadHistory(): SavedBet[] {
+  applyReset();
   try {
     return (JSON.parse(localStorage.getItem(KEY) ?? "[]") as unknown[]).filter(isBet);
   } catch {
@@ -59,7 +61,22 @@ const api = (init?: RequestInit, query = "") =>
 const pushRemote = (bets: SavedBet[]) => api({ method: "POST", body: JSON.stringify({ bets }) }).catch(() => null);
 
 /** Récupère l'historique Supabase, y envoie les coupons qui n'existaient que sur cet appareil, et fusionne. */
+// Remise à zéro du Suivi pour tous les comptes : la copie gardée sur l'appareil est effacée une fois,
+// pour que les anciens coupons ne soient pas renvoyés en ligne.
+const RESET_KEY = "pronoradar.historyReset";
+function applyReset() {
+  try {
+    if (localStorage.getItem(RESET_KEY) === HISTORY_RESET) return;
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith("pronoradar.history"))
+      .forEach((k) => localStorage.removeItem(k));
+    localStorage.setItem(RESET_KEY, HISTORY_RESET);
+    window.dispatchEvent(new Event("pronoradar-history"));
+  } catch {}
+}
+
 export async function syncHistory(): Promise<SyncState> {
+  applyReset();
   try {
     const res = await api();
     if (res.status === 401 || res.status === 503) return "local";
