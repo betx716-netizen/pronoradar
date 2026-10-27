@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { authFetch } from "@/lib/client";
+import { FEATURES } from "@/lib/features";
 
 const REF_KEY = "pronoradar.ref";
 
@@ -22,7 +23,7 @@ export function useReferralCapture(loggedIn: boolean) {
     } catch {}
   }, []);
   useEffect(() => {
-    if (!loggedIn) return;
+    if (!loggedIn || !FEATURES.referral) return;
     let code: string | null = null;
     try {
       code = localStorage.getItem(REF_KEY);
@@ -39,6 +40,13 @@ export function useReferralCapture(loggedIn: boolean) {
 /** Carte « Parraine tes amis » dans Mon compte. */
 export function ReferralCard({ code, invited, rewarded }: { code: string; invited: number; rewarded: number }) {
   const [copied, setCopied] = useState(false);
+  if (!FEATURES.referral)
+    return (
+      <section className="rounded-3xl bg-surface p-5 opacity-70">
+        <h3 className="font-display text-xl font-bold">🔒 Parraine tes amis</h3>
+        <p className="mt-1 text-[14px] text-muted">Bientôt disponible : invite tes amis et gagne des jours de Premium.</p>
+      </section>
+    );
   if (!code) return null;
   const link = referralLink(code);
   const text = `J'utilise PronoRadar : l'IA analyse les matchs et prépare les coupons du jour. Inscris-toi avec mon lien 👉 ${link}`;

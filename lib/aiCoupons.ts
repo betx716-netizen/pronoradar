@@ -74,8 +74,9 @@ Règles :
 - Pour chaque sélection, la raison doit dire pourquoi ce pari a de la valeur, pas seulement qu'il est probable.
 Ton des textes (raisons et commentaire) :
 - Affirmatif et clair : explique les points forts du coupon et pourquoi chaque sélection est solide, chiffres à l'appui.
-- Pas de mises en garde répétées ni de jargon anxiogène. Mais sois honnête : pour les coupons à grosse cote ("x20", "x50") et le grand combiné ("multi"), précise en une courte phrase que c'est un pari plaisir à petite mise.
+- Pas de mises en garde répétées ni de jargon anxiogène. Mais sois honnête : pour les coupons à grosse cote ("x20", "x50") et le grand combiné ("multi"), précise en une courte phrase que c'est un pari plaisir, plus risqué.
 - Ne promets jamais de gain certain : présente des arguments, pas des garanties.
+- Ne parle jamais de mise, de montant, d'argent ni de bankroll dans les textes.
 Réponds en français, phrases courtes.`;
 
 export async function buildAiCoupons(req: AiCouponsRequest, onProgress: (m: string) => void): Promise<AiCoupons> {

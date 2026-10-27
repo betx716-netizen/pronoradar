@@ -32,7 +32,7 @@ const FEATURES: { title: string; text: string; icon: ReactNode }[] = [
   },
   {
     title: "Suivi des résultats",
-    text: "Bénéfice, rentabilité et réussite par marché : vous savez ce qui marche vraiment.",
+    text: "Réussite par type de coupon et par marché : vous savez ce qui marche vraiment.",
     icon: <path d="M3 17l6-6 4 4 8-8M15 7h6v6" />,
   },
 ];

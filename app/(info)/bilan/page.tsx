@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
-import { fcfa } from "@/lib/plans";
 import { RECORD_START, loadRecord, recordStats, type CouponRecord, type RecordStatus } from "@/lib/record";
 
 export const revalidate = 1800; // recalculé au plus toutes les 30 minutes
 
 export const metadata: Metadata = {
   title: "Bilan public des coupons de l'IA",
-  description: "Tous les coupons du jour publiés par l'IA de PronoRadar, gagnés comme perdus : taux de réussite et bénéfice réel, mis à jour chaque jour.",
+  description: "Tous les coupons du jour publiés par l'IA de PronoRadar, gagnés comme perdus : taux de réussite réel, mis à jour chaque jour.",
   alternates: { canonical: "/bilan" },
 };
 
-const STAKE = 1000;
 const STATUS: Record<RecordStatus, { label: string; cls: string }> = {
   won: { label: "Gagné", cls: "bg-success text-white" },
   lost: { label: "Perdu", cls: "bg-danger text-white" },
@@ -21,12 +19,11 @@ const STATUS: Record<RecordStatus, { label: string; cls: string }> = {
 const LEG_ICON = { won: "✓", lost: "✗", push: "↺", pending: "…", unknown: "?" } as const;
 
 const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
-const signed = (n: number) => `${n > 0 ? "+" : ""}${fcfa(n)}`;
 const dayLabel = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
 export default async function RecordPage() {
   const records = await loadRecord().catch(() => [] as CouponRecord[]);
-  const { list, total } = recordStats(records, STAKE);
+  const { list, total } = recordStats(records);
   const days = [...new Set(records.map((r) => r.day))];
   const settledWon = total.won + total.lost;
 
@@ -42,11 +39,11 @@ export default async function RecordPage() {
         {[
           ["Coupons réglés", String(total.played)],
           ["Réussite", `${pct(total.won, settledWon)} %`],
-          [`Bénéfice (${fcfa(STAKE)} / coupon)`, signed(total.profit)],
-          ["Rentabilité", `${total.staked ? `${total.profit >= 0 ? "+" : ""}${Math.round((total.profit / total.staked) * 100)}` : 0} %`],
+          ["Gagnés", String(total.won)],
+          ["Perdus", String(total.lost)],
         ].map(([label, value]) => (
           <div key={label} className="rounded-2xl bg-surface p-4">
-            <p className={`font-display text-3xl leading-none ${label.startsWith("Bénéfice") || label === "Rentabilité" ? (total.profit >= 0 ? "text-success" : "text-danger") : "text-text"}`}>
+            <p className={`font-display text-3xl leading-none ${label === "Gagnés" ? "text-success" : label === "Perdus" ? "text-danger" : "text-text"}`}>
               {value}
             </p>
             <p className="mt-1 text-xs text-muted">{label}</p>
@@ -64,7 +61,6 @@ export default async function RecordPage() {
                   <th className="px-3 py-2">Coupon</th>
                   <th className="px-3 py-2 text-right">Gagnés</th>
                   <th className="px-3 py-2 text-right">Réussite</th>
-                  <th className="px-3 py-2 text-right">Bénéfice</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -75,16 +71,12 @@ export default async function RecordPage() {
                       {s.won}/{s.played}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">{pct(s.won, s.won + s.lost)} %</td>
-                    <td className={`px-3 py-2 text-right font-semibold tabular-nums ${s.profit >= 0 ? "text-success" : "text-danger"}`}>{signed(s.profit)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="text-xs">
-            Bénéfice calculé pour une mise de {fcfa(STAKE)} sur chaque coupon. Les grosses cotes perdent souvent : c&apos;est normal, elles se jouent en
-            petite mise.
-          </p>
+          <p className="text-xs">Les grosses cotes perdent souvent : c&apos;est normal, ce sont des paris plaisir.</p>
         </>
       )}
 

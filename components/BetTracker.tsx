@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { CATEGORY_LABELS } from "@/lib/coupon";
-import { fcfa } from "@/lib/value";
 import {
   findLive,
   legState,
@@ -13,7 +12,6 @@ import {
 import { LiveDot } from "./LiveBoard";
 import {
   loadHistory,
-  profit,
   removeBet,
   removeBets,
   syncHistory,
@@ -99,8 +97,6 @@ const dateLabel = (iso: string) =>
 
 function BetCard({ b, live }: { b: SavedBet; live: LiveMatch[] }) {
   const [open, setOpen] = useState(b.legs.length <= 3);
-  const gain = b.stake * b.totalOdds;
-  const settledProfit = profit(b);
   const shown = open ? b.legs : b.legs.slice(0, 3);
 
   return (
@@ -124,7 +120,7 @@ function BetCard({ b, live }: { b: SavedBet; live: LiveMatch[] }) {
       </div>
 
       {/* Chiffres clés */}
-      <div className="grid grid-cols-3 divide-x divide-border border-b border-border text-center">
+      <div className="grid grid-cols-2 divide-x divide-border border-b border-border text-center">
         <div className="px-2 py-3">
           <p className="text-[11px] uppercase tracking-wide text-muted">Cote</p>
           <p className="font-display text-2xl leading-none tabular-nums text-accent">
@@ -132,30 +128,8 @@ function BetCard({ b, live }: { b: SavedBet; live: LiveMatch[] }) {
           </p>
         </div>
         <div className="px-2 py-3">
-          <p className="text-[11px] uppercase tracking-wide text-muted">Mise</p>
-          <p className="mt-0.5 text-sm font-bold tabular-nums">
-            {fcfa(b.stake)}
-          </p>
-        </div>
-        <div className="px-2 py-3">
-          <p className="text-[11px] uppercase tracking-wide text-muted">
-            {b.status === "gagne" || b.status === "perdu"
-              ? "Résultat"
-              : "Gain possible"}
-          </p>
-          <p
-            className={`mt-0.5 text-sm font-bold tabular-nums ${
-              b.status === "gagne"
-                ? "text-success"
-                : b.status === "perdu"
-                  ? "text-danger"
-                  : ""
-            }`}
-          >
-            {b.status === "gagne" || b.status === "perdu"
-              ? fcfa(settledProfit, true)
-              : fcfa(gain)}
-          </p>
+          <p className="text-[11px] uppercase tracking-wide text-muted">Chance estimée</p>
+          <p className="mt-0.5 text-sm font-bold tabular-nums">{b.probability ? `${Math.round(b.probability)} %` : "—"}</p>
         </div>
       </div>
 
@@ -305,12 +279,9 @@ export function BetTracker() {
   const settled = bets.filter(
     (b) => b.status === "gagne" || b.status === "perdu",
   );
-  const staked = settled.reduce((t, b) => t + b.stake, 0);
-  const net = settled.reduce((t, b) => t + profit(b), 0);
   const won = settled.filter((b) => b.status === "gagne").length;
   const expected = settled.reduce((t, b) => t + b.probability / 100, 0);
   const pending = bets.filter((b) => b.status === "en_cours");
-  const atStake = pending.reduce((t, b) => t + b.stake, 0);
   const rate = settled.length ? (won / settled.length) * 100 : 0;
 
   // Réussite par marché : uniquement les paris simples, où le résultat dit si ce pari précis est passé.
@@ -326,36 +297,25 @@ export function BetTracker() {
   const list =
     filter === "tous" ? bets : bets.filter((b) => b.status === filter);
 
-  // Rentabilité par type de coupon : le meilleur indicateur pour savoir quelle méthode garder.
-  const byType = new Map<string, { n: number; won: number; staked: number; net: number }>();
+  // Réussite par type de coupon : le meilleur indicateur pour savoir quelle méthode garder.
+  const byType = new Map<string, { n: number; won: number }>();
   for (const b of settled) {
     const k = couponType(b);
-    const t = byType.get(k) ?? { n: 0, won: 0, staked: 0, net: 0 };
+    const t = byType.get(k) ?? { n: 0, won: 0 };
     t.n++;
     if (b.status === "gagne") t.won++;
-    t.staked += b.stake;
-    t.net += profit(b);
     byType.set(k, t);
   }
-  const types = [...byType].sort((a, b) => b[1].net / (b[1].staked || 1) - a[1].net / (a[1].staked || 1));
+  const types = [...byType].sort((a, b) => b[1].won / b[1].n - a[1].won / a[1].n);
 
   return (
     <div className="space-y-5">
       {/* Bilan */}
       <section className="overflow-hidden rounded-3xl bg-[#121216] p-5 text-white">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-          Bénéfice net
+          Mon suivi
         </p>
-        <p
-          className={`font-display text-5xl leading-none tabular-nums ${net >= 0 ? "text-[#34d399]" : "text-[#f87171]"}`}
-        >
-          {fcfa(net, true)}
-        </p>
-        <p className="mt-1 text-sm text-white/60">
-          sur {fcfa(staked)} misés · rentabilité{" "}
-          {staked ? `${((net / staked) * 100).toFixed(1)} %` : "—"}
-        </p>
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-3 grid grid-cols-3 gap-2">
           <div className="rounded-2xl bg-white/10 p-3">
             <p className="font-display text-3xl leading-none tabular-nums">
               {won}/{settled.length}
@@ -372,9 +332,7 @@ export function BetTracker() {
             <p className="font-display text-3xl leading-none tabular-nums">
               {pending.length}
             </p>
-            <p className="mt-1 text-[11px] text-white/70">
-              En cours · {fcfa(atStake)}
-            </p>
+            <p className="mt-1 text-[11px] text-white/70">En cours</p>
           </div>
         </div>
         {settled.length > 0 && (
@@ -403,32 +361,26 @@ export function BetTracker() {
       {settled.length >= 10 && won < expected * 0.8 && (
         <p className="rounded-xl bg-warn-bg p-3 text-sm text-warn-text">
           Vous gagnez nettement moins que prévu : nos probabilités semblent trop
-          optimistes. Réduisez les mises ou visez des cotes plus basses.
+          optimistes. Visez des cotes plus basses.
         </p>
       )}
 
       {types.length > 0 && (
         <section className="rounded-2xl border border-border bg-surface p-4">
-          <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted">Rentabilité par type de coupon</h3>
-          <p className="mb-3 text-xs text-muted">Du plus rentable au moins rentable : gardez ce qui gagne, abandonnez ce qui perd.</p>
+          <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted">Réussite par type de coupon</h3>
+          <p className="mb-3 text-xs text-muted">Du plus réussi au moins réussi : gardez ce qui gagne, abandonnez ce qui perd.</p>
           <ul className="space-y-2">
             {types.map(([k, t]) => {
-              const roi = t.staked ? (t.net / t.staked) * 100 : 0;
+              const pct = (t.won / t.n) * 100;
               return (
                 <li key={k} className="flex items-center justify-between gap-3 rounded-xl bg-surface-2 px-3 py-2.5">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold">{k}</p>
                     <p className="text-xs text-muted">
-                      {t.won}/{t.n} gagnés · {fcfa(t.staked)} misés
+                      {t.won}/{t.n} gagnés
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className={`font-display text-2xl leading-none tabular-nums ${t.net >= 0 ? "text-success" : "text-danger"}`}>{fcfa(t.net, true)}</p>
-                    <p className={`text-xs font-semibold tabular-nums ${roi >= 0 ? "text-success" : "text-danger"}`}>
-                      {roi >= 0 ? "+" : ""}
-                      {roi.toFixed(1)} %
-                    </p>
-                  </div>
+                  <p className={`font-display text-2xl leading-none tabular-nums ${pct >= 50 ? "text-success" : "text-danger"}`}>{pct.toFixed(0)} %</p>
                 </li>
               );
             })}

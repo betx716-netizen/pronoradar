@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/client";
 import type { CouponLeg } from "@/lib/coupon";
+import { FEATURES } from "@/lib/features";
 import { couponImage } from "@/lib/shareImage";
 
 // Code de parrainage du compte connecté, demandé une seule fois.
@@ -38,6 +39,13 @@ export function ShareCouponButton({ title, legs, totalOdds, className = "" }: { 
     } catch {}
     setBusy(false);
   }
+
+  if (!FEATURES.share)
+    return (
+      <button disabled title="Bientôt disponible" className={`rounded-xl border border-border py-2 text-sm font-semibold text-muted opacity-60 ${className}`}>
+        🔒 Partager
+      </button>
+    );
 
   return (
     <button onClick={share} disabled={busy} className={`rounded-xl border border-border py-2 text-sm font-semibold transition active:scale-95 disabled:opacity-60 ${className}`}>

@@ -95,7 +95,7 @@ export function CouponCoach({
       </div>
       <p className="mb-3 text-xs text-muted">
         {style === "prudent"
-          ? "Protège la bankroll : retire tout ce qui est douteux, et peut conseiller de ne pas jouer."
+          ? "Retire tout ce qui est douteux, et peut conseiller de ne pas jouer."
           : "Cherche le meilleur rapport gain / risque : propose toujours un coupon jouable, quitte à remplacer des sélections."}
       </p>
 
@@ -165,7 +165,7 @@ export function CouponCoach({
           )}
           <p className="rounded-xl bg-surface p-3 text-sm">
             <span className="font-semibold">Conseil : </span>
-            {review.advice} <span className="text-muted">(mise : {review.suggested_stake_percent} % de la bankroll)</span>
+            {review.advice}
           </p>
           <div className="flex gap-2">
             {toRemove.length > 0 && (

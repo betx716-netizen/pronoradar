@@ -46,9 +46,9 @@ export const CoachReviewSchema = z.object({
 export type CoachReview = z.infer<typeof CoachReviewSchema>;
 
 const STYLES: Record<CoachStyle, string> = {
-  prudent: `Style PRUDENT : ta priorité est de protéger la bankroll.
+  prudent: `Style PRUDENT : ta priorité est de ne garder que le solide.
 - Retire toute sélection douteuse, même si le coupon devient très court. Un coupon de 2 sélections solides vaut mieux que 5 moyennes.
-- Si rien n'est vraiment solide, conclus franchement « ne pas jouer aujourd'hui » (verdict a_eviter, mise 0).
+- Si rien n'est vraiment solide, conclus franchement « ne pas jouer aujourd'hui » (verdict a_eviter).
 - Mise conseillée entre 0 et 3 % de la bankroll.`,
   agressif: `Style AGRESSIF : tu cherches le meilleur rapport gain / risque et tu proposes toujours un coupon jouable.
 - Garde les sélections à bonne cote si leur probabilité tient la route ; remplace plutôt que retirer quand une meilleure alternative existe.
@@ -67,7 +67,7 @@ Ta méthode :
 
 ${STYLES[style]}
 
-Réponds en français, phrases courtes, sans jargon. Ne promets jamais de gain.`;
+Réponds en français, phrases courtes, sans jargon. Ne promets jamais de gain. Ne parle jamais de mise, de montant ni de bankroll.`;
 
 export async function reviewCoupon(req: CoachRequest, onProgress: (m: string) => void): Promise<CoachReview> {
   if (!aiAvailable()) throw new AnalysisError("Gemini est indisponible (clé absente ou quota atteint). Réessayez plus tard.");
@@ -99,7 +99,7 @@ export function demoReview(req: CoachRequest): CoachReview {
     weakest_link: `${req.legs[0].match} : ${req.legs[0].selection}, probabilité optimiste (démo).`,
     legs: req.legs.map((l, i) => ({ match: l.match, keep: i !== 0 || req.style === "agressif", reason: "Explication du coach (démo).", replacement: null })),
     correlations: [],
-    advice: req.style === "prudent" ? "Retirez la première sélection et misez petit (démo)." : "Jouable tel quel avec une mise modérée (démo).",
+    advice: req.style === "prudent" ? "Retirez la première sélection (démo)." : "Jouable tel quel (démo).",
     suggested_stake_percent: req.style === "prudent" ? 1 : 2.5,
   };
 }

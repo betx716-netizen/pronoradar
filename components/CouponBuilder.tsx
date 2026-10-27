@@ -11,7 +11,7 @@ import type { AnalysisResult, MarketCategory } from "@/lib/schemas";
 import { addBet } from "@/lib/history";
 import { CouponCoach } from "./CouponCoach";
 import { ShareCouponButton } from "./ShareCoupon";
-import { fcfa, kellyStake } from "@/lib/value";
+import { kellyStake } from "@/lib/value";
 
 const FOOTBALL_CATEGORIES: MarketCategory[] = [
   "resultat",
@@ -90,14 +90,6 @@ export function CouponBuilder({
   const [categories, setCategories] =
     useState<MarketCategory[]>(DEFAULT_CATEGORIES);
   const [copied, setCopied] = useState(false);
-  const [bankroll, setBankroll] = useState(10000);
-  useEffect(() => {
-    try {
-      const stored = Number(localStorage.getItem("pronoradar.bankroll"));
-      // Une bankroll sous 1 000 date de l'époque en euros : on repart sur la valeur par défaut en FCFA.
-      if (stored >= 1000) setBankroll(stored);
-    } catch {}
-  }, []);
   const [saved, setSaved] = useState(false);
 
   const available = results.some((r) => r.analysis.match.sport === "tennis")
@@ -133,22 +125,8 @@ export function CouponBuilder({
       prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
     );
 
-  const kelly = kellyStake(bankroll, coupon.probability, coupon.totalOdds);
-  // Mise conseillée : Kelly ¼ quand il donne une mise, sinon 1 % de la bankroll (2 % pour les petites cotes).
-  const basic = Math.max(100, Math.round((bankroll * (coupon.totalOdds <= 3 ? 0.02 : 0.01)) / 50) * 50);
-  const suggestedStake = kelly > 0 ? (profile === "x50" ? Math.min(kelly, basic) : kelly) : basic;
-  const [stakeInput, setStakeInput] = useState("");
-  const stake =
-    stakeInput === ""
-      ? suggestedStake
-      : Number(stakeInput.replace(",", ".")) || 0;
-
-  function changeBankroll(v: number) {
-    setBankroll(v);
-    try {
-      localStorage.setItem("pronoradar.bankroll", String(v));
-    } catch {}
-  }
+  // Avantage sur la cote : un montant de mise positif selon Kelly signifie que nos probabilités battent la cote.
+  const hasEdge = kellyStake(10000, coupon.probability, coupon.totalOdds) > 0;
 
   function save() {
     addBet({
@@ -156,7 +134,7 @@ export function CouponBuilder({
       legs: coupon.legs,
       totalOdds: coupon.totalOdds,
       probability: coupon.probability,
-      stake,
+      stake: 0,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -373,37 +351,9 @@ export function CouponBuilder({
         )}
         {coupon.legs.length > 0 && (
           <div className="mt-4 space-y-3 border-t border-dashed border-border pt-4">
-            <div className="grid grid-cols-2 gap-3">
-              <label className="text-xs text-muted">
-                Bankroll (FCFA)
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  value={bankroll}
-                  onChange={(e) => changeBankroll(Number(e.target.value) || 0)}
-                  className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-text"
-                />
-              </label>
-              <label className="text-xs text-muted">
-                Mise (FCFA)
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  value={stakeInput}
-                  placeholder={String(suggestedStake)}
-                  onChange={(e) => setStakeInput(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-text"
-                />
-              </label>
-            </div>
-            <p className="text-xs text-muted">
-              {kelly > 0
-                ? `Mise conseillée : ${fcfa(suggestedStake)} · gain potentiel ${fcfa(stake * coupon.totalOdds)}`
-                : `Pas d'avantage sur la cote d'après nos probabilités : le mieux est de passer, ou de jouer une mise plaisir (${fcfa(suggestedStake)}).`}
-
-            </p>
+            {!hasEdge && (
+              <p className="text-xs text-muted">Pas d&apos;avantage sur la cote d&apos;après nos probabilités : le mieux est de passer.</p>
+            )}
             <ShareCouponButton title="Mon coupon" legs={coupon.legs} totalOdds={coupon.totalOdds} className="mb-2 w-full" />
             <button
               onClick={save}

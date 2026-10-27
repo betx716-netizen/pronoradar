@@ -1,3 +1,4 @@
+import { FEATURES } from "@/lib/features";
 import { isDemo } from "@/lib/http";
 import { db, supabaseConfigured } from "@/lib/supabase";
 import { getViewer, unauthorized } from "@/lib/user";
@@ -14,7 +15,7 @@ export async function POST(req: Request) {
     .trim()
     .toUpperCase();
   if (!/^[A-Z0-9]{4,12}$/.test(code)) return Response.json({ error: "Code invalide." }, { status: 400 });
-  if (isDemo() || !supabaseConfigured()) return Response.json({ ok: true });
+  if (!FEATURES.referral || isDemo() || !supabaseConfigured()) return Response.json({ ok: true, paused: !FEATURES.referral });
 
   const [{ data: me }, { data: parrain }, { count: paid }] = await Promise.all([
     db().from("profiles").select("id, referred_by, created_at, ref_code").eq("id", viewer.id).maybeSingle(),

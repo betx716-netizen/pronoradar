@@ -220,15 +220,6 @@ export function AiCoupons({
     } catch {}
   }
 
-  function bankroll() {
-    try {
-      const v = Number(localStorage.getItem("pronoradar.bankroll"));
-      return v >= 1000 ? v : 10000;
-    } catch {
-      return 100;
-    }
-  }
-
   // Le nom du coupon : seulement sa désignation (la cote totale s'affiche à part).
   const title = (odds: number, n: number) =>
     n ? (n >= 8 ? "Grand combiné" : odds < 4 ? "Fiable" : odds < 10 ? "Équilibré" : "Grosse cote") : "Fiable";
@@ -249,14 +240,12 @@ export function AiCoupons({
   }
 
   function play(c: Built, odds: number, prob: number) {
-    const stake =
-      Math.round((bankroll() * (c.stakePercent / 100)) / 50) * 50 || 100;
     addBet({
       profile: `IA · ${title(odds, c.legs.length)}`,
       legs: c.legs,
       totalOdds: odds,
       probability: Math.round(prob * 10) / 10,
-      stake,
+      stake: 0,
     });
     setFlash(`play-${c.profile}`);
     setTimeout(() => setFlash(null), 1500);
