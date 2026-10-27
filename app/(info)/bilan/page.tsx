@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { fcfa } from "@/lib/plans";
-import { loadRecord, recordStats, type CouponRecord, type RecordStatus } from "@/lib/record";
+import { RECORD_START, loadRecord, recordStats, type CouponRecord, type RecordStatus } from "@/lib/record";
 
 export const revalidate = 1800; // recalculé au plus toutes les 30 minutes
 
@@ -35,7 +35,7 @@ export default async function RecordPage() {
       <h1>Bilan public de l&apos;IA</h1>
       <p>
         Chaque coupon du jour publié par l&apos;IA est ici, <strong>gagné ou perdu</strong>. Rien n&apos;est effacé. Les résultats sont vérifiés
-        automatiquement à partir des scores finaux.
+        automatiquement à partir des scores finaux. Bilan tenu depuis le {dayLabel(RECORD_START)}.
       </p>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -89,7 +89,7 @@ export default async function RecordPage() {
       )}
 
       <h2>Jour par jour</h2>
-      {days.length === 0 && <p>Le bilan démarre avec les premiers coupons du jour réglés.</p>}
+      {days.length === 0 && <p>Le bilan démarre avec les coupons du jour publiés à partir du {dayLabel(RECORD_START)}.</p>}
       <div className="space-y-5">
         {days.map((day) => (
           <section key={day}>

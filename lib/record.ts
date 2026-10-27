@@ -10,6 +10,8 @@ export type RecordLeg = { match: string; competition: string; selection: string;
 export type CouponRecord = { day: string; profile: string; title: string; total_odds: number; status: RecordStatus; legs: RecordLeg[] };
 
 const parisDay = (d = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(d);
+// Début du bilan : remis à zéro le 27 octobre 2026, il compte les coupons publiés à partir du lendemain.
+export const RECORD_START = "2026-10-28";
 const FINAL: RecordStatus[] = ["won", "lost", "void", "unverifiable"];
 
 /** État d'un coupon d'après ses sélections : une seule perdue suffit à le perdre. */
@@ -62,7 +64,8 @@ async function settleCoupon(day: string, c: DailyCoupon, scores: ReturnType<type
 /** Règle les coupons pas encore tranchés des derniers jours, puis renvoie tout le bilan (du plus récent au plus ancien). */
 export async function loadRecord(days = 60): Promise<CouponRecord[]> {
   if (!supabaseConfigured()) return [];
-  const since = parisDay(new Date(Date.now() - days * 86400000));
+  const from = parisDay(new Date(Date.now() - days * 86400000));
+  const since = from > RECORD_START ? from : RECORD_START;
   const [{ data: runs }, { data: saved }] = await Promise.all([
     db().from("daily_runs").select("day, coupons").eq("status", "ready").gte("day", since).order("day", { ascending: false }),
     db().from("coupon_record").select("day, profile, title, total_odds, status, legs").gte("day", since),
