@@ -7,7 +7,8 @@ import { edge, isValueBet } from "@/lib/value";
 const ORDER: MarketCategory[] = [
   "resultat", "double_chance", "rembourse", "mi_temps", "mi_temps_fin", "handicap", "buts", "buts_equipe", "les_deux_marquent",
   "resultat_buts", "resultat_btts", "score_exact", "corners", "tirs_cadres", "fautes", "cartons", "hors_jeu", "buteur", "passeur", "buteur_ou_passeur",
-  "sets", "jeux", "premier_set", "handicap_jeux", "score_sets", "tie_break",
+  "buts_1re_mt", "mi_temps_prolifique", "sans_encaisser", "ecart", "marque_deux_mt", "gagne_une_mt", "premier_but", "pair_impair", "penalty", "carton_rouge",
+  "sets", "jeux", "premier_set", "handicap_jeux", "score_sets", "tie_break", "aces", "doubles_fautes",
 ];
 
 function probColor(p: number) {

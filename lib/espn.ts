@@ -258,13 +258,16 @@ export type LiveMatch = {
   state: "pre" | "in" | "post";
   clock: string; // « 67' », « MT », « Terminé », ou l'heure de coup d'envoi
   date: string;
+  // Buts par mi-temps quand ESPN les donne ([1re, 2e]), pour régler les paris sur les mi-temps.
+  homeHalves?: number[];
+  awayHalves?: number[];
 };
 
 type LiveEvent = {
   id?: string;
   date?: string;
   competitions?: {
-    competitors?: { homeAway?: string; score?: string; team?: { displayName?: string } }[];
+    competitors?: { homeAway?: string; score?: string; team?: { displayName?: string }; linescores?: { value?: number | string }[] }[];
     status?: { displayClock?: string; type?: { state?: string; shortDetail?: string; completed?: boolean } };
   }[];
 };
@@ -314,10 +317,17 @@ export function parseScoreboard(data: unknown, slug: string): LiveMatch[] {
         state,
         clock: clockLabel(state, c?.status?.type?.shortDetail ?? "", c?.status?.displayClock ?? "", e.date),
         date: e.date,
+        homeHalves: halves(h.linescores),
+        awayHalves: halves(a.linescores),
       },
     ];
   });
 }
+
+const halves = (l?: { value?: number | string }[]) => {
+  const v = (l ?? []).map((x) => Number(x.value)).filter(Number.isFinite);
+  return v.length >= 2 ? v.slice(0, 2) : undefined;
+};
 
 export const scoreboardUrl = (slug: string, range: string) =>
   `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard?dates=${range}&limit=200`;

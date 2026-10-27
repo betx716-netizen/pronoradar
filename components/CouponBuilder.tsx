@@ -34,6 +34,16 @@ const FOOTBALL_CATEGORIES: MarketCategory[] = [
   "buteur",
   "passeur",
   "buteur_ou_passeur",
+  "buts_1re_mt",
+  "mi_temps_prolifique",
+  "sans_encaisser",
+  "ecart",
+  "marque_deux_mt",
+  "gagne_une_mt",
+  "premier_but",
+  "pair_impair",
+  "penalty",
+  "carton_rouge",
 ];
 const TENNIS_CATEGORIES: MarketCategory[] = [
   "resultat",
@@ -43,6 +53,8 @@ const TENNIS_CATEGORIES: MarketCategory[] = [
   "handicap_jeux",
   "score_sets",
   "tie_break",
+  "aces",
+  "doubles_fautes",
 ];
 const JACKPOT_CATEGORIES: MarketCategory[] = [
   "score_exact",

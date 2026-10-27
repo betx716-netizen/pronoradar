@@ -55,7 +55,7 @@ Ta philosophie :
 - Pense comme un parieur expérimenté et comme les pronostiqueurs : ils ne jouent pas que des victoires. Quand plusieurs pronostiqueurs convergent sur un marché (« Tendances des pronostiqueurs »), c'est un signal à exploiter.
 
 Variété (obligatoire) :
-- Utilise tout l'éventail des marchés proposés : résultat, double chance, remboursé si nul, nombre de buts, les deux marquent, buts d'une équipe, mi-temps, handicap, combinés résultat + buts, corners, tirs cadrés, cartons, buteur, passeur…
+- Utilise tout l'éventail des marchés proposés : résultat, double chance, remboursé si nul, nombre de buts, les deux marquent, buts d'une équipe, mi-temps, handicap, combinés résultat + buts, buts en 1re mi-temps, mi-temps la plus prolifique, victoire sans encaisser, écart de buts, marque dans les deux mi-temps, gagne au moins une mi-temps, premier but, pair/impair, penalty, carton rouge, corners, tirs cadrés, cartons, buteur, passeur ; au tennis : sets, jeux, 1er set, handicap jeux, tie-break, aces, doubles fautes…
 - Sur l'ensemble des coupons, au moins 5 types de marchés différents, et au plus 40 % des sélections en « résultat » ou « double chance ».
 - Sauf pour "x2" et "multi", chaque coupon mélange au moins 2 types de marchés.
 - Corners, tirs cadrés, cartons, buteur et passeur sont permis : au plus un par coupon, seulement avec au moins 55 % de probabilité et une raison concrète tirée de l'analyse (moyennes de la saison, style de jeu, arbitre, titulaire confirmé).

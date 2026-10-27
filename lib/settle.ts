@@ -107,9 +107,75 @@ export function legState(pick: MarketPick, home: string, away: string, m: LiveMa
       if (other === null) return "unknown";
       return decide(res && other);
     }
+    case "sans_encaisser": {
+      // « PSG ne prend pas de but », « Victoire de PSG sans encaisser »
+      const win = /victoire|gagne/i.test(sel);
+      const side = teamIn(pick.selection, isHome, isAway);
+      if (!side) return "unknown";
+      const conceded = side === "home" ? a : h;
+      const won = side === "home" ? h > a : a > h;
+      if (conceded > 0) return "lost";
+      return decide(!win || won);
+    }
+    case "ecart": {
+      // « PSG gagne par 2 buts d'écart ou plus »
+      const side = teamIn(pick.selection, isHome, isAway);
+      const n = Number(sel.match(/(\d+)\s*buts?/)?.[1]);
+      if (!side || !Number.isFinite(n)) return "unknown";
+      const diff = side === "home" ? h - a : a - h;
+      return decide(/moins|au plus/.test(sel) ? diff > 0 && diff <= n : diff >= n);
+    }
+    case "pair_impair":
+      if (/impair/.test(sel)) return decide((h + a) % 2 === 1);
+      if (/pair/.test(sel)) return decide((h + a) % 2 === 0);
+      return "unknown";
+    case "mi_temps": {
+      // Résultat à la mi-temps : « Mi-temps : PSG », « Nul à la mi-temps »
+      if (!m.homeHalves || !m.awayHalves) return final ? "unknown" : "pending";
+      const t = pick.selection.replace(/^(r[ée]sultat\s+[àa]\s+la\s+)?mi-temps\s*:?\s*/i, "").replace(/\s*[àa]\s+la\s+mi-temps$/i, "");
+      const r = resultOf(t, m.homeHalves[0], m.awayHalves[0], isHome, isAway);
+      return r === null ? "unknown" : decide(r);
+    }
+    case "buts_1re_mt":
+    case "mi_temps_prolifique":
+    case "marque_deux_mt":
+    case "gagne_une_mt": {
+      const hh = m.homeHalves;
+      const ah = m.awayHalves;
+      if (!final) return "pending";
+      if (!hh || !ah) return "unknown";
+      const first = hh[0] + ah[0];
+      const second = hh[1] + ah[1];
+      if (pick.category === "buts_1re_mt") {
+        const n = Number(sel.match(/(\d+[,.]\d)/)?.[1]?.replace(",", "."));
+        if (!Number.isFinite(n)) return "unknown";
+        return decide(/moins/.test(sel) ? first < n : first > n);
+      }
+      if (pick.category === "mi_temps_prolifique") {
+        if (/autant|égalité|egalite|nul/.test(sel)) return decide(first === second);
+        if (/1re|1ère|premi/.test(sel)) return decide(first > second);
+        if (/2e|2ème|second|deuxi/.test(sel)) return decide(second > first);
+        return "unknown";
+      }
+      const side = teamIn(pick.selection, isHome, isAway);
+      if (!side) return "unknown";
+      const mine = side === "home" ? hh : ah;
+      const theirs = side === "home" ? ah : hh;
+      if (pick.category === "marque_deux_mt") return decide(mine[0] > 0 && mine[1] > 0);
+      return decide(mine[0] > theirs[0] || mine[1] > theirs[1]);
+    }
     default:
       return "unknown";
   }
+}
+
+// Équipe nommée au début d'un pari (« PSG ne prend pas de but », « Victoire de Lyon sans encaisser »).
+function teamIn(selection: string, isHome: (t: string) => boolean, isAway: (t: string) => boolean): "home" | "away" | null {
+  const t = selection
+    .replace(/^(victoire\s+(de\s+l'|de\s+la\s+|du\s+|des\s+|de\s+|d')?)/i, "")
+    .split(/\s+(ne|gagne|marque|sans|par|avec|plus|moins|remporte)\b/i)[0]
+    .trim();
+  return isHome(t) ? "home" : isAway(t) ? "away" : null;
 }
 
 // Résultat demandé (« Victoire de l'AS Roma », « Nul », « PSG ») : vrai s'il est réalisé, null si illisible.

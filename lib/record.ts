@@ -93,6 +93,11 @@ export function settleStat(category: string, selection: string, home: string, aw
     // Cartons : un rouge compte comme un carton (règle la plus courante chez les bookmakers).
     cartons: (x) => (x.yellow == null ? undefined : x.yellow + (x.red ?? 0)),
   };
+  if (category === "carton_rouge") {
+    if (st.home.red == null && st.away.red == null) return "unknown";
+    const red = (st.home.red ?? 0) + (st.away.red ?? 0) > 0;
+    return /non/i.test(selection) === !red ? "won" : "lost";
+  }
   const get = keyOf[category];
   const m = selection.match(/(plus|moins)\s+de\s+(\d+[,.]\d)/i);
   if (!get || !m) return "unknown";
@@ -118,7 +123,7 @@ async function settleCoupon(
       const date = l.date?.slice(0, 10) || day;
       const live = findLive(await scores(l.competition, date), home, away);
       let state = legState(l.pick, home, away, live);
-      if (state === "unknown" && live?.state === "post" && ["corners", "tirs_cadres", "cartons", "fautes", "hors_jeu"].includes(l.pick.category)) {
+      if (state === "unknown" && live?.state === "post" && ["corners", "tirs_cadres", "cartons", "fautes", "hors_jeu", "carton_rouge"].includes(l.pick.category)) {
         const st = await stats(live);
         if (st) state = settleStat(l.pick.category, l.pick.selection, home, away, st);
       }

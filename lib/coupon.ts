@@ -44,6 +44,18 @@ export const CATEGORY_LABELS: Record<MarketCategory, string> = {
   buteur: "Buteur",
   passeur: "Passeur décisif",
   buteur_ou_passeur: "Buteur ou passeur",
+  buts_1re_mt: "Buts en 1re mi-temps",
+  mi_temps_prolifique: "Mi-temps la plus prolifique",
+  sans_encaisser: "Sans encaisser",
+  ecart: "Écart de buts",
+  marque_deux_mt: "Marque dans les deux mi-temps",
+  gagne_une_mt: "Gagne au moins une mi-temps",
+  premier_but: "Premier but",
+  pair_impair: "Pair / impair",
+  penalty: "Penalty",
+  carton_rouge: "Carton rouge",
+  aces: "Aces",
+  doubles_fautes: "Doubles fautes",
 };
 
 export type CouponLeg = { match: string; competition: string; date: string | null; pick: MarketPick };
