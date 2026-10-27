@@ -30,17 +30,25 @@ export type DayResult = { id: string; result: AnalysisResult };
 
 const matchName = (r: AnalysisResult) => `${r.analysis.match.home} – ${r.analysis.match.away}`;
 
-// Paris envoyés à l'IA pour chaque match : ceux qui ont le plus de valeur, puis les plus probables,
-// et quelques paris très sûrs pour le grand combiné.
+// Paris envoyés à l'IA pour chaque match. Pour qu'elle varie ses coupons, on lui montre tout l'éventail :
+// le meilleur pari de chaque type de marché (corners, tirs cadrés, cartons, buteur… compris), puis ceux qui ont
+// le plus de valeur, et quelques paris très sûrs pour le grand combiné.
+const FRAGILE_MIN = 55; // un marché « fragile » (forte variance) n'est proposé que s'il est assez probable
 function candidates(r: AnalysisResult): MarketPick[] {
-  const ok = (r.picks ?? []).filter((p) => p.odds >= 1.3 && p.probability >= 45 && p.reliability !== "fragile");
-  const byValue = [...ok].sort((a, b) => b.probability * b.odds - a.probability * a.odds).slice(0, 8);
-  const byProb = [...ok].sort((a, b) => b.probability - a.probability).slice(0, 6);
+  const ok = (r.picks ?? []).filter(
+    (p) => p.odds >= 1.3 && p.probability >= 45 && (p.reliability !== "fragile" || p.probability >= FRAGILE_MIN) && p.category !== "score_exact",
+  );
+  const value = (p: MarketPick) => p.probability * p.odds;
+  const byCategory = new Map<string, MarketPick[]>();
+  for (const p of [...ok].sort((a, b) => value(b) - value(a))) byCategory.set(p.category, [...(byCategory.get(p.category) ?? []), p]);
+  const bestOfEach = [...byCategory.values()].map((list) => list[0]);
+  const secondOfEach = [...byCategory.values()].flatMap((list) => list.slice(1, 2));
+  const byValue = [...ok].sort((a, b) => value(b) - value(a)).slice(0, 6);
   const safe = (r.picks ?? [])
     .filter((p) => p.odds >= 1.04 && p.odds < 1.45 && p.probability >= 78 && p.reliability !== "fragile")
     .sort((a, b) => b.probability - a.probability)
     .slice(0, 3);
-  return [...new Set([...byValue, ...byProb, ...safe])].slice(0, 14);
+  return [...new Set([...bestOfEach, ...byValue, ...safe, ...secondOfEach])].slice(0, 20);
 }
 
 function finish(profile: AiProfile, legs: DailyLeg[], comment: string, stakePercent: number): DailyCoupon {
@@ -86,6 +94,8 @@ export async function composeDailyCoupons(day: DayResult[], onProgress: (m: stri
         confidence: ai.confidence ?? null,
         summary: (ai.summary ?? "").slice(0, 600),
         risks: (ai.risks ?? []).slice(0, 5).map((x) => x.slice(0, 200)),
+        // Ce que disent les pronostiqueurs du web sur les autres marchés (buts, corners…).
+        trends: (r.analysis.secondary_trends ?? []).slice(0, 6).map((t) => `${t.market} : ${t.verdict}`.slice(0, 160)),
         picks: candidates(r).map((p, j) => {
           const pickId = `m${i}p${j}`;
           index.set(pickId, { match: matchName(r), competition: r.analysis.match.competition, date: r.analysis.match.date, pick: p, matchId: id, reason: "" });
@@ -102,11 +112,14 @@ export async function composeDailyCoupons(day: DayResult[], onProgress: (m: stri
     const coupons = AI_PROFILES.map((profile) => {
       const c = res.coupons.find((x) => x.profile === profile);
       const seen = new Set<string>();
+      let fragile = 0;
       const legs = (c?.legs ?? []).flatMap((l) => {
         const leg = index.get(l.pick_id.trim());
         // Une seule sélection par match, et seulement des paris existants. Hors grand combiné, rien sous 1,35.
         if (!leg || seen.has(leg.match)) return [];
         if (profile !== "multi" && leg.pick.odds < 1.35) return [];
+        // Au plus un marché à forte variance (corners, cartons, buteur…) par coupon.
+        if (leg.pick.reliability === "fragile" && fragile++ >= 1) return [];
         seen.add(leg.match);
         return [{ ...leg, reason: l.reason }];
       });

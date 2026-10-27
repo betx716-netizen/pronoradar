@@ -2,7 +2,7 @@
 // puis gardé dans la table coupon_record. Rien n'est retiré : les coupons perdus restent affichés.
 import type { DailyCoupon } from "./dailyCoupons";
 import { SLUGS, parseScoreboard, scoreboardUrl, type LiveMatch } from "./espn";
-import { findLive, legState, type LegState } from "./settle";
+import { findLive, legState, sameTeam, type LegState } from "./settle";
 import { db, supabaseConfigured } from "./supabase";
 
 export type RecordStatus = "won" | "lost" | "void" | "pending" | "unverifiable";
@@ -42,13 +42,86 @@ function scoresLoader() {
   };
 }
 
-async function settleCoupon(day: string, c: DailyCoupon, scores: ReturnType<typeof scoresLoader>): Promise<CouponRecord> {
+// Statistiques d'un match terminé (corners, tirs cadrés, cartons, fautes, hors-jeu), par équipe, d'après ESPN.
+type MatchStats = { home: Record<string, number>; away: Record<string, number> };
+const STAT_KEYS: Record<string, RegExp> = {
+  corners: /corner/i,
+  tirs_cadres: /shotsontarget|on target|on goal/i,
+  yellow: /yellow/i,
+  red: /redcard|red card/i,
+  fautes: /foul/i,
+  hors_jeu: /offside/i,
+};
+function statsLoader() {
+  const cache = new Map<string, Promise<MatchStats | null>>();
+  return (m: LiveMatch) => {
+    if (!cache.has(m.id)) {
+      cache.set(
+        m.id,
+        fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${m.slug}/summary?event=${m.id}`, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(6000) })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => {
+            const teams: { homeAway?: string; statistics?: { name?: string; label?: string; displayValue?: string }[] }[] = d?.boxscore?.teams ?? [];
+            if (teams.length < 2) return null;
+            const read = (t: (typeof teams)[number]) => {
+              const out: Record<string, number> = {};
+              for (const [key, re] of Object.entries(STAT_KEYS)) {
+                const st = (t.statistics ?? []).find((x) => re.test(`${x.name ?? ""} ${x.label ?? ""}`) && !/total ?shots|shots$/i.test(x.name ?? ""));
+                const v = Number(st?.displayValue);
+                if (Number.isFinite(v)) out[key] = v;
+              }
+              return out;
+            };
+            const home = teams.find((t) => t.homeAway === "home") ?? teams[0];
+            const away = teams.find((t) => t.homeAway === "away") ?? teams[1];
+            return { home: read(home), away: read(away) };
+          })
+          .catch(() => null),
+      );
+    }
+    return cache.get(m.id)!;
+  };
+}
+
+/** Pari sur une statistique (« Plus de 9,5 corners », « PSG plus de 4,5 tirs cadrés »), réglé avec les chiffres du match. */
+export function settleStat(category: string, selection: string, home: string, away: string, st: MatchStats): LegState {
+  const keyOf: Record<string, (x: Record<string, number>) => number | undefined> = {
+    corners: (x) => x.corners,
+    tirs_cadres: (x) => x.tirs_cadres,
+    fautes: (x) => x.fautes,
+    hors_jeu: (x) => x.hors_jeu,
+    // Cartons : un rouge compte comme un carton (règle la plus courante chez les bookmakers).
+    cartons: (x) => (x.yellow == null ? undefined : x.yellow + (x.red ?? 0)),
+  };
+  const get = keyOf[category];
+  const m = selection.match(/(plus|moins)\s+de\s+(\d+[,.]\d)/i);
+  if (!get || !m) return "unknown";
+  const before = selection.slice(0, m.index).trim();
+  const team = before && sameTeam(before, home) ? "home" : before && sameTeam(before, away) ? "away" : null;
+  const h = get(st.home);
+  const a = get(st.away);
+  const value = team === "home" ? h : team === "away" ? a : h == null || a == null ? undefined : h + a;
+  if (value == null) return "unknown";
+  const n = Number(m[2].replace(",", "."));
+  return /plus/i.test(m[1]) === value > n ? "won" : "lost";
+}
+
+async function settleCoupon(
+  day: string,
+  c: DailyCoupon,
+  scores: ReturnType<typeof scoresLoader>,
+  stats: ReturnType<typeof statsLoader>,
+): Promise<CouponRecord> {
   const legs: RecordLeg[] = await Promise.all(
     c.legs.map(async (l) => {
       const [home = "", away = ""] = l.match.split(/\s+[–-]\s+/);
       const date = l.date?.slice(0, 10) || day;
       const live = findLive(await scores(l.competition, date), home, away);
       let state = legState(l.pick, home, away, live);
+      if (state === "unknown" && live?.state === "post" && ["corners", "tirs_cadres", "cartons", "fautes", "hors_jeu"].includes(l.pick.category)) {
+        const st = await stats(live);
+        if (st) state = settleStat(l.pick.category, l.pick.selection, home, away, st);
+      }
       // Match introuvable plus de deux jours après : on ne pourra pas le vérifier.
       if (state === "unknown" && !live && Date.now() - new Date(`${date}T23:59:00Z`).getTime() < 2 * 86400000) state = "pending";
       const score = live && live.homeScore != null && live.awayScore != null && live.state === "post" ? `${live.homeScore}-${live.awayScore}` : null;
@@ -72,6 +145,7 @@ export async function loadRecord(days = 60): Promise<CouponRecord[]> {
   ]);
   const done = new Map((saved ?? []).map((r) => [`${r.day}|${r.profile}`, r as CouponRecord]));
   const scores = scoresLoader();
+  const stats = statsLoader();
   const out: CouponRecord[] = [];
   const updates: (CouponRecord & { settled_at: string | null; updated_at: string })[] = [];
   for (const run of runs ?? []) {
@@ -82,7 +156,7 @@ export async function loadRecord(days = 60): Promise<CouponRecord[]> {
         out.push(prev);
         continue;
       }
-      const rec = await settleCoupon(run.day, c, scores);
+      const rec = await settleCoupon(run.day, c, scores, stats);
       out.push(rec);
       const now = new Date().toISOString();
       updates.push({ ...rec, settled_at: FINAL.includes(rec.status) ? now : null, updated_at: now });

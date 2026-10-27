@@ -1,5 +1,5 @@
 // Coupons composés directement par l'IA : à partir de toutes les analyses récentes, elle choisit elle-même
-// les sélections de cinq coupons (Value, Sûr, Équilibré, Audacieux, Grosse cote).
+// les sélections des six coupons du jour, en variant les marchés (pas seulement des victoires).
 import { z } from "zod";
 import { AnalysisError, aiAvailable, emptyUsage, structure, todayInParis } from "./gemini";
 
@@ -17,7 +17,8 @@ export const AiCouponsRequestSchema = z.object({
         confidence: z.string().max(20).nullable(),
         summary: z.string().max(600),
         risks: z.array(z.string().max(200)).max(5),
-        picks: z.array(z.string().max(220)).max(14).describe("« id | pari | marché | cote | probabilité | source de la cote | fiabilité »"),
+        trends: z.array(z.string().max(160)).max(6).optional(),
+        picks: z.array(z.string().max(220)).max(20).describe("« id | pari | marché | cote | probabilité | source de la cote | fiabilité »"),
       }),
     )
     .min(1)
@@ -38,7 +39,7 @@ export const AiCouponsSchema = z.object({
 export type AiCoupons = z.infer<typeof AiCouponsSchema>;
 
 const SYSTEM = (size: number | null) => `Tu es un parieur professionnel. Ton but est de GAGNER sur la durée, pas seulement de jouer des favoris.
-À partir des analyses de matchs fournies, compose CINQ coupons combinés, du plus sûr au plus coté :
+À partir des analyses de matchs fournies, compose SIX coupons combinés, du plus sûr au plus coté :
 - "x2" : cote totale autour de 2. Mise 3 à 5 %.
 - "x5" : cote totale autour de 5. Mise 2 à 3 %.
 - "x10" : cote totale autour de 10. Mise 1 à 2 %.
@@ -51,11 +52,20 @@ Ta philosophie :
 - Cherche la VALEUR : les paris dont la probabilité de l'analyse dépasse celle de la cote du bookmaker (probabilité × cote > 1). Ce sont souvent des outsiders sous-estimés, des matchs nuls probables, des « plus de 2,5 buts » ou « les deux marquent » entre attaques efficaces, un handicap +1 sur une équipe solide.
 - Ne mets pas un favori simplement parce qu'il est favori : vérifie sa forme, ses absences, la motivation, le calendrier.
 - Mieux vaut peu de sélections bien choisies à 1,60-2,50 qu'une pile de favoris à 1,20.
+- Pense comme un parieur expérimenté et comme les pronostiqueurs : ils ne jouent pas que des victoires. Quand plusieurs pronostiqueurs convergent sur un marché (« Tendances des pronostiqueurs »), c'est un signal à exploiter.
+
+Variété (obligatoire) :
+- Utilise tout l'éventail des marchés proposés : résultat, double chance, remboursé si nul, nombre de buts, les deux marquent, buts d'une équipe, mi-temps, handicap, combinés résultat + buts, corners, tirs cadrés, cartons, buteur, passeur…
+- Sur l'ensemble des coupons, au moins 5 types de marchés différents, et au plus 40 % des sélections en « résultat » ou « double chance ».
+- Sauf pour "x2" et "multi", chaque coupon mélange au moins 2 types de marchés.
+- Corners, tirs cadrés, cartons, buteur et passeur sont permis : au plus un par coupon, seulement avec au moins 55 % de probabilité et une raison concrète tirée de l'analyse (moyennes de la saison, style de jeu, arbitre, titulaire confirmé).
+- Le nombre de sélections n'est PAS lié au type de coupon. Ne suis aucun schéma du type 2, 3, 4, 5 : choisis-le selon la qualité des paris du jour. "x2" peut être un pari simple à environ 2,00 ou un combiné de 2 ou 3 ; "x10" peut tenir en 3 sélections bien cotées ou en demander 5. Si un même schéma marche, garde-le, mais ne le force pas.
+- D'un jour à l'autre, ne reproduis pas mécaniquement la même structure de coupons.
 
 Règles :
-- Sauf pour "multi" : chaque sélection a une cote d'au moins 1,40 et probabilité d'au moins 50 % (60 % pour "x2"). Pas de score exact ni de marché « fragile ».
+- Sauf pour "multi" : chaque sélection a une cote d'au moins 1,40 et probabilité d'au moins 50 % (60 % pour "x2"). Pas de score exact.
 - Pas plus de deux favoris à moins de 1,60 dans un même coupon.
-- ${size ? `Au plus ${size} sélection(s) par coupon.` : "Choisis le nombre de sélections nécessaire pour approcher la cote visée, en privilégiant 2 à 6 sélections."}
+- ${size ? `Au plus ${size} sélection(s) par coupon.` : "Choisis librement le nombre de sélections (de 1 à 7, hors grand combiné) pour approcher la cote visée."}
 - Au plus UNE sélection par match dans un même coupon. Un même match peut figurer dans plusieurs coupons.
 - Utilise UNIQUEMENT les identifiants de paris fournis (pick_id exact), n'invente rien.
 - Écarte les matchs dont l'analyse signale une confiance faible ou des risques forts.
@@ -78,6 +88,7 @@ export async function buildAiCoupons(req: AiCouponsRequest, onProgress: (m: stri
         `\n### ${m.match} (${m.competition}${m.date ? `, ${m.date}` : ""}) — confiance de l'analyse : ${m.confidence ?? "inconnue"}`,
         `Résumé : ${m.summary}`,
         m.risks.length ? `Risques : ${m.risks.join(" ; ")}` : "",
+        m.trends?.length ? `Tendances des pronostiqueurs : ${m.trends.join(" ; ")}` : "",
         `Paris possibles :\n${m.picks.map((p) => `  ${p}`).join("\n")}`,
       ]
         .filter(Boolean)
