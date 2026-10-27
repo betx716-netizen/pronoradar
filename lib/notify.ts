@@ -3,12 +3,21 @@
 import { readKey } from "./env";
 import { isDemo } from "./http";
 
-export async function notifyAdmin(title: string, message: string, opts: { tags?: string; priority?: "default" | "high"; click?: string } = {}) {
-  const topic = readKey("NTFY_TOPIC");
-  if (!topic || isDemo()) return;
+export type NotifyResult = { sent: boolean; reason?: string; topicHint?: string };
+
+export async function notifyAdmin(
+  title: string,
+  message: string,
+  opts: { tags?: string; priority?: "default" | "high"; click?: string } = {},
+): Promise<NotifyResult> {
+  const topic = readKey("NTFY_TOPIC").trim();
+  if (!topic) return { sent: false, reason: "La variable NTFY_TOPIC n'est pas définie sur Vercel (ou le site n'a pas été redéployé depuis)." };
+  if (isDemo()) return { sent: false, reason: "Mode démo." };
+  // Début et fin du canal seulement, pour vérifier le nom sans l'exposer.
+  const topicHint = topic.length > 6 ? `${topic.slice(0, 3)}…${topic.slice(-3)} (${topic.length} caractères)` : `${topic.length} caractères`;
   const server = (readKey("NTFY_SERVER") || "https://ntfy.sh").replace(/\/$/, "");
   try {
-    await fetch(`${server}/${encodeURIComponent(topic)}`, {
+    const res = await fetch(`${server}/${encodeURIComponent(topic)}`, {
       method: "POST",
       body: message,
       headers: {
@@ -20,7 +29,9 @@ export async function notifyAdmin(title: string, message: string, opts: { tags?:
       },
       signal: AbortSignal.timeout(5000),
     });
+    return res.ok ? { sent: true, topicHint } : { sent: false, topicHint, reason: `ntfy a refusé l'envoi (erreur ${res.status}).` };
   } catch (e) {
     console.error("Notification ntfy :", e);
+    return { sent: false, topicHint, reason: "ntfy injoignable depuis le serveur." };
   }
 }

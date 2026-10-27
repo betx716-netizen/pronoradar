@@ -7,6 +7,7 @@ import { signOut } from "@/lib/session";
 import { Icon } from "../Icon";
 import { ThemeToggle } from "../ThemeToggle";
 import { AdminPayments } from "./AdminPayments";
+import { AdminNotifyTest } from "./AdminNotifyTest";
 import { AdminReset } from "./AdminReset";
 import { ChangePassword } from "./ChangePassword";
 import { LoginForm } from "./LoginForm";
@@ -76,6 +77,7 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
       {me?.admin && <AdminDaily />}
       {me?.admin && <AdminPayments />}
       {me?.admin && <AdminReset />}
+      {me?.admin && <AdminNotifyTest />}
       {me?.admin && <AdminDeleteAccount />}
 
       {me && me.payments.length > 0 && (
