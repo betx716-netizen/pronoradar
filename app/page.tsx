@@ -25,6 +25,7 @@ import { AccountView } from "@/components/app/AccountView";
 import { Sheet } from "@/components/app/Sheet";
 import { usePasswordRecovery, useSession } from "@/lib/session";
 import { ChangePassword } from "@/components/app/ChangePassword";
+import { INFO_PAGES } from "@/lib/legal";
 import { LiveBoard, LiveDot } from "@/components/LiveBoard";
 import { findLive, sameTeam, useLiveScores, type LiveMatch } from "@/lib/live";
 
@@ -1390,6 +1391,16 @@ function App() {
           }}
         />
       )}
+      <footer className="mx-auto mt-10 max-w-6xl px-4 text-center text-xs text-muted">
+        <nav className="mb-2 flex flex-wrap justify-center gap-x-4 gap-y-2">
+          {INFO_PAGES.map((p) => (
+            <a key={p.href} href={p.href} className="hover:text-accent">
+              {p.label}
+            </a>
+          ))}
+        </nav>
+        Aide à la décision, aucun gain garanti. Les paris comportent des risques : jouez de façon responsable. Réservé aux 18 ans et plus.
+      </footer>
       {recovering && (
         <Sheet title="Nouveau mot de passe" onClose={endRecovery}>
           <div className="pb-4">

@@ -1,3 +1,4 @@
+import { DeleteError, deleteAccountByLogin } from "@/lib/accountDelete";
 import { isDemo } from "@/lib/http";
 import { normalizePhone, phoneLogin } from "@/lib/phone";
 import { db } from "@/lib/supabase";
@@ -26,4 +27,17 @@ export async function POST(req: Request) {
   const { error } = await db().auth.admin.updateUserById(profile.id, { password });
   if (error) return Response.json({ error: "Impossible de changer le mot de passe." }, { status: 502 });
   return Response.json({ ok: true });
+}
+
+// Administrateur : supprime définitivement le compte d'un client (numéro ou email).
+export async function DELETE(req: Request) {
+  const viewer = await getViewer(req);
+  if (!viewer?.admin) return Response.json({ error: "Réservé à l'administrateur." }, { status: 403 });
+  const body = (await req.json().catch(() => null)) as { login?: string } | null;
+  try {
+    await deleteAccountByLogin(String(body?.login ?? ""));
+    return Response.json({ ok: true });
+  } catch (e) {
+    return Response.json({ error: e instanceof Error ? e.message : "Erreur." }, { status: e instanceof DeleteError ? e.status : 500 });
+  }
 }

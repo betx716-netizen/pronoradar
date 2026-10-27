@@ -10,6 +10,7 @@ import { AdminPayments } from "./AdminPayments";
 import { AdminReset } from "./AdminReset";
 import { ChangePassword } from "./ChangePassword";
 import { LoginForm } from "./LoginForm";
+import { AdminDeleteAccount, DeleteMyAccount } from "./DeleteAccount";
 import { displayAccount } from "@/lib/phone";
 
 type Me = {
@@ -69,6 +70,7 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
 
       {me?.admin && <AdminPayments />}
       {me?.admin && <AdminReset />}
+      {me?.admin && <AdminDeleteAccount />}
 
       {me && me.payments.length > 0 && (
         <section className="rounded-3xl bg-surface p-5">
@@ -104,6 +106,8 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
       <button onClick={() => signOut()} className="w-full rounded-full border-2 border-border py-3 font-semibold text-muted">
         Me déconnecter
       </button>
+
+      {me && !me.admin && <DeleteMyAccount />}
     </div>
   );
 }

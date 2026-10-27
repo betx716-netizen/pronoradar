@@ -19,7 +19,7 @@ const g = globalThis as unknown as { __prDemo?: DemoStore };
 export const demoStore = (): DemoStore => (g.__prDemo ??= { premium: new Map(), bets: new Map(), payments: new Map(), users: new Map(), free: new Map() });
 
 // Administrateurs : numéros listés dans ADMIN_PHONES (et emails dans ADMIN_EMAILS, pour d'anciens comptes).
-const admins = () => [
+export const admins = () => [
   ...(process.env.ADMIN_PHONES ?? "").split(",").flatMap((p) => {
     const n = normalizePhone(p);
     return n ? [phoneLogin(n)] : [];

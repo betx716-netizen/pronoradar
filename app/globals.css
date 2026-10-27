@@ -379,3 +379,13 @@ h1 {
     --accent-soft: rgba(240, 112, 90, 0.16);
   }
 }
+
+/* Pages d'information (FAQ, pages légales). */
+.info h1 { margin-bottom: 0.5rem; }
+.info h2 { margin: 1.75rem 0 0.5rem; font-size: 1.15rem; font-weight: 700; }
+.info p, .info li { color: var(--muted); line-height: 1.65; }
+.info p { margin: 0.5rem 0; }
+.info ul { list-style: disc; padding-left: 1.25rem; margin: 0.5rem 0; }
+.info li { margin: 0.25rem 0; }
+.info a { color: var(--accent); text-decoration: underline; }
+.info strong { color: var(--text); }

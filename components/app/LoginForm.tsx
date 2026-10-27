@@ -208,6 +208,19 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
           )}
         </p>
       )}
+      {mode === "signup" && (
+        <p className="text-[13px] text-muted">
+          En créant un compte, tu confirmes avoir 18 ans ou plus et accepter les{" "}
+          <a href="/cgu" target="_blank" className="underline">
+            conditions d&apos;utilisation
+          </a>{" "}
+          et la{" "}
+          <a href="/confidentialite" target="_blank" className="underline">
+            politique de confidentialité
+          </a>
+          .
+        </p>
+      )}
       {info && (
         <div className="rounded-2xl bg-success-soft p-3 text-[15px] text-success">
           <p>{info}</p>
