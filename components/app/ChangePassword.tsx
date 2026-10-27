@@ -4,8 +4,8 @@ import { useState } from "react";
 import { changePassword } from "@/lib/session";
 
 /** Changer son mot de passe une fois connecté (par exemple après en avoir reçu un nouveau). */
-export function ChangePassword() {
-  const [open, setOpen] = useState(false);
+export function ChangePassword({ defaultOpen = false }: { defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   const [pw, setPw] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { MANUAL_PAYMENT } from "@/lib/plans";
-import { signIn, signUp } from "@/lib/session";
+import { isEmail, resendConfirmation, sendPasswordReset, signIn, signUp } from "@/lib/session";
 
-/** Connexion ou création de compte avec le numéro de téléphone et un mot de passe. Aucun SMS ni email. */
+/** Connexion ou création de compte avec le numéro de téléphone (sans SMS) ou un email (lien de confirmation). */
 export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: string; defaultMode?: "signup" | "login"; onDone?: () => void }) {
   const [mode, setMode] = useState<"signup" | "login">(defaultMode);
   const [phone, setPhone] = useState("");
@@ -15,15 +15,26 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
   const [error, setError] = useState<string | null>(null);
   const [forgot, setForgot] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
+  const byEmail = isEmail(phone);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     if (mode === "signup" && password !== confirm) return setError("Les deux mots de passe ne sont pas identiques.");
     setBusy(true);
     try {
-      if (mode === "signup") await signUp(phone, password);
-      else await signIn(phone, password);
+      if (mode === "signup") {
+        if ((await signUp(phone, password)) === "confirm") {
+          setInfo(`Compte créé. Un lien de confirmation vient d'être envoyé à ${phone.trim()} : clique dessus pour activer ton compte (regarde aussi dans les spams).`);
+          setPassword("");
+          setConfirm("");
+          setMode("login");
+          setBusy(false);
+          return;
+        }
+      } else await signIn(phone, password);
       onDone?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -34,11 +45,29 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
   const input = "w-full rounded-2xl border-2 border-border bg-surface px-4 py-3 outline-none focus:border-accent";
   const help = `Bonjour, j'ai oublié le mot de passe de mon compte PronoRadar (numéro : ${phone || "…"}).`;
 
+  async function resend() {
+    setBusy(true);
+    try {
+      await resendConfirmation(phone);
+      setError(null);
+      setInfo("Nouveau lien de confirmation envoyé.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+    setBusy(false);
+  }
+
   async function askReset(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
+      if (byEmail) {
+        await sendPasswordReset(phone);
+        setForgotSent(true);
+        setBusy(false);
+        return;
+      }
       const res = await fetch("/api/auth/forgot", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone }) });
       const d = await res.json().catch(() => null);
       if (!res.ok) throw new Error(d?.error ?? "Demande impossible. Réessaie.");
@@ -55,6 +84,12 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
         <p className="text-[15px] font-semibold">Mot de passe oublié</p>
         {forgotSent ? (
           <>
+            {byEmail ? (
+              <p className="rounded-2xl bg-success-soft p-3 text-[15px] text-success">
+                Si un compte existe pour {phone.trim()}, un lien pour choisir un nouveau mot de passe vient d&apos;être envoyé par email (regarde aussi dans les spams).
+              </p>
+            ) : (
+            <>
             <p className="rounded-2xl bg-success-soft p-3 text-[15px] text-success">
               Demande envoyée. Tu vas recevoir ton nouveau mot de passe sur WhatsApp au {phone}. Tu pourras ensuite le changer dans Mon compte.
             </p>
@@ -66,17 +101,21 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
             >
               Nous écrire sur WhatsApp
             </a>
+            </>
+            )}
           </>
         ) : (
           <>
-            <p className="text-[14px] text-muted">Saisis le numéro de ton compte. On t&apos;envoie un nouveau mot de passe sur WhatsApp.</p>
+            <p className="text-[14px] text-muted">
+              Saisis le numéro ou l&apos;email de ton compte. Avec un email, tu reçois un lien pour choisir un nouveau mot de passe ; avec un numéro, un nouveau mot de passe sur WhatsApp.
+            </p>
             <label className="block">
-              <span className="mb-1 block text-[14px] font-medium">Numéro de téléphone</span>
-              <input inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07 00 00 00 00" className={input} required />
+              <span className="mb-1 block text-[14px] font-medium">Numéro ou email</span>
+              <input autoComplete="username" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07 00 00 00 00 ou nom@email.com" className={input} required />
             </label>
             {error && <p className="text-[14px] text-danger">{error}</p>}
             <button disabled={busy} className="w-full rounded-full bg-accent py-3.5 font-semibold text-white disabled:opacity-60">
-              {busy ? "Envoi…" : "Recevoir un nouveau mot de passe"}
+              {busy ? "Envoi…" : byEmail ? "Recevoir le lien par email" : "Recevoir un nouveau mot de passe"}
             </button>
           </>
         )}
@@ -122,8 +161,18 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
       </div>
       {intro && <p className="text-[15px] text-muted">{intro}</p>}
       <label className="block">
-        <span className="mb-1 block text-[14px] font-medium">Numéro de téléphone</span>
-        <input inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07 00 00 00 00" className={input} required />
+        <span className="mb-1 block text-[14px] font-medium">Numéro de téléphone ou email</span>
+        <input
+          type="text"
+          autoComplete="username"
+          autoCapitalize="none"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="07 00 00 00 00 ou nom@email.com"
+          className={input}
+          required
+        />
+        {mode === "signup" && byEmail && <span className="mt-1 block text-[13px] text-muted">Un lien de confirmation te sera envoyé par email.</span>}
       </label>
       <label className="block">
         <span className="mb-1 flex items-baseline justify-between text-[14px] font-medium">
@@ -149,7 +198,17 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
           <input type={show ? "text" : "password"} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} minLength={6} className={input} required />
         </label>
       )}
-      {error && <p className="text-[14px] text-danger">{error}</p>}
+      {error && (
+        <p className="text-[14px] text-danger">
+          {error}
+          {/confirm/i.test(error) && byEmail && (
+            <button type="button" onClick={resend} className="ml-1 font-semibold underline">
+              Renvoyer le lien
+            </button>
+          )}
+        </p>
+      )}
+      {info && <p className="rounded-2xl bg-success-soft p-3 text-[15px] text-success">{info}</p>}
       <button disabled={busy} className="w-full rounded-full bg-accent py-3.5 font-semibold text-white disabled:opacity-60">
         {busy ? "Un instant…" : mode === "signup" ? "Créer mon compte" : "Me connecter"}
       </button>

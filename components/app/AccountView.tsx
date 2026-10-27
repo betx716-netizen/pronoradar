@@ -36,7 +36,7 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
     return (
       <div className="mx-auto max-w-md rounded-3xl bg-surface p-5">
         <h2 className="mb-1 font-display text-3xl font-bold">Connexion</h2>
-        <LoginForm defaultMode="login" intro="Ton numéro et ton mot de passe te permettent de retrouver ton abonnement et ton suivi sur tous tes appareils." />
+        <LoginForm defaultMode="login" intro="Ton numéro (ou ton email) et ton mot de passe te permettent de retrouver ton abonnement et ton suivi sur tous tes appareils." />
       </div>
     );
   }

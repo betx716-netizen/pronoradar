@@ -141,7 +141,7 @@ export function Paywall({ signedIn, email, onClose }: { signedIn: boolean; email
         {!signedIn ? (
           <div className="rounded-2xl bg-surface p-4">
             <p className="mb-3 font-semibold">Crée ton compte ou connecte-toi pour payer</p>
-            <LoginForm intro="Ton abonnement sera lié à ton numéro : tu le retrouves sur tous tes appareils." />
+            <LoginForm intro="Ton abonnement sera lié à ton compte (numéro ou email) : tu le retrouves sur tous tes appareils." />
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4 rounded-2xl bg-surface p-4">

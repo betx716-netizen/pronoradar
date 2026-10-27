@@ -23,7 +23,8 @@ import { Paywall } from "@/components/app/Paywall";
 import { FREE_ANALYSES_LABEL } from "@/lib/plans";
 import { AccountView } from "@/components/app/AccountView";
 import { Sheet } from "@/components/app/Sheet";
-import { useSession } from "@/lib/session";
+import { usePasswordRecovery, useSession } from "@/lib/session";
+import { ChangePassword } from "@/components/app/ChangePassword";
 import { LiveBoard, LiveDot } from "@/components/LiveBoard";
 import { findLive, sameTeam, useLiveScores, type LiveMatch } from "@/lib/live";
 
@@ -259,6 +260,8 @@ function App() {
   const [needPassword, setNeedPassword] = useState(false);
   // Comptes et Premium.
   const session = useSession();
+  // Arrivée par le lien « mot de passe oublié » reçu par email : on propose tout de suite le nouveau mot de passe.
+  const [recovering, endRecovery] = usePasswordRecovery();
   const [me, setMe] = useState<{ premium: boolean; admin: boolean; premiumUntil: string | null } | null>(null);
   const [paywall, setPaywall] = useState(false);
   const [account, setAccount] = useState(false);
@@ -1386,6 +1389,13 @@ function App() {
             setAccountKey((k) => k + 1);
           }}
         />
+      )}
+      {recovering && (
+        <Sheet title="Nouveau mot de passe" onClose={endRecovery}>
+          <div className="pb-4">
+            <ChangePassword defaultOpen />
+          </div>
+        </Sheet>
       )}
       {account && (
         <Sheet title={session.email ? "Mon compte" : "Connexion"} onClose={() => setAccount(false)}>
