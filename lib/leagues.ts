@@ -33,6 +33,15 @@ export const LEAGUES: Record<Sport, League[]> = {
     { name: "LaLiga 2", oddsKey: "soccer_spain_segunda_division", apiFootballId: 141 },
     { name: "Serie B", oddsKey: "soccer_italy_serie_b", apiFootballId: 136 },
     { name: "2. Bundesliga", oddsKey: "soccer_germany_bundesliga2", apiFootballId: 79 },
+    // Coupes nationales
+    { name: "Coupe d'Allemagne", oddsKey: "soccer_germany_dfb_pokal", apiFootballId: 81 },
+    { name: "Coupe de France", oddsKey: "soccer_france_coupe_de_france", apiFootballId: 66 },
+    { name: "Coupe d'Italie", oddsKey: "soccer_italy_coppa_italia", apiFootballId: 137 },
+    { name: "Coupe du Roi (Espagne)", oddsKey: "soccer_spain_copa_del_rey", apiFootballId: 143 },
+    { name: "FA Cup (Angleterre)", oddsKey: "soccer_fa_cup", apiFootballId: 45 },
+    { name: "Coupe de la Ligue anglaise", oddsKey: "soccer_england_efl_cup", apiFootballId: 48 },
+    { name: "Coupe du Portugal", oddsKey: null, apiFootballId: 96 },
+    { name: "Coupe des Pays-Bas", oddsKey: null, apiFootballId: 90 },
   ],
   tennis: [
     { name: "ATP", oddsKey: "tennis_atp", apiFootballId: null },

@@ -25,8 +25,9 @@ export async function findFixtures(sport: Sport, competition: string, onProgress
     try {
       const r = await fetchOddsFixtures(sport, competition, league.oddsKey);
       usage.oddsRequestsRemaining = r.remaining;
-      // Championnat absent de la liste active : pas de match à venir, inutile de chercher ailleurs.
-      fixtures = r.covered ? r.fixtures : [];
+      // Championnat absent de la liste active : pas de match à venir, inutile de chercher ailleurs
+      // (sauf sur la source gratuite ESPN quand elle couvre la compétition, utile pour les coupes).
+      fixtures = r.covered ? r.fixtures : sport === "football" && espnCovers(competition) ? null : [];
     } catch (e) {
       notes.push(e instanceof Error ? e.message : String(e));
     }

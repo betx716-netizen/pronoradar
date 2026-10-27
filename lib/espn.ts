@@ -27,6 +27,14 @@ export const SLUGS: Record<string, string> = {
   "LaLiga 2": "esp.2",
   "Serie B": "ita.2",
   "2. Bundesliga": "ger.2",
+  "Coupe d'Allemagne": "ger.dfb_pokal",
+  "Coupe de France": "fra.coupe_de_france",
+  "Coupe d'Italie": "ita.coppa_italia",
+  "Coupe du Roi (Espagne)": "esp.copa_del_rey",
+  "FA Cup (Angleterre)": "eng.fa",
+  "Coupe de la Ligue anglaise": "eng.league_cup",
+  "Coupe du Portugal": "por.taca.portugal",
+  "Coupe des Pays-Bas": "ned.cup",
 };
 
 export const espnCovers = (competition: string) => competition in SLUGS;
@@ -58,7 +66,24 @@ export const ESPN_IDS: Record<string, string> = {
   "Serie B": "3931",
   "2. Bundesliga": "3927",
 };
-const NAME_BY_ID = Object.fromEntries(Object.entries(ESPN_IDS).map(([name, id]) => [id, name]));
+const NAME_BY_ID: Record<string, string> = Object.fromEntries(Object.entries(ESPN_IDS).map(([name, id]) => [id, name]));
+
+// Compétitions sans identifiant relevé (coupes nationales…) : identifiant demandé à ESPN une fois par jour.
+async function resolveMissingIds() {
+  const missing = Object.entries(SLUGS).filter(([name]) => !ESPN_IDS[name]);
+  await Promise.all(
+    missing.map(async ([name, slug]) => {
+      try {
+        const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard`, {
+          next: { revalidate: 86400 },
+          signal: AbortSignal.timeout(6000),
+        });
+        const id = res.ok ? String((await res.json())?.leagues?.[0]?.id ?? "") : "";
+        if (id) NAME_BY_ID[id] = name;
+      } catch {}
+    }),
+  );
+}
 
 /** Jours au format ESPN (AAAAMMJJ), de `from` à `to` jours par rapport à aujourd'hui. ESPN refuse désormais les plages : un jour par requête. */
 export const espnDays = (from: number, to: number) => {
@@ -451,6 +476,7 @@ function espnOdds(o?: EspnOdds): Fixture["odds"] {
 export async function fetchWeekFixtures(): Promise<Fixture[]> {
   const today = paris(new Date().toISOString(), "fr-CA", { year: "numeric", month: "2-digit", day: "2-digit" });
   const last = paris(new Date(Date.now() + 7 * 86400000).toISOString(), "fr-CA", { year: "numeric", month: "2-digit", day: "2-digit" });
+  await resolveMissingIds();
   const pages = await Promise.all(
     espnDays(-1, 8).map(async (d) => {
       try {
