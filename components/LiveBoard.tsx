@@ -15,7 +15,9 @@ export function LiveDot() {
   );
 }
 
-function Row({ m, onAnalyze }: { m: LiveMatch; onAnalyze: (m: LiveMatch) => void }) {
+const MAX_LIVE = 5;
+
+function Row({ m, selected, onToggle }: { m: LiveMatch; selected: boolean; onToggle: (m: LiveMatch) => void }) {
   const live = m.state === "in";
   const score = (n: number | null) => (n == null ? "–" : n);
   const winner = m.state === "post" && m.homeScore != null && m.awayScore != null ? Math.sign(m.homeScore - m.awayScore) : 0;
@@ -46,10 +48,11 @@ function Row({ m, onAnalyze }: { m: LiveMatch; onAnalyze: (m: LiveMatch) => void
         })}
         {live && (
           <button
-            onClick={() => onAnalyze(m)}
-            className="mt-1 w-full rounded-xl bg-accent py-1.5 text-xs font-bold text-on-accent transition active:scale-95"
+            onClick={() => onToggle(m)}
+            aria-pressed={selected}
+            className={`mt-1 w-full rounded-xl py-1.5 text-xs font-bold transition active:scale-95 ${selected ? "bg-accent text-on-accent" : "border border-accent text-accent"}`}
           >
-            Analyser en direct
+            {selected ? "✓ Sélectionné pour l'analyse" : "+ Analyser en direct"}
           </button>
         )}
       </div>
@@ -60,7 +63,21 @@ function Row({ m, onAnalyze }: { m: LiveMatch; onAnalyze: (m: LiveMatch) => void
 /** Onglet Direct : matchs en cours, terminés et à venir des championnats choisis, rafraîchis toutes les 30 secondes. */
 export function LiveBoard({ leagues, priorFor }: { leagues: string[]; priorFor: (home: string, away: string) => string | null }) {
   const { matches, worldMatches, updatedAt, fullCoverage } = useLiveScores(leagues, true);
-  const [analyzing, setAnalyzing] = useState<LiveMatch | null>(null);
+  // Matchs cochés pour l'analyse en direct (5 au plus), analysés ensemble.
+  const [selected, setSelected] = useState<LiveMatch[]>([]);
+  const [analyzing, setAnalyzing] = useState<LiveMatch[] | null>(null);
+  const [limitNote, setLimitNote] = useState(false);
+  const toggle = (m: LiveMatch) =>
+    setSelected((prev) => {
+      if (prev.some((x) => x.id === m.id)) return prev.filter((x) => x.id !== m.id);
+      if (prev.length >= MAX_LIVE) {
+        setLimitNote(true);
+        setTimeout(() => setLimitNote(false), 2500);
+        return prev;
+      }
+      return [...prev, m];
+    });
+  const isSel = (m: LiveMatch) => selected.some((x) => x.id === m.id);
 
   if (!updatedAt) return <div className="skeleton h-40 rounded-2xl" />;
 
@@ -75,8 +92,28 @@ export function LiveBoard({ leagues, priorFor }: { leagues: string[]; priorFor: 
 
   return (
     <div className="space-y-8">
-      {analyzing && (
-        <LiveAnalysisSheet match={analyzing} prior={priorFor(analyzing.home, analyzing.away)} onClose={() => setAnalyzing(null)} />
+      {analyzing && <LiveAnalysisSheet matches={analyzing} priorFor={priorFor} onClose={() => setAnalyzing(null)} />}
+      {selected.length > 0 && (
+        <div className="fixed inset-x-0 bottom-28 z-40 flex justify-center px-4">
+          <div className="flex w-full max-w-md items-center gap-2 rounded-2xl bg-[#121216] p-2 pl-4 text-white shadow-2xl">
+            <span className="min-w-0 flex-1 text-sm">
+              {limitNote ? "5 matchs au maximum" : `${selected.length} match${selected.length > 1 ? "s" : ""} sélectionné${selected.length > 1 ? "s" : ""} (5 max)`}
+            </span>
+            <button onClick={() => setSelected([])} className="px-2 text-xs text-white/60">
+              Vider
+            </button>
+            <button
+              onClick={() => {
+                // Scores du moment : on reprend la version à jour de chaque match sélectionné.
+                setAnalyzing(selected.map((s) => [...matches, ...worldMatches].find((m) => m.id === s.id) ?? s));
+                setSelected([]);
+              }}
+              className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-on-accent active:scale-95"
+            >
+              Analyser
+            </button>
+          </div>
+        </div>
       )}
       <p className={`rounded-xl p-3 text-xs ${fullCoverage ? "bg-success-soft text-success" : "bg-surface-2 text-muted"}`}>
         {fullCoverage
@@ -92,7 +129,8 @@ export function LiveBoard({ leagues, priorFor }: { leagues: string[]; priorFor: 
               {title === "En direct" && <LiveDot />}
               {title} <span className="text-base text-muted">({list.length})</span>
             </h2>
-            {leagues
+            {/* Championnats choisis d'abord, dans leur ordre, puis toute autre compétition présente. */}
+            {[...new Set([...leagues, ...list.map((m) => m.competition)])]
               .filter((l) => list.some((m) => m.competition === l))
               .map((l) => (
                 <div key={l} className="mb-4">
@@ -104,7 +142,7 @@ export function LiveBoard({ leagues, priorFor }: { leagues: string[]; priorFor: 
                     {list
                       .filter((m) => m.competition === l)
                       .map((m) => (
-                        <Row key={m.id} m={m} onAnalyze={setAnalyzing} />
+                        <Row key={m.id} m={m} selected={isSel(m)} onToggle={toggle} />
                       ))}
                   </ul>
                 </div>
@@ -128,7 +166,7 @@ export function LiveBoard({ leagues, priorFor }: { leagues: string[]; priorFor: 
                 {worldMatches
                   .filter((m) => m.competition === l)
                   .map((m) => (
-                    <Row key={m.id} m={m} onAnalyze={setAnalyzing} />
+                    <Row key={m.id} m={m} selected={isSel(m)} onToggle={toggle} />
                   ))}
               </ul>
             </div>

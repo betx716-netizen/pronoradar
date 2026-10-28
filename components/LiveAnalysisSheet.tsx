@@ -8,8 +8,55 @@ import type { LiveAnalysis } from "@/lib/liveAnalysis";
 import { LiveDot } from "./LiveBoard";
 import { parseSofaStats, sofaStatsUrl } from "@/lib/sofa";
 
-/** Fenêtre d'analyse en direct d'un match en cours. */
-export function LiveAnalysisSheet({ match, prior, onClose }: { match: LiveMatch; prior: string | null; onClose: () => void }) {
+/** Fenêtre d'analyse en direct : jusqu'à 5 matchs analysés en même temps, un onglet par match. */
+export function LiveAnalysisSheet({
+  matches,
+  priorFor,
+  onClose,
+}: {
+  matches: LiveMatch[];
+  priorFor: (home: string, away: string) => string | null;
+  onClose: () => void;
+}) {
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end justify-center text-text sm:items-center">
+      <button aria-label="Fermer" className="fade-in absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="sheet relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-border bg-surface pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:rounded-3xl">
+        {matches.length > 1 && (
+          <div className="sticky top-0 z-10 flex gap-1 overflow-x-auto rounded-t-3xl bg-[#121216] p-2 scrollbar-none">
+            {matches.map((m, i) => (
+              <button
+                key={m.id}
+                onClick={() => setActive(i)}
+                className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold transition ${i === active ? "bg-accent text-on-accent" : "text-white/70"}`}
+              >
+                {m.home.split(" ")[0]} – {m.away.split(" ")[0]}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Tous les matchs s'analysent en même temps ; seul l'onglet choisi est affiché. */}
+        {matches.map((m, i) => (
+          <div key={m.id} hidden={i !== active}>
+            <LivePanel match={m} prior={priorFor(m.home, m.away)} onClose={onClose} first={matches.length === 1} />
+          </div>
+        ))}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/** Analyse en direct d'un match. */
+function LivePanel({ match, prior, onClose, first }: { match: LiveMatch; prior: string | null; onClose: () => void; first: boolean }) {
   const [result, setResult] = useState<LiveAnalysis | null>(null);
   const [progress, setProgress] = useState("Analyse en cours…");
   const [error, setError] = useState<string | null>(null);
@@ -52,10 +99,6 @@ export function LiveAnalysisSheet({ match, prior, onClose }: { match: LiveMatch;
 
   useEffect(() => {
     run();
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -76,11 +119,9 @@ export function LiveAnalysisSheet({ match, prior, onClose }: { match: LiveMatch;
     </>
   );
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center text-text sm:items-center">
-      <button aria-label="Fermer" className="fade-in absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="sheet relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-border bg-surface pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:rounded-3xl">
-        <div className="rounded-t-3xl bg-[#121216] p-5 text-white">
+  return (
+    <>
+        <div className={`${first ? "rounded-t-3xl " : ""}bg-[#121216] p-5 text-white`}>
           <div className="mb-2 flex items-center justify-between">
             <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#f87171]">
               <LiveDot /> Analyse en direct · {match.clock}
@@ -164,8 +205,6 @@ export function LiveAnalysisSheet({ match, prior, onClose }: { match: LiveMatch;
             </div>
           )}
         </div>
-      </div>
-    </div>,
-    document.body,
+    </>
   );
 }
