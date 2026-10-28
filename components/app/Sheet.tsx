@@ -9,11 +9,15 @@ export function Sheet({ title, onClose, children, wide }: { title: string; onClo
   useEffect(() => {
     const key = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", key);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    // Bloque le défilement de la page derrière (iPhone compris, qui ignore overflow: hidden sur le body).
+    const y = window.scrollY;
+    const body = document.body.style;
+    const prev = { overflow: body.overflow, position: body.position, top: body.top, width: body.width };
+    Object.assign(body, { overflow: "hidden", position: "fixed", top: `-${y}px`, width: "100%" });
     return () => {
       window.removeEventListener("keydown", key);
-      document.body.style.overflow = prev;
+      Object.assign(body, prev);
+      window.scrollTo(0, y);
     };
   }, [onClose]);
 
@@ -29,7 +33,9 @@ export function Sheet({ title, onClose, children, wide }: { title: string; onClo
             <Icon name="close" className="h-4 w-4" />
           </button>
         </div>
-        <div className="overflow-y-auto overscroll-contain px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">{children}</div>
+        <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch]">
+          {children}
+        </div>
       </div>
     </div>,
     document.body,

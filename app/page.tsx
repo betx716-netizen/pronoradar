@@ -21,7 +21,7 @@ import { SettingsPanel } from "@/components/SettingsPanel";
 import { ScrollRow } from "@/components/ScrollRow";
 import { Paywall } from "@/components/app/Paywall";
 import { FREE_ANALYSES_LABEL } from "@/lib/plans";
-import { AccountView } from "@/components/app/AccountView";
+import { AccountView, prefetchAccount } from "@/components/app/AccountView";
 import { Sheet } from "@/components/app/Sheet";
 import { usePasswordRecovery, useSession } from "@/lib/session";
 import { ChangePassword } from "@/components/app/ChangePassword";
@@ -265,6 +265,9 @@ function App() {
   const session = useSession();
   // Lien de parrainage (?ref=…) : gardé jusqu'à la création du compte, puis transmis au serveur.
   useReferralCapture(Boolean(session.email));
+  useEffect(() => {
+    if (session.email) prefetchAccount(session.email);
+  }, [session.email]);
   // Arrivée par le lien « mot de passe oublié » reçu par email : on propose tout de suite le nouveau mot de passe.
   const [recovering, endRecovery] = usePasswordRecovery();
   const [me, setMe] = useState<{ premium: boolean; admin: boolean; premiumUntil: string | null } | null>(null);

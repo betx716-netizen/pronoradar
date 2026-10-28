@@ -25,16 +25,34 @@ type Me = {
   referral?: { code: string; invited: number; rewarded: number };
 };
 
+let lastMe: { email: string; me: Me } | null = null;
+
+/** Charge les informations du compte à l'avance (à l'ouverture de l'app), pour un « Mon compte » instantané. */
+export function prefetchAccount(email: string) {
+  if (lastMe?.email === email) return;
+  api<Me>("/api/me")
+    .then((m) => {
+      lastMe = { email, me: m };
+    })
+    .catch(() => {});
+}
+
 const date = (iso: string) => new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" }).format(new Date(iso));
 const STATUS: Record<string, string> = { accepted: "Payé", pending: "En attente", review: "En vérification", refused: "Refusé" };
 
 /** Compte : connexion, offre en cours, renouvellement et historique des paiements. */
 export function AccountView({ email, refreshKey, onUnlock }: { email: string | null; refreshKey: number; onUnlock: () => void }) {
-  const [me, setMe] = useState<Me | null>(null);
+  // Dernières informations connues du compte, affichées tout de suite à la réouverture, puis rafraîchies.
+  const [me, setMe] = useState<Me | null>(() => (email && lastMe?.email === email ? lastMe.me : null));
 
   useEffect(() => {
     if (!email) return setMe(null);
-    api<Me>("/api/me").then(setMe).catch(() => setMe(null));
+    api<Me>("/api/me")
+      .then((m) => {
+        lastMe = { email, me: m };
+        setMe(m);
+      })
+      .catch(() => {});
   }, [email, refreshKey]);
 
   if (!email) {
@@ -45,6 +63,15 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
       </div>
     );
   }
+
+  // Tant que l'offre n'est pas connue, on n'affiche pas « Gratuit » par erreur.
+  if (!me)
+    return (
+      <div className="mx-auto max-w-md space-y-4">
+        <div className="skeleton h-40 rounded-3xl" />
+        <div className="skeleton h-24 rounded-3xl" />
+      </div>
+    );
 
   const premiumActive = me?.premium;
   return (
