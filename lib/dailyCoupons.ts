@@ -82,6 +82,19 @@ export function computedCoupons(day: DayResult[]): DailyCoupon[] {
   }).filter((c) => c.legs.length > 0);
 }
 
+// Deux coupons dans la même fourchette de cote auraient le même nom : le suivant prend le nom du palier
+// au-dessus (« L'équilibré » plutôt qu'un second « Le sûr »), puisqu'ils sont rangés par cote croissante.
+const LADDER = ["Le sûr", "L'équilibré", "L'ambitieux", "Le coup", "La grosse cote"];
+function uniqueTitles(coupons: DailyCoupon[]): DailyCoupon[] {
+  let floor = -1;
+  return coupons.map((c) => {
+    if (c.profile === "multi") return c;
+    const at = Math.max(LADDER.indexOf(c.title), floor + 1);
+    floor = Math.min(at, LADDER.length - 1);
+    return { ...c, title: LADDER[floor] };
+  });
+}
+
 /** Les six coupons du jour, composés par l'IA (ou calculés si elle est indisponible). */
 export async function composeDailyCoupons(day: DayResult[], onProgress: (m: string) => void = () => {}): Promise<DailyCoupon[]> {
   if (day.length === 0) return [];
@@ -129,7 +142,7 @@ export async function composeDailyCoupons(day: DayResult[], onProgress: (m: stri
     })
       .filter((c) => c.legs.length > 0)
       .sort((a, b) => Number(a.profile === "multi") - Number(b.profile === "multi") || a.totalOdds - b.totalOdds);
-    if (coupons.length) return coupons;
+    if (coupons.length) return uniqueTitles(coupons);
   } catch (e) {
     onProgress(`IA indisponible pour les coupons : ${e instanceof Error ? e.message : String(e)}`);
   }
