@@ -5,6 +5,7 @@
 // Déroulé : le cron Vercel (une fois par jour) appelle /api/cron/daily, qui travaille quelques minutes puis
 // se relance lui-même tant qu'il reste des matchs. Si la chaîne s'interrompt, la première visite qui trouve
 // un travail arrêté depuis plus de 3 minutes la relance.
+import { matchPriority } from "./priority";
 import { analyzeMatch } from "./analyze";
 import { composeDailyCoupons, computedCoupons, type DailyCoupon, type DayResult } from "./dailyCoupons";
 import { demoAnalysis, demoFixtures } from "./demo";
@@ -83,11 +84,12 @@ async function findDayFixtures(day: string, log: (m: string) => void) {
     const merged = [...ofDay, ...extra].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
     found.push(...merged.map((f) => ({ ...f, sport })));
     log(`${name} : ${merged.length} match(s) aujourd'hui`);
-    if (found.length >= MAX_MATCHES * 3) break;
   }
-  // Les matchs avec des cotes passent devant : leurs analyses et leurs coupons sont plus fiables.
-  // À égalité, l'ordre des championnats (priorité) puis l'heure.
-  const ranked = found.map((f, i) => ({ f, i })).sort((a, b) => Number(Boolean(b.f.odds)) - Number(Boolean(a.f.odds)) || a.i - b.i);
+  // Tous les matchs du jour sont classés par importance : niveau de la compétition, grandes équipes,
+  // puis présence de cotes. À égalité, l'ordre de la liste des championnats.
+  const ranked = found
+    .map((f, i) => ({ f, i, p: matchPriority(f) }))
+    .sort((a, b) => b.p - a.p || a.i - b.i);
   return { fixtures: ranked.slice(0, MAX_MATCHES).map((x) => x.f), notes };
 }
 
