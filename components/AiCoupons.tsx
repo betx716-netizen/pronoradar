@@ -9,7 +9,7 @@ import type {
   AiCouponsRequest,
   AiProfile,
 } from "@/lib/aiCoupons";
-import { CATEGORY_LABELS, type CouponLeg } from "@/lib/coupon";
+import { CATEGORY_LABELS, clubAlreadyIn, couponTitle, type CouponLeg } from "@/lib/coupon";
 import { addBet } from "@/lib/history";
 import type { AnalysisResult, MarketPick } from "@/lib/schemas";
 
@@ -147,16 +147,15 @@ export function AiCoupons({
         ["x2", "x5", "x10", "x20", "x50", "multi"] as AiProfile[]
       ).map((profile) => {
         const c = res.coupons.find((x) => x.profile === profile);
-        const seen = new Set<string>();
-        const legs = (c?.legs ?? []).flatMap((l) => {
+        const legs: Built["legs"] = [];
+        for (const l of c?.legs ?? []) {
           const leg = index.get(l.pick_id.trim());
-          // Une seule sélection par match, et seulement des paris existants. Hors grand combiné, pas de
-          // sélection sous 1,35 : à ce prix-là, elle ne rapporte presque rien et ajoute un risque.
-          if (!leg || seen.has(leg.match)) return [];
-          if (profile !== "multi" && leg.pick.odds < 1.35) return [];
-          seen.add(leg.match);
-          return [{ ...leg, reason: l.reason }];
-        });
+          // Un seul pari par club (même écrit autrement), et seulement des paris existants. Hors grand combiné,
+          // pas de sélection sous 1,35 : à ce prix-là, elle ne rapporte presque rien et ajoute un risque.
+          if (!leg || clubAlreadyIn(leg.match, legs)) continue;
+          if (profile !== "multi" && leg.pick.odds < 1.35) continue;
+          legs.push({ ...leg, reason: l.reason });
+        }
         return {
           profile,
           legs,
@@ -221,8 +220,8 @@ export function AiCoupons({
   }
 
   // Le nom du coupon : seulement sa désignation (la cote totale s'affiche à part).
-  const title = (odds: number, n: number) =>
-    n ? (n >= 8 ? "Grand combiné" : odds < 4 ? "Fiable" : odds < 10 ? "Équilibré" : "Grosse cote") : "Fiable";
+  // Le nom suit la cote réellement atteinte.
+  const title = (odds: number, n: number) => couponTitle(odds, n);
 
   async function copy(c: Built, odds: number) {
     const text = [

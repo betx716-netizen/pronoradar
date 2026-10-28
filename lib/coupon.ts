@@ -1,5 +1,6 @@
 // Construit un coupon combiné à partir des matchs analysés : au plus une sélection par match,
 // choisie selon le profil de risque, puis classement des matchs pour garder les meilleures.
+import { sameTeam } from "./settle";
 import type { AnalysisResult, MarketCategory, MarketPick } from "./schemas";
 import { edge, isValueBet } from "./value";
 
@@ -60,6 +61,27 @@ export const CATEGORY_LABELS: Record<MarketCategory, string> = {
 
 export type CouponLeg = { match: string; competition: string; date: string | null; pick: MarketPick };
 
+const teamsOfMatch = (match: string) => match.split(/\s+[–-]\s+/).map((t) => t.trim()).filter(Boolean);
+
+/**
+ * Vrai si un club de ce match figure déjà dans le coupon. Un même match peut arriver deux fois
+ * (analyse du jour et analyse perso, noms écrits différemment) : on compare les équipes, pas le texte.
+ */
+export function clubAlreadyIn(match: string, legs: { match: string }[]) {
+  const mine = teamsOfMatch(match);
+  return legs.some((l) => teamsOfMatch(l.match).some((t) => mine.some((m) => sameTeam(m, t))));
+}
+
+/** Nom d'un coupon d'après sa cote réelle : il ne s'appelle « grosse cote » que si la cote est vraiment grosse. */
+export function couponTitle(totalOdds: number, legsCount: number, grandCombine = false) {
+  if (grandCombine || legsCount >= 8) return "Le grand combiné";
+  if (totalOdds < 3) return "Le sûr";
+  if (totalOdds < 7) return "L'équilibré";
+  if (totalOdds < 15) return "L'ambitieux";
+  if (totalOdds < 35) return "Le coup";
+  return "La grosse cote";
+}
+
 export type Coupon = {
   legs: CouponLeg[];
   totalOdds: number;
@@ -98,8 +120,12 @@ export function buildCoupon(
   // Tous les paris retenus de chaque match, pour chercher la combinaison la plus courte vers la cote visée.
   const pools: { leg: Omit<CouponLeg, "pick">; picks: MarketPick[] }[] = [];
 
+  const usedMatches: { match: string }[] = [];
   for (const r of results) {
     const match = `${r.analysis.match.home} – ${r.analysis.match.away}`;
+    // Même match analysé deux fois (noms écrits autrement) : on ne garde que la première analyse.
+    if (clubAlreadyIn(match, usedMatches)) continue;
+    usedMatches.push({ match });
     const leg = { match, competition: r.analysis.match.competition, date: r.analysis.match.date };
     // Pari imposé (remplacement proposé par le coach) : gardé tel quel.
     const forcedSelection = options.forced?.[match];
@@ -160,7 +186,7 @@ export function buildCoupon(
   // Sinon (ou pour Value) : on ajoute les meilleures sélections jusqu'à la cote visée, sans dépasser le maximum.
   let odds = legs.reduce((t, l) => t * l.pick.odds, 1);
   for (const c of candidates.sort((x, y) => x.cost - y.cost)) {
-    if (legs.some((l) => l.match === c.match)) continue;
+    if (clubAlreadyIn(c.match, legs)) continue;
     if (legs.length >= options.size || (target && odds >= target * 0.92)) break;
     const { cost: _cost, ...leg } = c;
     legs.push(leg);

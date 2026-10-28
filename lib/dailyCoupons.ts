@@ -1,7 +1,7 @@
 // Coupons du jour : l'IA les compose à partir de toutes les analyses de la journée.
 // Si l'IA est indisponible, le générateur automatique (lib/coupon.ts) prend le relais.
 import { AI_PROFILES, buildAiCoupons, type AiCouponsRequest, type AiProfile } from "./aiCoupons";
-import { CATEGORY_LABELS, buildCoupon, type CouponLeg } from "./coupon";
+import { CATEGORY_LABELS, buildCoupon, clubAlreadyIn, couponTitle, type CouponLeg } from "./coupon";
 import type { AnalysisResult, MarketCategory, MarketPick } from "./schemas";
 
 export type DailyLeg = CouponLeg & { reason: string; matchId: string };
@@ -52,13 +52,16 @@ function candidates(r: AnalysisResult): MarketPick[] {
 }
 
 function finish(profile: AiProfile, legs: DailyLeg[], comment: string, stakePercent: number): DailyCoupon {
+  const totalOdds = Math.round(legs.reduce((t, l) => t * l.pick.odds, 1) * 100) / 100;
   return {
     profile,
-    ...COUPON_META[profile],
+    // Le nom suit la cote réellement atteinte : pas de « grosse cote » à 12.
+    title: couponTitle(totalOdds, legs.length, profile === "multi"),
+    subtitle: profile === "multi" ? COUPON_META.multi.subtitle : `Cote ${totalOdds.toFixed(2)}`,
     legs,
     comment,
     stakePercent,
-    totalOdds: Math.round(legs.reduce((t, l) => t * l.pick.odds, 1) * 100) / 100,
+    totalOdds,
     probability: Math.round(legs.reduce((t, l) => t * (l.pick.probability / 100), 1) * 1000) / 10,
   };
 }
@@ -111,20 +114,21 @@ export async function composeDailyCoupons(day: DayResult[], onProgress: (m: stri
     const res = await buildAiCoupons(body, onProgress);
     const coupons = AI_PROFILES.map((profile) => {
       const c = res.coupons.find((x) => x.profile === profile);
-      const seen = new Set<string>();
       let fragile = 0;
-      const legs = (c?.legs ?? []).flatMap((l) => {
+      const legs: DailyLeg[] = [];
+      for (const l of c?.legs ?? []) {
         const leg = index.get(l.pick_id.trim());
-        // Une seule sélection par match, et seulement des paris existants. Hors grand combiné, rien sous 1,35.
-        if (!leg || seen.has(leg.match)) return [];
-        if (profile !== "multi" && leg.pick.odds < 1.35) return [];
+        // Un seul pari par club (même écrit autrement), et seulement des paris existants. Hors grand combiné, rien sous 1,35.
+        if (!leg || clubAlreadyIn(leg.match, legs)) continue;
+        if (profile !== "multi" && leg.pick.odds < 1.35) continue;
         // Au plus un marché à forte variance (corners, cartons, buteur…) par coupon.
-        if (leg.pick.reliability === "fragile" && fragile++ >= 1) return [];
-        seen.add(leg.match);
-        return [{ ...leg, reason: l.reason }];
-      });
+        if (leg.pick.reliability === "fragile" && fragile++ >= 1) continue;
+        legs.push({ ...leg, reason: l.reason });
+      }
       return finish(profile, legs, c?.comment ?? "", c?.stake_percent ?? DEFAULT_STAKE[profile]);
-    }).filter((c) => c.legs.length > 0);
+    })
+      .filter((c) => c.legs.length > 0)
+      .sort((a, b) => Number(a.profile === "multi") - Number(b.profile === "multi") || a.totalOdds - b.totalOdds);
     if (coupons.length) return coupons;
   } catch (e) {
     onProgress(`IA indisponible pour les coupons : ${e instanceof Error ? e.message : String(e)}`);
