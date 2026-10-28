@@ -22,7 +22,10 @@ const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
 const dayLabel = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
 export default async function RecordPage() {
-  const records = await loadRecord().catch(() => [] as CouponRecord[]);
+  const all = await loadRecord().catch(() => [] as CouponRecord[]);
+  // Les sélections d'un coupon ne sont montrées qu'une fois tous ses matchs terminés : avant, ce serait donner
+  // gratuitement les coupons Premium du jour. Elles ne sont même pas envoyées dans la page.
+  const records = all.map((r) => (r.legs.some((l) => l.state === "pending") ? { ...r, legs: [], hidden: r.legs.length } : { ...r, hidden: 0 }));
   const { list, total } = recordStats(records);
   const days = [...new Set(records.map((r) => r.day))];
   const settledWon = total.won + total.lost;
@@ -97,6 +100,11 @@ export default async function RecordPage() {
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${STATUS[r.status].cls}`}>{STATUS[r.status].label}</span>
                     </summary>
                     <ul className="mt-2 divide-y divide-border text-sm" style={{ listStyle: "none", paddingLeft: 0 }}>
+                      {r.hidden > 0 && (
+                        <li className="py-2 text-xs">
+                          🔒 {r.hidden} sélection{r.hidden > 1 ? "s" : ""} : visibles ici une fois tous les matchs du coupon terminés.
+                        </li>
+                      )}
                       {r.legs.map((l, i) => (
                         <li key={i} className="flex items-center gap-2 py-1.5">
                           <span className={`w-4 text-center font-bold ${l.state === "won" ? "text-success" : l.state === "lost" ? "text-danger" : "text-muted"}`}>
