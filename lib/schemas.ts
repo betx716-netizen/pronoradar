@@ -256,6 +256,7 @@ export type AnalysisResult = {
   picks?: MarketPick[]; // tous les paris proposés pour ce match, prêts pour le coupon
   engine?: "ia" | "calcul"; // "calcul" : sans Gemini, à partir des cotes et d'API-Football
   notice?: string; // explique pourquoi l'analyse a été calculée sans IA (quota Gemini atteint…)
+  offline?: boolean; // rédigée sans recherche web : actualité (entraîneurs, effectifs, absences) non vérifiée
   demo?: boolean;
 };
 

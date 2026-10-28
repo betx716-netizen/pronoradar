@@ -96,7 +96,10 @@ function uniqueTitles(coupons: DailyCoupon[]): DailyCoupon[] {
 }
 
 /** Les six coupons du jour, composés par l'IA (ou calculés si elle est indisponible). */
-export async function composeDailyCoupons(day: DayResult[], onProgress: (m: string) => void = () => {}): Promise<DailyCoupon[]> {
+export async function composeDailyCoupons(all: DayResult[], onProgress: (m: string) => void = () => {}): Promise<DailyCoupon[]> {
+  // Les analyses faites sans recherche web (actualité non vérifiée) ne servent aux coupons que s'il n'y a pas assez du reste.
+  const verified = all.filter((d) => !d.result.offline);
+  const day = verified.length >= 6 ? verified : all;
   if (day.length === 0) return [];
   const index = new Map<string, DailyLeg>();
   const body: AiCouponsRequest = {

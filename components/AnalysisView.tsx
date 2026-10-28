@@ -315,7 +315,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
         </p>
       )}
       {(calc || result.notice) && (
-        <p className="rounded-lg bg-surface-2 px-4 py-2 text-sm text-muted">
+        <p className={`rounded-lg px-4 py-2 text-sm ${result.offline ? "bg-warn-bg font-medium text-warn-text" : "bg-surface-2 text-muted"}`}>
           {result.notice ??
             "Analyse calculée sans IA : elle repose uniquement sur les cotes et les statistiques."}
         </p>

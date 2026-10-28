@@ -33,6 +33,7 @@ Règles de recherche :
 - Pour chaque source, relève : son nom, l'issue qu'elle pronostique, ses probabilités en % s'il y en a, ses autres pronostics (score, buts, sets…) et son argument.
 - Recherche aussi le contexte : forme récente, blessés et suspendus, compositions : cherche d'abord la composition OFFICIELLE (onze de départ annoncé par les clubs, environ une heure avant le match) ; si elle n'est pas encore publiée, reprends la composition probable publiée par un média fiable (L'Équipe, Foot Mercato, Sofascore, RotoWire, presse locale…) en notant sa source. N'invente JAMAIS une composition toi-même : si tu n'en trouves aucune publiée, dis-le. Cherche aussi l'enjeu du match. Au tennis : surface, classement, forme, fatigue.
 - Ne retiens que des pronostics qui concernent bien CE match à CETTE date.
+- FRAÎCHEUR : tes connaissances internes sont anciennes (entraîneurs remplacés, joueurs transférés, blessures guéries). Ne cite un entraîneur, un joueur, une blessure ou une suspension QUE s'il apparaît dans une source récente (moins de 7 jours) trouvée pendant ta recherche. Vérifie notamment qui est l'entraîneur actuel de chaque équipe avant d'en parler. En cas de doute, ne cite pas de nom et parle de l'équipe. Ignore les articles d'avant la saison en cours.
 - N'invente jamais un pronostic ou une source. Si une information manque, dis-le.
 - Les cotes des bookmakers et les statistiques fournies dans la demande sont fiables : sers-t'en, inutile de les rechercher.
 
@@ -53,17 +54,22 @@ const STRUCTURE_SYSTEM = `Tu convertis un dossier d'analyse sportive en JSON. Re
 - Dans "markets", recopie TOUS les marchés secondaires du dossier (buts, les deux marquent, corners, fautes, cartons, mi-temps, mi-temps/fin, handicap, score exact, buts par équipe, buteurs, passeurs, buteur ou passeur, combinés résultat + buts ou + les deux marquent, tirs cadrés, hors-jeu, buts en 1re mi-temps, mi-temps la plus prolifique, sans encaisser, écart de buts, marque dans les deux mi-temps, gagne au moins une mi-temps, premier but, pair/impair, penalty, carton rouge, sets, jeux, 1er set, handicap jeux, score en sets, tie-break, aces, doubles fautes), un pari par ligne avec la catégorie correspondante et sa fiabilité (fiable, moyenne ou fragile) avec sa probabilité.
 - Dans "lineups", recopie les compositions du dossier avec leur statut (officielle ou probable) et leur source. Mets null si le dossier n'en cite aucune publiée par une source, ou au tennis : n'en reconstitue jamais une toi-même. Le nombre de joueurs par ligne doit correspondre au système (4-3-3 : 4, 3, 3). Chaque joueur au format « numéro nom ». Dans "kit", les couleurs du maillot en hexadécimal (null si inconnues).
 - Dans "recent_home", "recent_away" et "h2h_games", recopie les derniers matchs et confrontations listés dans le dossier (score au format domicile-extérieur, ex. "2-1") ; laisse vide ce que le dossier ne donne pas.
+- Ne recopie aucun nom d'entraîneur, de joueur ou de blessure que le dossier ne rattache pas à une source récente.
 - Rédige tous les textes en français.`;
 
 // Utilisé quand la recherche Google n'est plus disponible : Gemini analyse sans pouvoir citer de pronostiqueurs.
-const NO_SEARCH_SYSTEM: string = `Tu es un analyste sportif rigoureux. Tu n'as PAS accès au web pour cette analyse.
-Appuie-toi sur les données fournies (cotes, statistiques) et sur tes connaissances générales des équipes ou des joueurs.
-N'invente aucune source, aucun pronostiqueur, aucune blessure récente : la liste des sources doit rester vide.
-Rédige en français : contexte connu, ce que disent les cotes, puis TA propre analyse (probabilités en % pour chaque issue,
-issue la plus probable, score ou sets probables, confiance faible / moyenne / élevée, facteurs clés, risques).
-Précise que l'actualité récente (blessures, compositions) n'a pas pu être vérifiée. Ne donne AUCUNE composition d'équipe : sans accès au web, elle serait inventée.
+const noSearchSystem = () => `Tu es un analyste sportif rigoureux. Tu n'as PAS accès au web pour cette analyse.
+Nous sommes le ${todayInParis()} : tes connaissances internes sont ANCIENNES. Entraîneurs, effectifs, transferts, blessures et forme ont pu changer depuis.
+Règles absolues :
+- Ne cite AUCUN nom de personne : ni entraîneur, ni joueur, ni dirigeant, ni arbitre. Parle uniquement des équipes (« l'équipe à domicile », « Manchester City »…).
+- N'affirme rien sur la forme récente, les blessures, les suspensions, les transferts ou le classement actuel : tu ne peux pas le vérifier.
+- N'invente aucune source ni aucun pronostiqueur : la liste des sources reste vide.
+- Ne donne AUCUNE composition d'équipe et AUCUN pari sur un joueur (buteur, passeur).
+Appuie-toi seulement sur les données fournies (cotes, statistiques, derniers résultats s'ils sont donnés) et sur le style de jeu général et durable des équipes.
+Rédige en français : ce que disent les cotes, puis TA propre analyse (probabilités en % pour chaque issue, issue la plus probable, score ou sets probables, confiance faible ou moyenne — jamais élevée sans recherche —, facteurs clés, risques).
+Précise en une phrase que l'actualité récente n'a pas pu être vérifiée.
 ${PHILOSOPHY}
-Donne aussi les marchés secondaires, chacun avec une probabilité en % et la moyenne attendue : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (ligne la plus pertinente entre 8,5 et 10,5), fautes (entre 20,5 et 24,5), cartons (3,5 ou 4,5). Ajoute aussi : résultat à la mi-temps, mi-temps/fin de match, handicap (-1 ou +1), les 2 ou 3 scores exacts les plus probables, le nombre de buts de chaque équipe, les combinés résultat + plus/moins 2,5 buts et résultat + les deux marquent, les tirs cadrés et les hors-jeu, et les 3 buteurs les plus probables (joueurs titulaires probables uniquement, en tenant compte des blessés : forme récente, buts cette saison, tireur de penalty), les 2 passeurs décisifs les plus probables (passes décisives cette saison, tireur de coups de pied arrêtés) et les 2 joueurs les plus probables pour « buteur ou passeur décisif ». Pense aussi aux autres paris que jouent les parieurs et les pronostiqueurs, et donne ceux qui ont du sens pour ce match : buts en 1re mi-temps, mi-temps la plus prolifique, victoire ou match sans encaisser, écart de buts, équipe qui marque dans les deux mi-temps, équipe qui gagne au moins une mi-temps, équipe qui marque le premier, nombre de buts pair ou impair, penalty oui/non, carton rouge oui/non. Au tennis : nombre de sets et de jeux, vainqueur du 1er set, handicap jeux, score exact en sets, tie-break oui/non, nombre d'aces et de doubles fautes. Appuie-toi sur les moyennes de la saison des deux équipes (buts, corners, fautes, cartons), le style de jeu et l'arbitre si connu.`;
+Donne aussi les marchés secondaires, chacun avec une probabilité en % : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners, cartons, résultat à la mi-temps, mi-temps/fin de match, handicap (-1 ou +1), buts de chaque équipe, résultat + plus/moins 2,5 buts, résultat + les deux marquent, buts en 1re mi-temps, mi-temps la plus prolifique, sans encaisser, écart de buts, pair/impair. Au tennis : nombre de sets et de jeux, vainqueur du 1er set, handicap jeux, tie-break oui/non.`;
 
 const MODE_SETTINGS = {
   rapide: { sourcesTarget: "4 à 6", injuries: false },
@@ -192,10 +198,12 @@ async function analyzeWithGemini(
     .join("\n");
 
   let notice: string | undefined;
+  let offline = false;
   const withoutSearch = async (reason: string) => {
-    notice = `${reason} Analyse rédigée par Gemini à partir des cotes et de ses connaissances, sans recherche web : l'actualité récente n'a pas été vérifiée.`;
+    offline = true;
+    notice = `⚠️ ${reason} Analyse faite sans recherche web, à partir des cotes : entraîneurs, effectifs, forme et absences n'ont pas pu être vérifiés.`;
     onProgress(`${reason} Analyse par Gemini à partir des cotes et de ses connaissances, sans recherche web.`);
-    return writeWithoutSearch({ system: NO_SEARCH_SYSTEM, prompt, usage, onProgress });
+    return writeWithoutSearch({ system: noSearchSystem(), prompt, usage, onProgress });
   };
   let research: { text: string; consultedPages: AnalysisResult["consultedPages"] };
   if (!webSearchAvailable()) {
@@ -222,6 +230,14 @@ async function analyzeWithGemini(
   analysis.match.sport = req.sport;
   analysis.match.home = req.home;
   analysis.match.away = req.away;
+  if (offline) {
+    // Sans recherche web, rien de daté ni de nominatif : pas de compositions, d'absences ni de paris sur un joueur,
+    // et jamais une confiance élevée.
+    analysis.lineups = null;
+    analysis.context.absences = [];
+    analysis.markets = analysis.markets.filter((m) => !["buteur", "passeur", "buteur_ou_passeur"].includes(m.category));
+    if (analysis.ai_analysis.confidence === "élevée") analysis.ai_analysis.confidence = "moyenne";
+  }
   analysis.sources = [
     ...apiSources(req, insight),
     ...analysis.sources.filter((s) => s.type !== "bookmaker" && s.type !== "exchange"),
@@ -237,5 +253,6 @@ async function analyzeWithGemini(
     engine: "ia",
     picks: buildPicks(analysis, req.odds, "ia"),
     notice,
+    offline,
   };
 }

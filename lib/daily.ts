@@ -7,6 +7,7 @@
 // un travail arrêté depuis plus de 3 minutes la relance.
 import { matchPriority } from "./priority";
 import { analyzeMatch } from "./analyze";
+import { webSearchAvailable } from "./gemini";
 import { composeDailyCoupons, computedCoupons, type DailyCoupon, type DayResult } from "./dailyCoupons";
 import { demoAnalysis, demoFixtures } from "./demo";
 import { espnCovers, fetchWeekFixtures, sameTeam } from "./espn";
@@ -198,6 +199,56 @@ async function compose(day: string, log: (m: string) => void) {
   log(`${coupons.length} coupon(s) prêts`);
 }
 
+// Heure de coup d'envoi (ms) d'un match du jour, d'après sa date et son heure de Paris ; null si inconnue.
+function kickoff(f: DayFixture): number | null {
+  if (!f.date || !f.time || !/^\d{2}:\d{2}$/.test(f.time)) return null;
+  // Heure de Paris : on teste les deux décalages possibles (été +2, hiver +1) et on garde celui qui retombe juste.
+  for (const off of ["+01:00", "+02:00"]) {
+    const t = Date.parse(`${f.date}T${f.time}:00${off}`);
+    const back = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" }).format(t);
+    if (back === f.time) return t;
+  }
+  return null;
+}
+
+/**
+ * Analyses faites sans recherche web (quota atteint le matin) : refaites dès que la recherche revient, pour les
+ * matchs qui n'ont pas encore commencé. Les coupons du jour sont recomposés si aucun de leurs matchs n'a commencé.
+ */
+async function refreshOffline(day: string, deadline: number, log: (m: string) => void) {
+  if (!webSearchAvailable()) return;
+  const { data } = await db().from("daily_matches").select("id, attempts, fixture, result").eq("day", day).eq("status", "done").order("position");
+  const soon = Date.now() + 45 * 60_000;
+  const rows = (data ?? []).filter((r) => (r.result as AnalysisResult | null)?.offline && (kickoff(r.fixture as DayFixture) ?? Infinity) > soon);
+  let redone = 0;
+  for (const r of rows) {
+    if (deadline - Date.now() < 150_000 || !webSearchAvailable()) break;
+    log(`Nouvelle analyse avec recherche web : ${r.fixture.home} – ${r.fixture.away}`);
+    try {
+      const result = await analyzeMatch(
+        { sport: r.fixture.sport, mode: MODE, home: r.fixture.home, away: r.fixture.away, competition: r.fixture.competition, date: r.fixture.date, odds: r.fixture.odds ?? null, apiFootballId: r.fixture.apiFootballId ?? null },
+        () => {},
+      );
+      if (result.offline) break; // la recherche est retombée : on réessaiera plus tard
+      await db().from("daily_matches").update({ result, updated_at: new Date().toISOString() }).eq("id", r.id);
+      redone++;
+    } catch (e) {
+      log(`Échec : ${e instanceof Error ? e.message : String(e)}`);
+      break;
+    }
+    await touch(day);
+  }
+  if (!redone) return;
+  const { data: run } = await db().from("daily_runs").select("coupons").eq("day", day).single();
+  const legs = ((run?.coupons ?? []) as DailyCoupon[]).flatMap((c) => c.legs);
+  const { data: all } = await db().from("daily_matches").select("id, fixture").eq("day", day);
+  const startOf = new Map((all ?? []).map((m) => [m.id, kickoff(m.fixture as DayFixture)]));
+  const started = legs.some((l) => (startOf.get(l.matchId) ?? 0) < Date.now() + 15 * 60_000);
+  if (started) return;
+  await db().from("daily_runs").update({ status: "analyzing" }).eq("day", day).eq("status", "ready");
+  await compose(day, log);
+}
+
 /**
  * Travaille jusqu'à `deadline` (horodatage en ms). Renvoie `more: true` s'il reste des matchs à analyser :
  * l'appelant doit alors relancer un nouveau passage.
@@ -226,6 +277,8 @@ export async function runWorker(deadline: number, log: (m: string) => void = con
     if (p.pending > 0) return { more: true, status: "analyzing" };
     if (p.running > 0) return { more: false, status: "analyzing" }; // un autre passage termine ses matchs et relancera
     await compose(day, log);
+  } else if (run.status === "ready") {
+    await refreshOffline(day, deadline, log);
   } else if (run.status === "composing" && olderThan(run.heartbeat, TAKEOVER_MS)) {
     await db().from("daily_runs").update({ status: "analyzing" }).eq("day", day).eq("status", "composing");
     await compose(day, log);
@@ -265,7 +318,10 @@ export async function readDay(): Promise<DayData> {
 export function needsKick(d: DayData) {
   if (isDemo()) return false;
   if (d.status === "none") return true;
-  if (d.status === "ready" || d.status === "failed") return false;
+  // Journée prête mais avec des analyses faites sans recherche web : on relance au plus toutes les 30 min pour les refaire.
+  if (d.status === "ready")
+    return webSearchAvailable() && d.matches.some((m) => m.result?.offline) && olderThan(d.heartbeat, 30 * 60_000);
+  if (d.status === "failed") return false;
   return olderThan(d.heartbeat, 3 * 60_000);
 }
 
