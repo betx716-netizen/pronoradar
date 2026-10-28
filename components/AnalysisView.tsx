@@ -299,7 +299,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
         {s === "home" ? match.home : match.away}
       </span>
       {sport === "football" && (
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60 group-hover:text-white">
+        <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-white/60 group-hover:text-white">
           Voir la compo
         </span>
       )}
@@ -334,7 +334,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
             {playing ? (
               <>
                 <p
-                  className={`flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-wider ${playing.state === "in" ? "text-[#f87171]" : "text-white/60"}`}
+                  className={`flex items-center justify-center gap-1.5 text-[0.6875rem] font-bold uppercase tracking-wider ${playing.state === "in" ? "text-[#f87171]" : "text-white/60"}`}
                 >
                   {playing.state === "in" && <LiveDot />}
                   {playing.state === "in"
@@ -344,14 +344,14 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
                 <p className="font-display text-5xl leading-none tabular-nums">
                   {playing.homeScore}-{playing.awayScore}
                 </p>
-                <p className="mt-1 text-[11px] text-white/60">
+                <p className="mt-1 text-[0.6875rem] text-white/60">
                   Prédit :{" "}
                   {calc ? name(ai.predicted_outcome) : ai.score_prediction}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-[10px] uppercase tracking-wider text-white/60">
+                <p className="text-[0.625rem] uppercase tracking-wider text-white/60">
                   {calc
                     ? "Pronostic"
                     : sport === "tennis"
@@ -363,7 +363,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
                 </p>
               </>
             )}
-            <span className="mt-2 inline-block rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold">
+            <span className="mt-2 inline-block rounded-full bg-white/10 px-2.5 py-0.5 text-[0.6875rem] font-semibold">
               Confiance {ai.confidence}
             </span>
           </div>
@@ -422,7 +422,7 @@ export function AnalysisView({ result }: { result: AnalysisResult }) {
                   : "Pas assez de pronostics"}
               </p>
               <span
-                className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${LEVEL_STYLES[consensus.level]}`}
+                className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold ${LEVEL_STYLES[consensus.level]}`}
               >
                 Consensus {consensus.level}
               </span>
@@ -752,7 +752,7 @@ function GameList({ title, team, games, h2h = false }: { title: string; team: st
           <div className="flex gap-1">
             {results.map((r, i) =>
               r ? (
-                <span key={i} className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold ${RESULT_STYLE[r]}`}>
+                <span key={i} className={`flex h-5 w-5 items-center justify-center rounded text-[0.625rem] font-bold ${RESULT_STYLE[r]}`}>
                   {r}
                 </span>
               ) : null,

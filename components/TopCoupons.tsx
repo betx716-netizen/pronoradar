@@ -40,7 +40,7 @@ export function TopCoupons({ onOpen, refreshKey }: { onOpen: () => void; refresh
         <ul className="flex-1 divide-y divide-border">
           {c.legs.slice(0, 4).map((l) => (
             <li key={l.match} className="px-4 py-2">
-              <p className="truncate text-[11px] text-muted">{l.match}</p>
+              <p className="truncate text-[0.6875rem] text-muted">{l.match}</p>
               <div className="flex items-start justify-between gap-3">
                 <p className="min-w-0 break-words text-sm font-semibold leading-snug">{l.pick.selection}</p>
                 <span className="shrink-0 font-bold tabular-nums">{l.pick.odds.toFixed(2)}</span>

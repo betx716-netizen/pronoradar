@@ -53,29 +53,29 @@ export function AdminPayments() {
         <h3 className="font-display text-2xl font-bold">Paiements à valider</h3>
         <span className="font-display text-2xl font-bold text-accent">{pending.length}</span>
       </div>
-      <p className="mb-4 text-[14px] text-muted">Vérifie la référence et le montant dans tes SMS Wave ou Orange Money avant de valider.</p>
-      {error && <p className="mb-3 text-[14px] text-danger">{error}</p>}
+      <p className="mb-4 text-[0.875rem] text-muted">Vérifie la référence et le montant dans tes SMS Wave ou Orange Money avant de valider.</p>
+      {error && <p className="mb-3 text-[0.875rem] text-danger">{error}</p>}
       {!list && <div className="skeleton h-24 rounded-2xl" />}
-      {list && pending.length === 0 && <p className="rounded-2xl bg-surface-2 p-4 text-center text-[15px] text-muted">Aucune demande en attente.</p>}
+      {list && pending.length === 0 && <p className="rounded-2xl bg-surface-2 p-4 text-center text-[0.9375rem] text-muted">Aucune demande en attente.</p>}
       <ul className="space-y-3">
         {pending.map((p) => (
           <li key={p.id} className="rounded-2xl bg-surface-2 p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="truncate font-semibold">{p.email ? displayAccount(p.email) : "Compte inconnu"}</p>
-                <p className="text-[13px] text-muted">
+                <p className="text-[0.8125rem] text-muted">
                   {PLANS.find((x) => x.id === p.plan)?.label ?? p.plan} · {p.method} · {when(p.created_at)}
                 </p>
               </div>
               <p className="shrink-0 whitespace-nowrap font-display text-2xl font-bold">{fcfa(p.amount)}</p>
             </div>
-            <dl className="mt-3 grid grid-cols-2 gap-2 text-[14px]">
+            <dl className="mt-3 grid grid-cols-2 gap-2 text-[0.875rem]">
               <div>
-                <dt className="text-[12px] text-muted">Référence</dt>
+                <dt className="text-[0.75rem] text-muted">Référence</dt>
                 <dd className="break-all font-semibold">{p.reference}</dd>
               </div>
               <div>
-                <dt className="text-[12px] text-muted">Envoyé depuis</dt>
+                <dt className="text-[0.75rem] text-muted">Envoyé depuis</dt>
                 <dd className="font-semibold">{p.payer_phone}</dd>
               </div>
             </dl>
@@ -92,11 +92,11 @@ export function AdminPayments() {
       </ul>
       {done.length > 0 && (
         <div className="mt-4">
-          <button onClick={() => setShowAll(!showAll)} className="text-[14px] font-semibold text-accent">
+          <button onClick={() => setShowAll(!showAll)} className="text-[0.875rem] font-semibold text-accent">
             {showAll ? "Masquer l'historique" : `Voir l'historique (${done.length})`}
           </button>
           {showAll && (
-            <ul className="mt-2 divide-y divide-border text-[14px]">
+            <ul className="mt-2 divide-y divide-border text-[0.875rem]">
               {done.map((p) => (
                 <li key={p.id} className="flex justify-between gap-3 py-2">
                   <span className="min-w-0 truncate">

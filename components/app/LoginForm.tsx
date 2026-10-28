@@ -81,16 +81,16 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
   if (forgot) {
     return (
       <form onSubmit={askReset} className="space-y-3">
-        <p className="text-[15px] font-semibold">Mot de passe oublié</p>
+        <p className="text-[0.9375rem] font-semibold">Mot de passe oublié</p>
         {forgotSent ? (
           <>
             {byEmail ? (
-              <p className="rounded-2xl bg-success-soft p-3 text-[15px] text-success">
+              <p className="rounded-2xl bg-success-soft p-3 text-[0.9375rem] text-success">
                 Si un compte existe pour {phone.trim()}, un lien pour choisir un nouveau mot de passe vient d&apos;être envoyé par email (regarde aussi dans les spams).
               </p>
             ) : (
             <>
-            <p className="rounded-2xl bg-success-soft p-3 text-[15px] text-success">
+            <p className="rounded-2xl bg-success-soft p-3 text-[0.9375rem] text-success">
               Demande envoyée. Tu vas recevoir ton nouveau mot de passe sur WhatsApp au {phone}. Tu pourras ensuite le changer dans Mon compte.
             </p>
             <a
@@ -106,14 +106,14 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
           </>
         ) : (
           <>
-            <p className="text-[14px] text-muted">
+            <p className="text-[0.875rem] text-muted">
               Saisis le numéro ou l&apos;email de ton compte. Avec un email, tu reçois un lien pour choisir un nouveau mot de passe ; avec un numéro, un nouveau mot de passe sur WhatsApp.
             </p>
             <label className="block">
-              <span className="mb-1 block text-[14px] font-medium">Numéro ou email</span>
+              <span className="mb-1 block text-[0.875rem] font-medium">Numéro ou email</span>
               <input autoComplete="username" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07 00 00 00 00 ou nom@email.com" className={input} required />
             </label>
-            {error && <p className="text-[14px] text-danger">{error}</p>}
+            {error && <p className="text-[0.875rem] text-danger">{error}</p>}
             <button disabled={busy} className="w-full rounded-full bg-accent py-3.5 font-semibold text-white disabled:opacity-60">
               {busy ? "Envoi…" : byEmail ? "Recevoir le lien par email" : "Recevoir un nouveau mot de passe"}
             </button>
@@ -127,7 +127,7 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
             setMode("login");
             setError(null);
           }}
-          className="w-full py-2 text-[14px] font-medium text-muted"
+          className="w-full py-2 text-[0.875rem] font-medium text-muted"
         >
           Retour à la connexion
         </button>
@@ -137,7 +137,7 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <div className="flex rounded-full bg-surface-3 p-1 text-[15px] font-semibold" role="tablist">
+      <div className="flex rounded-full bg-surface-3 p-1 text-[0.9375rem] font-semibold" role="tablist">
         {(
           [
             ["signup", "Créer un compte"],
@@ -159,9 +159,9 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
           </button>
         ))}
       </div>
-      {intro && <p className="text-[15px] text-muted">{intro}</p>}
+      {intro && <p className="text-[0.9375rem] text-muted">{intro}</p>}
       <label className="block">
-        <span className="mb-1 block text-[14px] font-medium">Numéro de téléphone ou email</span>
+        <span className="mb-1 block text-[0.875rem] font-medium">Numéro de téléphone ou email</span>
         <input
           type="text"
           autoComplete="username"
@@ -172,12 +172,12 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
           className={input}
           required
         />
-        {mode === "signup" && byEmail && <span className="mt-1 block text-[13px] text-muted">Un lien de confirmation te sera envoyé par email.</span>}
+        {mode === "signup" && byEmail && <span className="mt-1 block text-[0.8125rem] text-muted">Un lien de confirmation te sera envoyé par email.</span>}
       </label>
       <label className="block">
-        <span className="mb-1 flex items-baseline justify-between text-[14px] font-medium">
+        <span className="mb-1 flex items-baseline justify-between text-[0.875rem] font-medium">
           Mot de passe
-          <button type="button" onClick={() => setShow(!show)} className="text-[13px] font-semibold text-accent">
+          <button type="button" onClick={() => setShow(!show)} className="text-[0.8125rem] font-semibold text-accent">
             {show ? "Masquer" : "Afficher"}
           </button>
         </span>
@@ -194,12 +194,12 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
       </label>
       {mode === "signup" && (
         <label className="block">
-          <span className="mb-1 block text-[14px] font-medium">Confirme le mot de passe</span>
+          <span className="mb-1 block text-[0.875rem] font-medium">Confirme le mot de passe</span>
           <input type={show ? "text" : "password"} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} minLength={6} className={input} required />
         </label>
       )}
       {error && (
-        <p className="text-[14px] text-danger">
+        <p className="text-[0.875rem] text-danger">
           {error}
           {/confirm/i.test(error) && byEmail && (
             <button type="button" onClick={resend} className="ml-1 font-semibold underline">
@@ -209,7 +209,7 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
         </p>
       )}
       {mode === "signup" && (
-        <p className="text-[13px] text-muted">
+        <p className="text-[0.8125rem] text-muted">
           En créant un compte, tu confirmes avoir 18 ans ou plus et accepter les{" "}
           <a href="/cgu" target="_blank" className="underline">
             conditions d&apos;utilisation
@@ -222,7 +222,7 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
         </p>
       )}
       {info && (
-        <div className="rounded-2xl bg-success-soft p-3 text-[15px] text-success">
+        <div className="rounded-2xl bg-success-soft p-3 text-[0.9375rem] text-success">
           <p>{info}</p>
           {byEmail && (
             <button type="button" onClick={resend} disabled={busy} className="mt-2 font-semibold underline disabled:opacity-60">
@@ -240,7 +240,7 @@ export function LoginForm({ intro, defaultMode = "signup", onDone }: { intro?: s
           setForgot(true);
           setError(null);
         }}
-        className="w-full rounded-full border-2 border-border py-3 text-[15px] font-semibold text-muted"
+        className="w-full rounded-full border-2 border-border py-3 text-[0.9375rem] font-semibold text-muted"
       >
         Mot de passe oublié ?
       </button>

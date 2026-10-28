@@ -10,7 +10,7 @@ export function HeroBanner({ matches, analyses, values, loading }: { matches: nu
       <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rotate-12 rounded-[3rem] bg-accent/90" />
       <div className="pointer-events-none absolute -right-6 top-20 h-20 w-20 rotate-12 rounded-3xl bg-accent/40" />
       <div className="relative max-w-[68%]">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/60">Aujourd&apos;hui</p>
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.3em] text-white/60">Aujourd&apos;hui</p>
         <p className="mt-1 font-display text-[2rem] leading-[0.95] sm:text-5xl">
           Les cotes, les avis,
           <br />
@@ -22,7 +22,7 @@ export function HeroBanner({ matches, analyses, values, loading }: { matches: nu
         {stats.map((s) => (
           <div key={s.label} className="rounded-2xl bg-white/10 p-3 backdrop-blur">
             <dd className="font-display text-3xl leading-none tabular-nums">{s.value}</dd>
-            <dt className="mt-1 text-[11px] leading-tight text-white/70">{s.label}</dt>
+            <dt className="mt-1 text-[0.6875rem] leading-tight text-white/70">{s.label}</dt>
           </div>
         ))}
       </dl>

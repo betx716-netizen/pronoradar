@@ -169,7 +169,7 @@ function MatchCard({
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-black/45 to-black/70" />
           <div className="relative">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-white/80">{f.competition}</p>
+              <p className="truncate text-[0.6875rem] font-semibold uppercase tracking-wide text-white/80">{f.competition}</p>
               <button
                 type="button"
                 onClick={onToggle}
@@ -186,7 +186,7 @@ function MatchCard({
               <div className="shrink-0 text-center">
                 {playing ? (
                   <>
-                    <p className={`flex items-center justify-center gap-1 text-[11px] font-bold ${playing.state === "in" ? "text-[#fca5a5]" : "text-white/70"}`}>
+                    <p className={`flex items-center justify-center gap-1 text-[0.6875rem] font-bold ${playing.state === "in" ? "text-[#fca5a5]" : "text-white/70"}`}>
                       {playing.state === "in" && <LiveDot />}
                       {playing.state === "in" ? playing.clock : "Terminé"}
                     </p>
@@ -213,12 +213,12 @@ function MatchCard({
                 ] as [string, number, number, string][]
               ).map(([label, odd, p, name]) => (
                 <div key={label} className="flex min-w-0 flex-1 flex-col items-center rounded-xl bg-surface-3 px-1 py-1.5">
-                  <span className="max-w-full truncate text-[10px] font-semibold uppercase text-muted">{label === "N" ? "Nul" : name}</span>
+                  <span className="max-w-full truncate text-[0.625rem] font-semibold uppercase text-muted">{label === "N" ? "Nul" : name}</span>
                   <span className="font-display text-2xl leading-none tabular-nums">{odd.toFixed(2)}</span>
                   <span className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface">
                     <span className="block h-full bg-accent" style={{ width: `${p}%` }} />
                   </span>
-                  <span className="text-[10px] tabular-nums text-muted">{p} %</span>
+                  <span className="text-[0.625rem] tabular-nums text-muted">{p} %</span>
                 </div>
               ))}
             </div>
@@ -819,7 +819,7 @@ function App() {
               <p className="font-display text-[1.7rem] leading-none tracking-wide">
                 PRONO<span className="text-white/75">RADAR</span>
               </p>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/80">
+              <p className="text-[0.625rem] font-semibold uppercase tracking-[0.3em] text-white/80">
                 Pronostics · Analyse IA
               </p>
             </div>
@@ -845,7 +845,7 @@ function App() {
                   {t.label}
                   {t.count !== undefined && (
                     <span
-                      className={`rounded-full px-1.5 text-[11px] ${tab === t.id ? "bg-accent text-on-accent" : "bg-white/20 text-white"}`}
+                      className={`rounded-full px-1.5 text-[0.6875rem] ${tab === t.id ? "bg-accent text-on-accent" : "bg-white/20 text-white"}`}
                     >
                       {t.count}
                     </span>
@@ -952,11 +952,11 @@ function App() {
                         on ? "border-accent bg-accent text-on-accent" : n ? "border-border bg-surface" : "border-border bg-surface opacity-50"
                       }`}
                     >
-                      <span className="text-[11px] font-semibold uppercase">
+                      <span className="text-[0.6875rem] font-semibold uppercase">
                         {d === weekDays[0] ? "Auj." : new Intl.DateTimeFormat("fr-FR", { weekday: "short" }).format(date).replace(".", "")}
                       </span>
                       <span className="font-display text-2xl leading-none">{date.getDate()}</span>
-                      <span className={`text-[10px] ${on ? "text-on-accent/80" : "text-muted"}`}>
+                      <span className={`text-[0.625rem] ${on ? "text-on-accent/80" : "text-muted"}`}>
                         {n} match{n > 1 ? "s" : ""}
                       </span>
                     </button>
@@ -1054,7 +1054,7 @@ function App() {
                         {/* Nombre de matchs de ce championnat aujourd'hui. */}
                         <span className="shrink-0 rounded-full bg-accent px-2.5 py-1 text-center text-xs font-bold leading-tight text-on-accent tabular-nums">
                           {ids.length}
-                          <span className="block text-[10px] font-semibold opacity-80">
+                          <span className="block text-[0.625rem] font-semibold opacity-80">
                             match{ids.length > 1 ? "s" : ""}
                           </span>
                         </span>
@@ -1323,31 +1323,38 @@ function App() {
         )}
       </main>
 
+      {/* Barre du bas : l'onglet actif s'ouvre en pastille (icône + nom), les autres restent en icône seule. */}
       <nav
-        className="fixed inset-x-3 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 grid grid-cols-5 rounded-3xl border border-border bg-surface/95 shadow-[0_8px_30px_-6px_rgba(0,0,0,0.25)] backdrop-blur-xl lg:hidden"
+        className="fixed inset-x-3 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 flex items-center gap-1 rounded-full border border-border bg-surface/90 p-1.5 shadow-[0_10px_34px_-8px_rgba(0,0,0,0.35)] backdrop-blur-xl lg:hidden"
         role="tablist"
       >
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => goTo(t.id)}
-            className={`relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition active:scale-95 ${tab === t.id ? "text-accent" : "text-muted"}`}
-          >
-            <span
-              className={`flex h-8 w-12 items-center justify-center rounded-full transition ${tab === t.id ? "bg-accent-soft" : ""}`}
+        {tabs.map((t) => {
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={active}
+              aria-label={t.label}
+              onClick={() => goTo(t.id)}
+              className={`relative flex h-12 items-center justify-center gap-2 overflow-hidden rounded-full font-semibold transition-all duration-300 active:scale-95 ${
+                active ? "flex-[2.4] bg-accent text-on-accent shadow-[0_6px_18px_-4px_var(--accent)]" : "flex-1 text-muted"
+              }`}
             >
               <Icon name={t.icon} />
-            </span>
-            {t.label}
-            {t.count !== undefined && (
-              <span className="absolute right-[18%] top-1 min-w-4 rounded-full bg-accent px-1 text-[10px] leading-4 text-on-accent">
-                {t.count > 99 ? "99+" : t.count}
+              <span
+                className={`whitespace-nowrap text-[0.95rem] transition-all duration-300 ${active ? "max-w-[7rem] opacity-100" : "max-w-0 opacity-0"}`}
+              >
+                {t.label}
               </span>
-            )}
-          </button>
-        ))}
+              {t.count !== undefined && !active && (
+                <span className="absolute right-[14%] top-1 min-w-4 rounded-full bg-accent px-1 text-[0.625rem] leading-4 text-on-accent">
+                  {t.count > 99 ? "99+" : t.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </nav>
 
       {selectionBar && (

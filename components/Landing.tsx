@@ -41,7 +41,7 @@ const FEATURES: { title: string; text: string; icon: ReactNode }[] = [
 function MockCard({ className, home, away, score, pct, tone }: { className: string; home: string; away: string; score: string; pct: number; tone: string }) {
   return (
     <div className={`landing-float absolute w-56 rounded-2xl border border-white/10 bg-white/95 p-3 text-[#121216] shadow-2xl ${className}`}>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#5d6270]">Analyse IA · confiance élevée</p>
+      <p className="text-[0.625rem] font-semibold uppercase tracking-wider text-[#5d6270]">Analyse IA · confiance élevée</p>
       <div className="mt-1 flex items-center justify-between">
         <p className="font-display text-xl leading-none">{home}</p>
         <p className="font-display text-2xl leading-none text-[#16a34a]">{score}</p>
@@ -50,7 +50,7 @@ function MockCard({ className, home, away, score, pct, tone }: { className: stri
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e9e9ee]">
         <div className="h-full" style={{ width: `${pct}%`, background: tone }} />
       </div>
-      <p className="mt-1 text-[11px] text-[#5d6270]">
+      <p className="mt-1 text-[0.6875rem] text-[#5d6270]">
         Probabilité <strong className="text-[#121216]">{pct} %</strong>
       </p>
     </div>
@@ -117,7 +117,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
           <MockCard className="left-0 top-4 [animation-delay:-2s]" home="PSG" away="OM" score="2-1" pct={64} tone="#15803d" />
           <MockCard className="bottom-6 right-0 [animation-delay:-4s]" home="Real" away="Barça" score="1-1" pct={38} tone="#b45309" />
           <div className="landing-float absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-[#16a34a] px-5 py-3 text-center shadow-2xl">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-white/80">Coupon fiable</p>
+            <p className="text-[0.625rem] font-semibold uppercase tracking-wider text-white/80">Coupon fiable</p>
             <p className="font-display text-4xl leading-none">cote 4,85</p>
           </div>
         </div>

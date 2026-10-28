@@ -126,7 +126,7 @@ export function DailyCoupons({
           return (
             <li key={l.match}>
               <button onClick={() => r && onOpen(r)} disabled={!r} className="w-full px-4 py-2 text-left">
-                <p className="truncate text-[11px] text-muted">{l.match}</p>
+                <p className="truncate text-[0.6875rem] text-muted">{l.match}</p>
                 <div className="flex items-start justify-between gap-3">
                   <p className="min-w-0 break-words text-sm font-semibold leading-snug">
                     {l.pick.selection}

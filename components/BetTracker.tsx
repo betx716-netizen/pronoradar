@@ -122,13 +122,13 @@ function BetCard({ b, live }: { b: SavedBet; live: LiveMatch[] }) {
       {/* Chiffres clés */}
       <div className="grid grid-cols-2 divide-x divide-border border-b border-border text-center">
         <div className="px-2 py-3">
-          <p className="text-[11px] uppercase tracking-wide text-muted">Cote</p>
+          <p className="text-[0.6875rem] uppercase tracking-wide text-muted">Cote</p>
           <p className="font-display text-2xl leading-none tabular-nums text-accent">
             {b.totalOdds.toFixed(2)}
           </p>
         </div>
         <div className="px-2 py-3">
-          <p className="text-[11px] uppercase tracking-wide text-muted">Chance estimée</p>
+          <p className="text-[0.6875rem] uppercase tracking-wide text-muted">Chance estimée</p>
           <p className="mt-0.5 text-sm font-bold tabular-nums">{b.probability ? `${Math.round(b.probability)} %` : "—"}</p>
         </div>
       </div>
@@ -146,7 +146,7 @@ function BetCard({ b, live }: { b: SavedBet; live: LiveMatch[] }) {
               className="flex items-start gap-3 px-4 py-2.5"
             >
               <span
-                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${badge ? badge.cls : "bg-surface-3"}`}
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[0.625rem] font-bold ${badge ? badge.cls : "bg-surface-3"}`}
               >
                 {badge ? badge.icon : i + 1}
               </span>
@@ -192,7 +192,7 @@ function BetCard({ b, live }: { b: SavedBet; live: LiveMatch[] }) {
             <button
               key={s}
               onClick={() => updateBet(b.id, { status: s })}
-              className={`rounded-lg px-1 py-1.5 text-[11px] font-semibold transition active:scale-95 sm:text-xs ${b.status === s ? STATUS[s].on : "text-muted"}`}
+              className={`rounded-lg px-1 py-1.5 text-[0.6875rem] font-semibold transition active:scale-95 sm:text-xs ${b.status === s ? STATUS[s].on : "text-muted"}`}
             >
               {STATUS[s].label}
             </button>
@@ -320,19 +320,19 @@ export function BetTracker() {
             <p className="font-display text-3xl leading-none tabular-nums">
               {won}/{settled.length}
             </p>
-            <p className="mt-1 text-[11px] text-white/70">Coupons gagnés</p>
+            <p className="mt-1 text-[0.6875rem] text-white/70">Coupons gagnés</p>
           </div>
           <div className="rounded-2xl bg-white/10 p-3">
             <p className="font-display text-3xl leading-none tabular-nums">
               {settled.length ? `${rate.toFixed(0)} %` : "—"}
             </p>
-            <p className="mt-1 text-[11px] text-white/70">Taux de réussite</p>
+            <p className="mt-1 text-[0.6875rem] text-white/70">Taux de réussite</p>
           </div>
           <div className="rounded-2xl bg-white/10 p-3">
             <p className="font-display text-3xl leading-none tabular-nums">
               {pending.length}
             </p>
-            <p className="mt-1 text-[11px] text-white/70">En cours</p>
+            <p className="mt-1 text-[0.6875rem] text-white/70">En cours</p>
           </div>
         </div>
         {settled.length > 0 && (
@@ -344,7 +344,7 @@ export function BetTracker() {
                 style={{ width: `${100 - rate}%` }}
               />
             </div>
-            <p className="mt-1.5 text-[11px] text-white/60">
+            <p className="mt-1.5 text-[0.6875rem] text-white/60">
               Attendu d&apos;après nos probabilités : {expected.toFixed(1)}{" "}
               coupon{expected >= 2 ? "s" : ""} gagné{expected >= 2 ? "s" : ""}
             </p>

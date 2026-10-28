@@ -79,11 +79,11 @@ export function Paywall({ signedIn, email, onClose }: { signedIn: boolean; email
         <div className="space-y-4 pb-2">
           <div className="flex gap-3 rounded-2xl bg-success-soft p-4 text-success">
             <Icon name="check" className="mt-0.5 h-5 w-5 shrink-0" />
-            <p className="text-[15px] leading-relaxed">
+            <p className="text-[0.9375rem] leading-relaxed">
               Ton paiement de {fcfa(chosen.price)} est en vérification. Premium s&apos;active sur ton compte dès qu&apos;il est validé : tu n&apos;as rien d&apos;autre à faire.
             </p>
           </div>
-          <p className="text-[15px] text-muted">Pour une activation plus rapide, préviens-nous sur WhatsApp :</p>
+          <p className="text-[0.9375rem] text-muted">Pour une activation plus rapide, préviens-nous sur WhatsApp :</p>
           <a
             href={`https://wa.me/${MANUAL_PAYMENT.whatsapp}?text=${encodeURIComponent(message)}`}
             target="_blank"
@@ -106,7 +106,7 @@ export function Paywall({ signedIn, email, onClose }: { signedIn: boolean; email
     <Sheet title="Passe en Premium" onClose={onClose}>
       <ul className="mb-5 space-y-2.5">
         {PREMIUM_PERKS.map((perk) => (
-          <li key={perk} className="flex gap-3 text-[15px] leading-snug">
+          <li key={perk} className="flex gap-3 text-[0.9375rem] leading-snug">
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
               <Icon name="check" className="h-3.5 w-3.5" />
             </span>
@@ -127,9 +127,9 @@ export function Paywall({ signedIn, email, onClose }: { signedIn: boolean; email
               <span className="flex-1">
                 <span className="flex items-center gap-2 font-semibold">
                   {p.label}
-                  {p.badge && <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[12px] font-semibold text-accent">{p.badge}</span>}
+                  {p.badge && <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[0.75rem] font-semibold text-accent">{p.badge}</span>}
                 </span>
-                <span className="text-[13px] text-muted">{p.perDay}</span>
+                <span className="text-[0.8125rem] text-muted">{p.perDay}</span>
               </span>
               <span className="font-display text-2xl font-bold">{fcfa(p.price)}</span>
             </label>
@@ -145,7 +145,7 @@ export function Paywall({ signedIn, email, onClose }: { signedIn: boolean; email
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4 rounded-2xl bg-surface p-4">
-            <div className="flex rounded-full bg-surface-3 p-1 text-[15px] font-semibold" role="radiogroup" aria-label="Moyen de paiement">
+            <div className="flex rounded-full bg-surface-3 p-1 text-[0.9375rem] font-semibold" role="radiogroup" aria-label="Moyen de paiement">
               {MANUAL_PAYMENT.methods.map((m) => (
                 <button
                   type="button"
@@ -160,44 +160,44 @@ export function Paywall({ signedIn, email, onClose }: { signedIn: boolean; email
               ))}
             </div>
 
-            <ol className="space-y-3 text-[15px]">
+            <ol className="space-y-3 text-[0.9375rem]">
               <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[13px] font-bold text-white">1</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[0.8125rem] font-bold text-white">1</span>
                 <div className="flex-1">
                   <p>
                     Envoie <strong>{fcfa(chosen.price)}</strong> par {how.label} au
                   </p>
                   <button type="button" onClick={copyNumber} className="mt-1 flex w-full items-center justify-between rounded-xl bg-accent-soft px-3 py-2">
                     <span className="font-display text-2xl font-bold tracking-wide text-accent">{MANUAL_PAYMENT.number}</span>
-                    <span className="text-[13px] font-semibold text-accent">{copied ? "Copié" : "Copier"}</span>
+                    <span className="text-[0.8125rem] font-semibold text-accent">{copied ? "Copié" : "Copier"}</span>
                   </button>
-                  <p className="mt-1 text-[13px] text-muted">{how.hint}</p>
+                  <p className="mt-1 text-[0.8125rem] text-muted">{how.hint}</p>
                 </div>
               </li>
               <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[13px] font-bold text-white">2</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[0.8125rem] font-bold text-white">2</span>
                 <p className="flex-1">Garde le SMS de confirmation : il contient la référence de la transaction.</p>
               </li>
               <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[13px] font-bold text-white">3</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[0.8125rem] font-bold text-white">3</span>
                 <p className="flex-1">Remplis ces deux champs et envoie ta demande.</p>
               </li>
             </ol>
 
             <label className="block">
-              <span className="mb-1 block text-[14px] font-medium">Numéro qui a envoyé l&apos;argent</span>
+              <span className="mb-1 block text-[0.875rem] font-medium">Numéro qui a envoyé l&apos;argent</span>
               <input inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07 00 00 00 00" className={input} required />
             </label>
             <label className="block">
-              <span className="mb-1 block text-[14px] font-medium">Référence de la transaction</span>
+              <span className="mb-1 block text-[0.875rem] font-medium">Référence de la transaction</span>
               <input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Ex. MP251025.1302.A12345" className={input} autoCapitalize="characters" required />
             </label>
-            {error && <p className="text-[14px] text-danger">{error}</p>}
-            <button disabled={busy} className="w-full rounded-full bg-accent py-4 text-[17px] font-semibold text-white shadow-[0_8px_20px_-8px_var(--accent)] disabled:opacity-60">
+            {error && <p className="text-[0.875rem] text-danger">{error}</p>}
+            <button disabled={busy} className="w-full rounded-full bg-accent py-4 text-[1.0625rem] font-semibold text-white shadow-[0_8px_20px_-8px_var(--accent)] disabled:opacity-60">
               {busy ? "Envoi…" : "J'ai payé, activer mon Premium"}
             </button>
             {cinetpay && (
-              <button type="button" onClick={payOnline} disabled={busy} className="w-full py-1 text-[14px] font-semibold text-accent">
+              <button type="button" onClick={payOnline} disabled={busy} className="w-full py-1 text-[0.875rem] font-semibold text-accent">
                 Ou payer en ligne (carte, Moov, MTN)
               </button>
             )}
@@ -205,7 +205,7 @@ export function Paywall({ signedIn, email, onClose }: { signedIn: boolean; email
         )}
       </div>
 
-      <p className="mt-5 pb-2 text-center text-[12px] leading-relaxed text-muted">
+      <p className="mt-5 pb-2 text-center text-[0.75rem] leading-relaxed text-muted">
         Paiement unique, sans renouvellement automatique. Les pronostics sont des analyses, pas des garanties de gain. Jeu interdit aux moins de 18 ans.
       </p>
     </Sheet>

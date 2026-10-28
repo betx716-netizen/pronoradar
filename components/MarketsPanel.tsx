@@ -39,9 +39,9 @@ export function MarketsPanel({ picks }: { picks: MarketPick[] }) {
                     <div className="flex items-baseline justify-between gap-2 text-sm">
                       <span className="min-w-0 truncate">
                         {p.selection}
-                        {p.reliability === "fragile" && <span className="ml-1.5 text-[10px] text-warn-text">fragile</span>}
+                        {p.reliability === "fragile" && <span className="ml-1.5 text-[0.625rem] text-warn-text">fragile</span>}
                         {isValueBet(p) && (
-                          <span className="ml-1.5 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold text-on-accent">VALUE +{edge(p)!.toFixed(1)} %</span>
+                          <span className="ml-1.5 rounded bg-accent px-1.5 py-0.5 text-[0.625rem] font-bold text-on-accent">VALUE +{edge(p)!.toFixed(1)} %</span>
                         )}
                       </span>
                       <span className="shrink-0 tabular-nums">

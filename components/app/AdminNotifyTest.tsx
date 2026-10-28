@@ -27,8 +27,8 @@ export function AdminNotifyTest() {
   return (
     <section className="space-y-3 rounded-3xl bg-surface p-5">
       <h3 className="font-display text-xl font-bold">Notifications</h3>
-      <p className="text-[14px] text-muted">Inscriptions, paiements à valider et mots de passe oubliés arrivent dans l&apos;app ntfy.</p>
-      {msg && <p className={`rounded-2xl p-3 text-[14px] ${msg.ok ? "bg-success-soft text-success" : "bg-surface-2 text-danger"}`}>{msg.text}</p>}
+      <p className="text-[0.875rem] text-muted">Inscriptions, paiements à valider et mots de passe oubliés arrivent dans l&apos;app ntfy.</p>
+      {msg && <p className={`rounded-2xl p-3 text-[0.875rem] ${msg.ok ? "bg-success-soft text-success" : "bg-surface-2 text-danger"}`}>{msg.text}</p>}
       <button onClick={test} disabled={busy} className="w-full rounded-full bg-accent py-2.5 font-semibold text-white disabled:opacity-60">
         {busy ? "Envoi…" : "Envoyer une notification de test"}
       </button>

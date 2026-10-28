@@ -38,7 +38,7 @@ export function ChangePassword({ defaultOpen = false }: { defaultOpen?: boolean 
         <form onSubmit={submit} className="mt-3 space-y-3">
           <input type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Nouveau mot de passe (6 caractères min.)" minLength={6} className={input} required aria-label="Nouveau mot de passe" />
           <input type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Confirme le mot de passe" minLength={6} className={input} required aria-label="Confirme le mot de passe" />
-          {note && <p className={`text-[14px] ${note.ok ? "text-success" : "text-danger"}`}>{note.text}</p>}
+          {note && <p className={`text-[0.875rem] ${note.ok ? "text-success" : "text-danger"}`}>{note.text}</p>}
           <button disabled={busy} className="w-full rounded-full bg-accent py-2.5 font-semibold text-white disabled:opacity-60">
             {busy ? "…" : "Enregistrer le nouveau mot de passe"}
           </button>

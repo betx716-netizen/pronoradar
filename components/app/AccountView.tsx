@@ -77,17 +77,17 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
   return (
     <div className="mx-auto max-w-md space-y-4">
       <section className={`rounded-3xl p-5 ${premiumActive ? "bg-accent text-white" : "bg-surface"}`}>
-        <p className={`text-[14px] ${premiumActive ? "text-white/70" : "text-muted"}`}>{displayAccount(email)}</p>
+        <p className={`text-[0.875rem] ${premiumActive ? "text-white/70" : "text-muted"}`}>{displayAccount(email)}</p>
         <div className="mt-1 flex items-center gap-2">
           {premiumActive && <Icon name="crown" className="h-6 w-6 text-accent" />}
           <h2 className="font-display text-3xl font-bold">{premiumActive ? "Premium" : "Gratuit"}</h2>
         </div>
         {premiumActive ? (
-          <p className="mt-1 text-[15px] text-white/85">
+          <p className="mt-1 text-[0.9375rem] text-white/85">
             {me?.admin && !me.premiumUntil ? "Accès administrateur" : me?.premiumUntil ? `Actif jusqu'au ${date(me.premiumUntil)}` : "Actif"}
           </p>
         ) : (
-          <p className="mt-1 text-[15px] text-muted">Tu vois le coupon sûr du jour et quelques pronostics.</p>
+          <p className="mt-1 text-[0.9375rem] text-muted">Tu vois le coupon sûr du jour et quelques pronostics.</p>
         )}
         {!(me?.admin && !me.premiumUntil) && (
         <button
@@ -112,14 +112,14 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
           <h3 className="mb-3 font-display text-xl font-bold">Mes paiements</h3>
           <ul className="divide-y divide-border">
             {me.payments.map((p) => (
-              <li key={p.id} className="flex items-center justify-between py-2.5 text-[15px]">
+              <li key={p.id} className="flex items-center justify-between py-2.5 text-[0.9375rem]">
                 <span>
                   {PLANS.find((x) => x.id === p.plan)?.label ?? p.plan}
-                  <span className="block text-[13px] text-muted">{date(p.created_at)}</span>
+                  <span className="block text-[0.8125rem] text-muted">{date(p.created_at)}</span>
                 </span>
                 <span className="text-right">
                   <span className="font-display text-lg font-bold">{fcfa(p.amount)}</span>
-                  <span className={`block text-[13px] ${p.status === "accepted" ? "text-success" : p.status === "refused" ? "text-danger" : "text-muted"}`}>
+                  <span className={`block text-[0.8125rem] ${p.status === "accepted" ? "text-success" : p.status === "refused" ? "text-danger" : "text-muted"}`}>
                     {STATUS[p.status] ?? p.status}
                   </span>
                 </span>

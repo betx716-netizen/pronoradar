@@ -86,12 +86,12 @@ function ResultCard({ job, onOpen }: { job: Job; onOpen: () => void }) {
           <div className="rounded-xl bg-surface-2 p-2.5">
             <p className="text-xs text-muted">Consensus</p>
             <p className="truncate font-semibold">{outcomeName(c.pick, f.home, f.away)}</p>
-            <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${LEVEL_STYLES[c.level]}`}>{c.level}</span>
+            <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold ${LEVEL_STYLES[c.level]}`}>{c.level}</span>
           </div>
           <div className="rounded-xl bg-surface-2 p-2.5">
             <p className="text-xs text-muted">{calc ? "Calcul" : "IA"}</p>
             <p className="truncate font-semibold">{outcomeName(ai.predicted_outcome, f.home, f.away)}</p>
-            <p className="mt-1 text-[11px] text-muted">
+            <p className="mt-1 text-[0.6875rem] text-muted">
               {calc ? "" : `${ai.score_prediction} · `}confiance {ai.confidence}
             </p>
           </div>

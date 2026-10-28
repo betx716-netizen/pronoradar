@@ -120,6 +120,8 @@ body {
 
 html {
   overflow-x: clip;
+  /* Sur téléphone, tout le texte et les espacements (en rem) sont un peu plus petits : interface moins « zoomée ». */
+  font-size: 100%;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   touch-action: manipulation; /* supprime le zoom au double tap */
@@ -169,11 +171,11 @@ button {
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(10px) scale(0.99); }
   to { opacity: 1; transform: none; }
 }
 .fade-in {
-  animation: fade-in 0.25s ease-out both;
+  animation: fade-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes sheet-up {
@@ -389,3 +391,25 @@ h1 {
 .info li { margin: 0.25rem 0; }
 .info a { color: var(--accent); text-decoration: underline; }
 .info strong { color: var(--text); }
+
+@media (max-width: 640px) {
+  html { font-size: 87.5%; } /* 14 px au lieu de 16 px */
+  body { letter-spacing: -0.005em; }
+}
+
+/* Texte plus net et titres plus serrés. */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3 { letter-spacing: 0.01em; }
+
+/* Transitions douces partout (boutons, onglets, cartes). */
+button, a, [role="tab"] {
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}

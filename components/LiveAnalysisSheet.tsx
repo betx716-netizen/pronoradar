@@ -183,7 +183,7 @@ function LivePanel({ match, prior, onClose, first }: { match: LiveMatch; prior: 
                       const value = b.expected_odds >= minOdds;
                       return (
                         <li key={b.bet} className={`rounded-xl p-3 ${i === 0 ? "border-2 border-accent bg-accent-soft" : "bg-surface-2"}`}>
-                          {i === 0 && <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-accent">Meilleure option</p>}
+                          {i === 0 && <p className="mb-1 text-[0.625rem] font-bold uppercase tracking-wider text-accent">Meilleure option</p>}
                           <div className="flex items-baseline justify-between gap-2">
                             <span className="break-words font-semibold">{b.bet}</span>
                             <span className="shrink-0 font-display text-2xl leading-none tabular-nums text-accent">≈ {b.expected_odds.toFixed(2)}</span>
@@ -201,7 +201,7 @@ function LivePanel({ match, prior, onClose, first }: { match: LiveMatch; prior: 
               <button onClick={run} className="w-full rounded-xl border border-border py-2.5 text-sm font-semibold">
                 Réanalyser avec le score actuel
               </button>
-              <p className="text-center text-[11px] text-muted">Les cotes en direct changent vite : vérifiez-les chez votre bookmaker. Aucun gain garanti.</p>
+              <p className="text-center text-[0.6875rem] text-muted">Les cotes en direct changent vite : vérifiez-les chez votre bookmaker. Aucun gain garanti.</p>
             </div>
           )}
         </div>

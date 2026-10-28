@@ -29,18 +29,18 @@ function ScorerCard({ s, rank, onOpen }: { s: Scorer; rank: number; onOpen: () =
       className="relative w-40 shrink-0 snap-start overflow-hidden rounded-3xl p-3 text-left text-white shadow-lg transition active:scale-95"
       style={{ background: `linear-gradient(160deg, ${shirt}, #0f172a 85%)` }}
     >
-      <span className="absolute left-2.5 top-2.5 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-black text-[#0f172a]">#{rank}</span>
+      <span className="absolute left-2.5 top-2.5 rounded-full bg-white/90 px-2 py-0.5 text-[0.6875rem] font-black text-[#0f172a]">#{rank}</span>
       <div className="flex justify-center pt-4 [&_svg]:h-20 [&_svg]:w-20">
         <Jersey shirt={shirt} detail={detail} number="" />
       </div>
       <p className="mt-1 line-clamp-2 min-h-[2.4rem] font-display text-xl uppercase leading-none">{s.player}</p>
-      <p className="mt-1 truncate text-[11px] text-white/70">
+      <p className="mt-1 truncate text-[0.6875rem] text-white/70">
         {s.r.analysis.match.home} – {s.r.analysis.match.away}
       </p>
       <div className="mt-2 rounded-xl bg-white/95 px-2 py-1.5 text-center text-[#0f172a]">
-        <p className="text-[10px] font-semibold uppercase text-[#5d6270]">{s.p.category === "buteur" ? "Buteur" : s.p.category === "passeur" ? "Passeur" : "Buteur ou passeur"}</p>
+        <p className="text-[0.625rem] font-semibold uppercase text-[#5d6270]">{s.p.category === "buteur" ? "Buteur" : s.p.category === "passeur" ? "Passeur" : "Buteur ou passeur"}</p>
         <p className="font-display text-2xl leading-none">{s.p.odds.toFixed(2)}</p>
-        <p className="text-[10px] text-[#5d6270]">{Math.round(s.p.probability)} % selon l&apos;IA</p>
+        <p className="text-[0.625rem] text-[#5d6270]">{Math.round(s.p.probability)} % selon l&apos;IA</p>
       </div>
     </button>
   );
@@ -55,10 +55,10 @@ function LockedCard({ rank, onUnlock }: { rank: number; onUnlock?: () => void })
       onClick={onUnlock}
       className="relative flex w-40 shrink-0 snap-start flex-col items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-b from-[#334155] to-[#0f172a] p-3 text-center text-white shadow-lg transition active:scale-95"
     >
-      <span className="absolute left-2.5 top-2.5 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-black text-[#0f172a]">#{rank}</span>
+      <span className="absolute left-2.5 top-2.5 rounded-full bg-white/90 px-2 py-0.5 text-[0.6875rem] font-black text-[#0f172a]">#{rank}</span>
       <Icon name="lock" className="mb-2 h-8 w-8 text-white/80" />
       <p className="font-display text-xl uppercase leading-none">Buteur masqué</p>
-      <p className="mt-2 rounded-full bg-white px-3 py-1 text-[12px] font-semibold text-[#0f172a]">Débloquer avec Premium</p>
+      <p className="mt-2 rounded-full bg-white px-3 py-1 text-[0.75rem] font-semibold text-[#0f172a]">Débloquer avec Premium</p>
     </button>
   );
 }

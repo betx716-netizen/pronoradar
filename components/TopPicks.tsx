@@ -38,10 +38,10 @@ export function TopPicks({ results, onOpen }: { results: AnalysisResult[]; onOpe
               }`}
             >
               {value && (
-                <span className="absolute right-3 top-3 rounded-full bg-accent px-2 py-0.5 text-[10px] font-black text-on-accent">VALUE +{edge(p)!.toFixed(0)} %</span>
+                <span className="absolute right-3 top-3 rounded-full bg-accent px-2 py-0.5 text-[0.625rem] font-black text-on-accent">VALUE +{edge(p)!.toFixed(0)} %</span>
               )}
               <button onClick={() => onOpen(r)} className="block w-full pr-16 text-left">
-                <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted">{r.analysis.match.competition}</p>
+                <p className="truncate text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">{r.analysis.match.competition}</p>
                 <p className="truncate font-semibold">{match}</p>
               </button>
               <p className="mt-2 truncate text-sm">{p.selection}</p>

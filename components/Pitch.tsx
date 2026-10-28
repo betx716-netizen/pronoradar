@@ -47,7 +47,7 @@ function Player({ raw, shirt, detail, keeper }: { raw: string; shirt: string; de
       <Jersey shirt={shirt} detail={detail} number={p.number} keeper={keeper} />
       {/* Ombre au sol */}
       <span className="-mt-1 h-1.5 w-8 rounded-full bg-black/35 blur-[2px]" />
-      <span className="mt-0.5 max-w-full truncate rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold leading-tight text-white sm:text-[11px]">
+      <span className="mt-0.5 max-w-full truncate rounded bg-black/60 px-1.5 py-0.5 text-[0.625rem] font-semibold leading-tight text-white sm:text-[0.6875rem]">
         {p.short}
       </span>
     </div>

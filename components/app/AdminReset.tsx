@@ -46,10 +46,10 @@ export function AdminReset() {
       <h3 className="font-display text-xl font-bold">Mot de passe oublié d&apos;un client</h3>
       <input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Numéro du client" className={input} required aria-label="Numéro du client" />
       <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Nouveau mot de passe (6 caractères min.)" minLength={6} className={input} required aria-label="Nouveau mot de passe" />
-      {error && <p className="text-[14px] text-danger">{error}</p>}
+      {error && <p className="text-[0.875rem] text-danger">{error}</p>}
       {done && (
         <div className="space-y-2 rounded-2xl bg-success-soft p-3">
-          <p className="text-[14px] text-success">
+          <p className="text-[0.875rem] text-success">
             Mot de passe changé pour le {formatPhone(done.phone)} : <strong>{done.password}</strong>
           </p>
           <a

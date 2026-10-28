@@ -37,7 +37,7 @@ export function DeleteMyAccount() {
       </button>
       {open && (
         <div className="mt-3 space-y-3">
-          <p className="text-[14px] text-muted">
+          <p className="text-[0.875rem] text-muted">
             Ton compte, ton suivi de coupons et ton historique de paiements seront effacés définitivement. Un abonnement Premium en cours sera perdu, sans
             remboursement. Cette action est irréversible.
           </p>
@@ -48,7 +48,7 @@ export function DeleteMyAccount() {
             className="w-full rounded-2xl border-2 border-border bg-surface-2 px-4 py-2.5 outline-none focus:border-danger"
             aria-label="Confirmation"
           />
-          {error && <p className="text-[14px] text-danger">{error}</p>}
+          {error && <p className="text-[0.875rem] text-danger">{error}</p>}
           <button
             onClick={remove}
             disabled={busy || word.trim().toUpperCase() !== "SUPPRIMER"}
@@ -95,7 +95,7 @@ export function AdminDeleteAccount() {
         required
         aria-label="Numéro ou email du client"
       />
-      {note && <p className={`text-[14px] ${note.ok ? "text-success" : "text-danger"}`}>{note.text}</p>}
+      {note && <p className={`text-[0.875rem] ${note.ok ? "text-success" : "text-danger"}`}>{note.text}</p>}
       <button disabled={busy} className="w-full rounded-full bg-danger py-2.5 font-semibold text-white disabled:opacity-60">
         {busy ? "…" : "Supprimer le compte"}
       </button>
