@@ -71,6 +71,14 @@ export function todayInParis() {
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** Prochaine remise à zéro des quotas Gemini : minuit heure du Pacifique (+ 5 min de marge). */
+function nextQuotaReset() {
+  const now = new Date();
+  const la = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+  const toMidnight = (24 - la.getHours()) * 3600_000 - la.getMinutes() * 60_000 - la.getSeconds() * 1000;
+  return now.getTime() + toMidnight + 5 * 60_000;
+}
+
 // Le palier gratuit limite le nombre de requêtes par minute : on patiente puis on réessaie.
 async function withRetry<T>(fn: () => Promise<T>, onProgress: (m: string) => void, kind: "search" | "plain" = "plain"): Promise<T> {
   for (let attempt = 0; ; attempt++) {
@@ -87,7 +95,8 @@ async function withRetry<T>(fn: () => Promise<T>, onProgress: (m: string) => voi
           continue;
         }
         // Quota du jour (ou recherche non incluse dans l'offre gratuite) : inutile de réessayer avant demain.
-        pausedUntil[kind] = Date.now() + (hardLimit ? 12 * 3600_000 : QUOTA_PAUSE_MS);
+        // Quota du jour épuisé : pause jusqu'à la remise à zéro (minuit en Californie, 8 h UTC en hiver), pas 12 h au hasard.
+        pausedUntil[kind] = hardLimit ? nextQuotaReset() : Date.now() + QUOTA_PAUSE_MS;
         console.error("Quota Gemini :", err.message);
         throw new AnalysisError(
           kind === "search" ? `Gemini : quota gratuit de recherche Google atteint${detail}.` : `Gemini : quota gratuit atteint${detail}.`,
@@ -242,8 +251,12 @@ export async function researchWithGoogle(opts: WriteOpts & { queries?: string[] 
     throw new AnalysisError("Recherche web indisponible pour le moment (quota atteint).", "quota", false, true);
   }
   const queries = opts.queries?.length ? opts.queries : [opts.prompt.replace(/\s+/g, " ").slice(0, 160)];
-  const { snippets, pages, searches } = await webSearch(queries.slice(0, 3), opts.onProgress);
+  const { snippets, pages, searches } = await webSearch(queries.slice(0, 2), opts.onProgress);
   opts.usage.webSearches += searches;
+  // Recherche de secours vide (quota épuisé, aucun résultat) : ce n'est pas une analyse vérifiée.
+  if (snippets.length === 0) {
+    throw new AnalysisError("Recherche web de secours sans résultat pour le moment.", "quota", false, true);
+  }
   const written = await writeWithoutSearch({
     ...opts,
     system: `${opts.system}\n\nTu n'as pas d'accès direct au web : appuie-toi UNIQUEMENT sur les résultats de recherche fournis, cite leurs sources par leur nom, et n'invente rien.`,

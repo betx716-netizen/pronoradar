@@ -6,7 +6,9 @@ import { sameTeam } from "./settle";
 const TIERS: [number, string[]][] = [
   [100, ["Ligue des Champions"]],
   [90, ["Ligue Europa", "Ligue 1", "Premier League", "LaLiga", "Serie A", "Bundesliga"]],
-  [80, ["Ligue Conférence", "Coupe d'Allemagne", "Coupe de France", "Coupe d'Italie", "Coupe du Roi (Espagne)", "FA Cup (Angleterre)", "Coupe de la Ligue anglaise"]],
+  [80, ["Ligue Conférence"]],
+  // Coupes nationales : premiers tours pleins de petits clubs ; les grands clubs y remontent grâce à leur bonus.
+  [62, ["Coupe d'Allemagne", "Coupe de France", "Coupe d'Italie", "Coupe du Roi (Espagne)", "FA Cup (Angleterre)", "Coupe de la Ligue anglaise"]],
   [65, ["Liga Portugal", "Eredivisie", "Jupiler Pro League (Belgique)", "Süper Lig (Turquie)", "Premiership (Écosse)", "Coupe du Portugal", "Coupe des Pays-Bas"]],
   [50, ["Super League (Suisse)", "Bundesliga (Autriche)", "Super League (Grèce)", "Superliga (Danemark)", "Ekstraklasa (Pologne)", "Allsvenskan (Suède)", "Eliteserien (Norvège)"]],
   [40, ["Ligue 2", "Championship (Angleterre)", "LaLiga 2", "Serie B", "2. Bundesliga"]],
