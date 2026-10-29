@@ -27,6 +27,7 @@ import { usePasswordRecovery, useSession } from "@/lib/session";
 import { ChangePassword } from "@/components/app/ChangePassword";
 import { INFO_PAGES } from "@/lib/legal";
 import { Landing } from "@/components/Landing";
+import { MaintenanceScreen, fetchMaintenance, type MaintenanceState } from "@/components/Maintenance";
 import { useReferralCapture } from "@/components/app/Referral";
 import { LiveBoard, LiveDot } from "@/components/LiveBoard";
 import { findLive, sameTeam, useLiveScores, type LiveMatch } from "@/lib/live";
@@ -1467,6 +1468,20 @@ function App() {
 export default function Home() {
   const session = useSession();
   const enter = () => window.scrollTo(0, 0);
+  // Site en travaux : page d'attente pour tous, sauf l'administrateur. Vérifié à l'ouverture puis chaque minute.
+  const [works, setWorks] = useState<MaintenanceState | null>(null);
+  useEffect(() => {
+    if (!session.ready) return;
+    let alive = true;
+    const check = () => fetchMaintenance().then((m) => alive && setWorks(m));
+    check();
+    const t = setInterval(check, 60_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [session.ready, session.email]);
+  if (works?.on && !works.admin) return <MaintenanceScreen message={works.message} />;
   // Pendant le chargement, la page d'accueil est déjà dans le HTML (lue par Google) mais invisible, pour éviter un flash.
   if (!session.ready)
     return (
@@ -1475,5 +1490,14 @@ export default function Home() {
       </div>
     );
   if (!session.email) return <Landing onEnter={enter} />;
-  return <App />;
+  return (
+    <>
+      {works?.on && (
+        <div className="sticky top-0 z-50 bg-danger px-4 py-1.5 text-center text-xs font-semibold text-white">
+          Site fermé au public (travaux) · tu es le seul à voir l&apos;app
+        </div>
+      )}
+      <App />
+    </>
+  );
 }

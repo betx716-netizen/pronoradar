@@ -14,6 +14,7 @@ import { LoginForm } from "./LoginForm";
 import { AdminDeleteAccount, DeleteMyAccount } from "./DeleteAccount";
 import { ReferralCard } from "./Referral";
 import { AdminDaily } from "./AdminDaily";
+import { AdminMaintenance } from "../Maintenance";
 import { displayAccount } from "@/lib/phone";
 
 type Me = {
@@ -101,6 +102,7 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
 
       {me?.referral && <ReferralCard {...me.referral} />}
 
+      {me?.admin && <AdminMaintenance />}
       {me?.admin && <AdminDaily />}
       {me?.admin && <AdminPayments />}
       {me?.admin && <AdminReset />}

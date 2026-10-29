@@ -5,6 +5,7 @@ import { hasGroq, hasTavily } from "./backup";
 import { OddsApiError, hasOddsApi } from "./odds";
 import type { ServicesStatus, StreamEvent } from "./schemas";
 import { maskProviders } from "./mask";
+import { getMaintenance, maintenanceResponse } from "./maintenance";
 import { getViewer, premiumRequired, unauthorized } from "./user";
 
 export const isDemo = () => process.env.DEMO_MODE === "1";
@@ -37,13 +38,20 @@ export async function guard(req: Request): Promise<Response | null> {
   if (nc) return nc;
   const viewer = await getViewer(req);
   if (!viewer) return unauthorized();
+  const m = await getMaintenance();
+  if (m.on && !viewer.admin) return maintenanceResponse(m.message);
   if (!viewer.premium) return premiumRequired();
   return null;
 }
 
 /** Lecture ouverte à tous (programme des matchs, mis en cache 2 heures). */
-export function guardOpen(_req: Request): Response | null {
-  return notConfigured();
+export async function guardOpen(req: Request): Promise<Response | null> {
+  const nc = notConfigured();
+  if (nc) return nc;
+  // Pendant les travaux, seuls les administrateurs peuvent lancer des analyses ou charger les programmes.
+  const m = await getMaintenance();
+  if (m.on && !(await getViewer(req).catch(() => null))?.admin) return maintenanceResponse(m.message);
+  return null;
 }
 
 function errorEvent(err: unknown): StreamEvent {

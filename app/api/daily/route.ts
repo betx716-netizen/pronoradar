@@ -3,6 +3,7 @@ import { needsKick, readDay } from "@/lib/daily";
 import { isDemo } from "@/lib/http";
 import { appOrigin, kickWorker } from "@/lib/kick";
 import { maskProviders } from "@/lib/mask";
+import { getMaintenance, maintenanceResponse } from "@/lib/maintenance";
 import { FREE_COUPONS, FREE_MATCH_TIPS } from "@/lib/plans";
 import { supabaseConfigured } from "@/lib/supabase";
 import { getViewer } from "@/lib/user";
@@ -17,7 +18,8 @@ export async function GET(req: Request) {
     return Response.json({ error: "Coupons du jour indisponibles : SUPABASE_SECRET_KEY manque dans les réglages du serveur." }, { status: 503 });
   }
   try {
-    const [day, viewer] = await Promise.all([readDay(), getViewer(req)]);
+    const [day, viewer, m] = await Promise.all([readDay(), getViewer(req), getMaintenance()]);
+    if (m.on && !viewer?.admin) return maintenanceResponse(m.message);
     const premium = viewer?.premium ?? false;
     if (needsKick(day)) after(() => kickWorker(appOrigin(req)));
     const body = {

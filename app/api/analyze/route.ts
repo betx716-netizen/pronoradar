@@ -11,7 +11,7 @@ export const maxDuration = 300; // une analyse complète prend 1 à 4 minutes
 
 // Premium : analyses illimitées. Compte gratuit : 1 analyse par jour (rendue si elle échoue).
 export async function POST(req: Request) {
-  const nc = guardOpen(req);
+  const nc = await guardOpen(req);
   if (nc) return nc;
   const viewer = await getViewer(req);
   if (!viewer) return unauthorized();
