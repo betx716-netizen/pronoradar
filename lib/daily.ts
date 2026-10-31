@@ -8,6 +8,7 @@
 import { matchPriority } from "./priority";
 import { analyzeMatch } from "./analyze";
 import { webSearchAvailable } from "./gemini";
+import { loadKeyOverrides } from "./keys";
 import { composeDailyCoupons, computedCoupons, type DailyCoupon, type DayResult } from "./dailyCoupons";
 import { demoAnalysis, demoFixtures } from "./demo";
 import { espnCovers, fetchWeekFixtures, sameTeam } from "./espn";
@@ -255,6 +256,7 @@ async function refreshOffline(day: string, deadline: number, log: (m: string) =>
  */
 export async function runWorker(deadline: number, log: (m: string) => void = console.log): Promise<{ more: boolean; status: RunStatus }> {
   const day = today();
+  await loadKeyOverrides();
   let run = await ensureRun(day, log);
   await touch(day);
 

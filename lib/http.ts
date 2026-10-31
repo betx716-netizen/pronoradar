@@ -6,6 +6,7 @@ import { OddsApiError, hasOddsApi } from "./odds";
 import type { ServicesStatus, StreamEvent } from "./schemas";
 import { maskProviders } from "./mask";
 import { getMaintenance, maintenanceResponse } from "./maintenance";
+import { loadKeyOverrides } from "./keys";
 import { getViewer, premiumRequired, unauthorized } from "./user";
 
 export const isDemo = () => process.env.DEMO_MODE === "1";
@@ -34,6 +35,7 @@ function notConfigured(): Response | null {
 
 /** Actions qui consomment l'IA et les API (analyses, coupons, coach, direct) : réservées aux membres Premium. */
 export async function guard(req: Request): Promise<Response | null> {
+  await loadKeyOverrides();
   const nc = notConfigured();
   if (nc) return nc;
   const viewer = await getViewer(req);
@@ -46,6 +48,7 @@ export async function guard(req: Request): Promise<Response | null> {
 
 /** Lecture ouverte à tous (programme des matchs, mis en cache 2 heures). */
 export async function guardOpen(req: Request): Promise<Response | null> {
+  await loadKeyOverrides();
   const nc = notConfigured();
   if (nc) return nc;
   // Pendant les travaux, seuls les administrateurs peuvent lancer des analyses ou charger les programmes.

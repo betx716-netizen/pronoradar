@@ -37,8 +37,14 @@ export const aiAvailable = () => geminiAvailable() || groqAvailable();
 export const webSearchAvailable = () => googleSearchAvailable() || (tavilyAvailable() && aiAvailable());
 
 let client: GoogleGenAI | null = null;
+let clientKey = "";
 function getClient() {
-  client ??= new GoogleGenAI({ apiKey: readKey("GEMINI_API_KEY") });
+  // Recréé si la clé a changé (remplacée par l'administrateur depuis l'app).
+  const key = readKey("GEMINI_API_KEY");
+  if (!client || key !== clientKey) {
+    client = new GoogleGenAI({ apiKey: key });
+    clientKey = key;
+  }
   return client;
 }
 
