@@ -21,7 +21,7 @@ export const geminiAvailable = () => hasGemini() && Date.now() >= pausedUntil.pl
 // On essaie donc plusieurs modèles dans l'ordre ; GEMINI_SEARCH_MODELS (séparés par des virgules) permet d'imposer la liste.
 export const SEARCH_MODELS = [
   ...new Set(
-    (process.env.GEMINI_SEARCH_MODELS || `${MODEL},gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash`)
+    (process.env.GEMINI_SEARCH_MODELS || `${MODEL},gemini-flash-latest,gemini-3.8-flash,gemini-3.5-flash,gemini-flash-lite-latest,gemini-3.5-flash-lite`)
       .split(",")
       .map((m) => m.trim())
       .filter(Boolean),
@@ -285,7 +285,7 @@ export async function researchWithGoogle(opts: WriteOpts & { queries?: string[] 
     throw new AnalysisError("Recherche web indisponible pour le moment (quota atteint).", "quota", false, true);
   }
   const queries = opts.queries?.length ? opts.queries : [opts.prompt.replace(/\s+/g, " ").slice(0, 160)];
-  const { snippets, pages, searches } = await webSearch(queries.slice(0, 2), opts.onProgress);
+  const { snippets, pages, searches } = await webSearch(queries.slice(0, 1), opts.onProgress);
   opts.usage.webSearches += searches;
   // Recherche de secours vide (quota épuisé, aucun résultat) : ce n'est pas une analyse vérifiée.
   if (snippets.length === 0) {
