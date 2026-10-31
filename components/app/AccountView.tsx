@@ -14,6 +14,7 @@ import { LoginForm } from "./LoginForm";
 import { AdminDeleteAccount, DeleteMyAccount } from "./DeleteAccount";
 import { ReferralCard } from "./Referral";
 import { AdminDaily } from "./AdminDaily";
+import { AdminDiagnostic } from "./AdminDiagnostic";
 import { AdminMaintenance } from "../Maintenance";
 import { displayAccount } from "@/lib/phone";
 
@@ -104,6 +105,7 @@ export function AccountView({ email, refreshKey, onUnlock }: { email: string | n
 
       {me?.admin && <AdminMaintenance />}
       {me?.admin && <AdminDaily />}
+      {me?.admin && <AdminDiagnostic />}
       {me?.admin && <AdminPayments />}
       {me?.admin && <AdminReset />}
       {me?.admin && <AdminNotifyTest />}

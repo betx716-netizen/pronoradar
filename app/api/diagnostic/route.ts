@@ -1,5 +1,6 @@
 import { describeKey, readKey } from "@/lib/env";
 import { getViewer } from "@/lib/user";
+import { SEARCH_MODELS } from "@/lib/gemini";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,21 @@ export async function GET(req: Request) {
       cle: describeKey("API_FOOTBALL_KEY"),
       test: football ? await probe("https://v3.football.api-sports.io/status", { headers: { "x-apisports-key": football } }) : "pas de clé",
     },
+    // Vrai test de la recherche Google intégrée, modèle par modèle (c'est elle qui s'épuise, pas Gemini seul).
+    "Recherche Google (Gemini)": gemini
+      ? Object.fromEntries(
+          await Promise.all(
+            SEARCH_MODELS.map(async (m) => [
+              m,
+              await probe(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
+                method: "POST",
+                headers: { "content-type": "application/json", "x-goog-api-key": gemini },
+                body: JSON.stringify({ contents: [{ parts: [{ text: "Quel est le prochain match du PSG ? Une phrase." }] }], tools: [{ google_search: {} }] }),
+              }),
+            ]),
+          ),
+        )
+      : "pas de clé",
     Gemini: {
       cle: describeKey("GEMINI_API_KEY"),
       modele: model,

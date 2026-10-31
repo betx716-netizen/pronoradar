@@ -16,7 +16,20 @@ export const hasGemini = () => Boolean(readKey("GEMINI_API_KEY"));
 // Deux quotas distincts chez Google : la recherche Google intégrée s'épuise bien avant Gemini lui-même.
 const pausedUntil = { search: 0, plain: 0 };
 export const geminiAvailable = () => hasGemini() && Date.now() >= pausedUntil.plain;
-export const googleSearchAvailable = () => geminiAvailable() && Date.now() >= pausedUntil.search;
+
+// Recherche Google intégrée : chaque modèle a son propre quota gratuit, souvent minuscule sur le tout dernier.
+// On essaie donc plusieurs modèles dans l'ordre ; GEMINI_SEARCH_MODELS (séparés par des virgules) permet d'imposer la liste.
+export const SEARCH_MODELS = [
+  ...new Set(
+    (process.env.GEMINI_SEARCH_MODELS || `${MODEL},gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash`)
+      .split(",")
+      .map((m) => m.trim())
+      .filter(Boolean),
+  ),
+];
+const searchPausedUntil: Record<string, number> = {};
+const searchModelsLeft = () => SEARCH_MODELS.filter((m) => Date.now() >= (searchPausedUntil[m] ?? 0));
+export const googleSearchAvailable = () => geminiAvailable() && Date.now() >= pausedUntil.search && searchModelsLeft().length > 0;
 
 // Avec les services de secours : une IA (principale ou de secours) et une recherche web (intégrée ou de secours).
 export const hasAI = () => hasGemini() || hasGroq();
@@ -127,16 +140,37 @@ async function geminiResearch(opts: {
   usage: Usage;
   onProgress: (message: string) => void;
 }) {
-  const response = await withRetry(
-    () =>
-      getClient().models.generateContent({
-        model: MODEL,
-        contents: opts.prompt,
-        config: { systemInstruction: opts.system, tools: [{ googleSearch: {} }] },
-      }),
-    opts.onProgress,
-    "search",
-  );
+  let response: Awaited<ReturnType<ReturnType<typeof getClient>["models"]["generateContent"]>> | null = null;
+  let lastError: unknown = null;
+  for (const model of searchModelsLeft()) {
+    try {
+      response = await withRetry(
+        () =>
+          getClient().models.generateContent({
+            model,
+            contents: opts.prompt,
+            config: { systemInstruction: opts.system, tools: [{ googleSearch: {} }] },
+          }),
+        opts.onProgress,
+        "search",
+      );
+      break;
+    } catch (e) {
+      lastError = e;
+      const quota = e instanceof AnalysisError && e.searchOnly;
+      const missing = e instanceof ApiError && (e.status === 404 || (e.status === 400 && /not (found|supported)|google_search|tool/i.test(e.message)));
+      if (!quota && !missing) throw e;
+      // Ce modèle n'a plus de recherche (ou ne la propose pas) : on le met de côté et on essaie le suivant.
+      searchPausedUntil[model] = quota ? nextQuotaReset() : Date.now() + 24 * 3600_000;
+      pausedUntil.search = 0;
+      console.error(`Recherche Google indisponible avec ${model} :`, e instanceof Error ? e.message : e);
+      if (searchModelsLeft().length) opts.onProgress("Recherche Google : essai avec un autre modèle…");
+    }
+  }
+  if (!response) {
+    if (lastError instanceof AnalysisError) throw lastError;
+    throw new AnalysisError("Recherche Google indisponible pour le moment (quota atteint).", "quota", false, true);
+  }
   opts.usage.geminiRequests++;
 
   const meta = response.candidates?.[0]?.groundingMetadata;

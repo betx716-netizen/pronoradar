@@ -4,7 +4,33 @@
 import { readKey } from "./env";
 import type { ConsultedPage } from "./schemas";
 
-const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+// Groq retire régulièrement des modèles : si celui demandé n'existe plus, on prend le premier disponible de cette liste.
+const GROQ_PREFERRED = [
+  process.env.GROQ_MODEL,
+  "llama-3.3-70b-versatile",
+  "openai/gpt-oss-120b",
+  "meta-llama/llama-4-maverick-17b-128e-instruct",
+  "qwen/qwen3-32b",
+  "openai/gpt-oss-20b",
+  "meta-llama/llama-4-scout-17b-16e-instruct",
+  "llama-3.1-8b-instant",
+].filter(Boolean) as string[];
+let groqModel = GROQ_PREFERRED[0];
+
+async function pickGroqModel(): Promise<boolean> {
+  try {
+    const res = await fetch("https://api.groq.com/openai/v1/models", { headers: { Authorization: `Bearer ${readKey("GROQ_API_KEY")}` } });
+    if (!res.ok) return false;
+    const ids = new Set(((await res.json())?.data ?? []).map((m: { id?: string }) => m.id));
+    const next = GROQ_PREFERRED.find((m) => ids.has(m) && m !== groqModel);
+    if (!next) return false;
+    console.error(`IA de secours : modèle ${groqModel} indisponible, passage à ${next}`);
+    groqModel = next;
+    return true;
+  } catch {
+    return false;
+  }
+}
 const PAUSE_MS = 30 * 60_000;
 const paused = { groq: 0, tavily: 0 };
 
@@ -24,7 +50,7 @@ export async function groqChat(system: string, prompt: string, onProgress: (m: s
       method: "POST",
       headers: { Authorization: `Bearer ${readKey("GROQ_API_KEY")}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: GROQ_MODEL,
+        model: groqModel,
         temperature: 0.3,
         messages: [
           { role: "system", content: system },
@@ -47,6 +73,11 @@ export async function groqChat(system: string, prompt: string, onProgress: (m: s
     if (res.status >= 500 && attempt < 2) {
       await wait(3000);
       continue;
+    }
+    if ((res.status === 404 || res.status === 400) && attempt < 2) {
+      const body = await res.text().catch(() => "");
+      if (/model/i.test(body) && (await pickGroqModel())) continue;
+      throw new Error(`IA de secours : erreur ${res.status} ${body}`);
     }
     if (!res.ok) throw new Error(`IA de secours : erreur ${res.status} ${await res.text().catch(() => "")}`);
     const data = await res.json();
