@@ -3,11 +3,12 @@
 import { AI_PROFILES, buildAiCoupons, type AiCouponsRequest, type AiProfile } from "./aiCoupons";
 import { CATEGORY_LABELS, buildCoupon, clubAlreadyIn, couponTitle, type CouponLeg } from "./coupon";
 import type { AnalysisResult, MarketCategory, MarketPick } from "./schemas";
+import { composeHockeyCoupons } from "./hockeyCoupons";
 
 export type DailyLeg = CouponLeg & { reason: string; matchId: string };
 
 export type DailyCoupon = {
-  profile: AiProfile;
+  profile: AiProfile | "hockey_100" | "hockey_1000";
   title: string;
   subtitle: string;
   legs: DailyLeg[];
@@ -96,7 +97,15 @@ function uniqueTitles(coupons: DailyCoupon[]): DailyCoupon[] {
 }
 
 /** Les six coupons du jour, composés par l'IA (ou calculés si elle est indisponible). */
-export async function composeDailyCoupons(all: DayResult[], onProgress: (m: string) => void = () => {}): Promise<DailyCoupon[]> {
+export async function composeDailyCoupons(everything: DayResult[], onProgress: (m: string) => void = () => {}): Promise<DailyCoupon[]> {
+  // Hockey : coupons à part, uniquement à très grosse cote (lib/hockeyCoupons.ts).
+  const hockey = everything.filter((d) => d.result.analysis.match.sport === "hockey" && !d.result.offline);
+  const others = everything.filter((d) => d.result.analysis.match.sport !== "hockey");
+  const [main, big] = await Promise.all([composeMainCoupons(others, onProgress), composeHockeyCoupons(hockey, onProgress).catch(() => [])]);
+  return [...main, ...big];
+}
+
+async function composeMainCoupons(all: DayResult[], onProgress: (m: string) => void): Promise<DailyCoupon[]> {
   // Les analyses faites sans recherche web (actualité non vérifiée) ne servent aux coupons que s'il n'y a pas assez du reste.
   const verified = all.filter((d) => !d.result.offline);
   const day = verified.length >= 6 ? verified : all;

@@ -22,11 +22,14 @@ export function couponStatus(states: LegState[]): RecordStatus {
   return states.every((s) => s === "push") ? "void" : "won";
 }
 
+// Compétitions d'autres sports que le football, avec leur chemin ESPN.
+const OTHER_SPORTS: Record<string, string> = { NHL: "hockey/nhl" };
+
 // Scores d'un championnat pour un jour, gardés pendant le calcul (plusieurs sélections partagent un match).
 function scoresLoader() {
   const cache = new Map<string, Promise<LiveMatch[]>>();
   return (competition: string, day: string) => {
-    const slug = SLUGS[competition];
+    const slug = OTHER_SPORTS[competition] ?? SLUGS[competition];
     if (!slug) return Promise.resolve([] as LiveMatch[]);
     const key = `${slug}|${day}`;
     if (!cache.has(key)) {

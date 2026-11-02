@@ -71,6 +71,21 @@ Précise en une phrase que l'actualité récente n'a pas pu être vérifiée.
 ${PHILOSOPHY}
 Donne aussi les marchés secondaires, chacun avec une probabilité en % : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners, cartons, résultat à la mi-temps, mi-temps/fin de match, handicap (-1 ou +1), buts de chaque équipe, résultat + plus/moins 2,5 buts, résultat + les deux marquent, buts en 1re mi-temps, mi-temps la plus prolifique, sans encaisser, écart de buts, pair/impair. Au tennis : nombre de sets et de jeux, vainqueur du 1er set, handicap jeux, tie-break oui/non.`;
 
+// Hockey (NHL) : consignes propres, centrées sur les buteurs du moment et les buts par période.
+const HOCKEY_FOCUS = `C'est un match de HOCKEY SUR GLACE (NHL). Ignore les marchés du football (corners, cartons, mi-temps…).
+Recherche en priorité, avec des sources de moins de 7 jours :
+- Le gardien titulaire annoncé de chaque équipe, et sa forme (pourcentage d'arrêts récent).
+- Les BUTEURS EN FORME CETTE SEMAINE : les joueurs qui ont marqué sur les 5 à 10 derniers matchs, leur temps de glace, leur place en power play (1re unité) et sur le premier trio. En NHL, les buteurs changent d'une semaine à l'autre : ne te fie pas aux noms célèbres, regarde la forme récente réelle et les blessés.
+- Les buts par période des deux équipes (moyennes marquées et encaissées en 1re, 2e et 3e période).
+- Les matchs joués deux soirs de suite (back-to-back), les blessés et les changements de trio.
+Donne ensuite, chacun avec une probabilité en % :
+- les 4 ou 5 buteurs les plus probables du match (catégorie buteur, format « Prénom Nom buteur »), et 2 joueurs pour « marque ou fait une passe » (buteur_ou_passeur) ;
+- « Les deux équipes marquent dans chaque période » et « Les deux équipes marquent en 1re / 2e / 3e période » (btts_periodes) ;
+- « [équipe] marque dans chaque période » pour chaque équipe (marque_chaque_periode) ;
+- plus/moins de buts par période, ex. « Plus de 1,5 buts en 2e période » (buts_periode) ;
+- le vainqueur prolongation comprise (resultat), le total de buts du match (buts, ligne 5,5 ou 6,5) et la puck line ±1,5 (handicap).
+Pas de composition d'équipe sur terrain : mets lineups à null.`;
+
 const MODE_SETTINGS = {
   rapide: { sourcesTarget: "4 à 6", injuries: false },
   complete: { sourcesTarget: "8 à 12", injuries: true },
@@ -192,6 +207,7 @@ async function analyzeWithGemini(
     req.competition ? `Compétition : ${req.competition}.` : "",
     req.date ? `Date : ${req.date}.` : "Si la date n'est pas précisée, prends la prochaine rencontre entre eux.",
     knownFacts(req, insight, history),
+    req.sport === "hockey" ? HOCKEY_FOCUS : "",
     "Recense les pronostics publiés sur ce match, puis donne ton analyse.",
   ]
     .filter(Boolean)
@@ -216,7 +232,10 @@ async function analyzeWithGemini(
         prompt,
         usage,
         onProgress,
-        queries: [`${req.home} ${req.away} pronostic`, `${req.home} vs ${req.away} prediction`, `${req.home} ${req.away} compositions officielles probables`],
+        queries:
+          req.sport === "hockey"
+            ? [`${req.home} vs ${req.away} NHL prediction goal scorers`, `${req.home} ${req.away} starting goalies injuries`]
+            : [`${req.home} ${req.away} pronostic`, `${req.home} vs ${req.away} prediction`, `${req.home} ${req.away} compositions officielles probables`],
       });
     } catch (e) {
       if (!(e instanceof AnalysisError && e.searchOnly)) throw e;
@@ -230,6 +249,7 @@ async function analyzeWithGemini(
   analysis.match.sport = req.sport;
   analysis.match.home = req.home;
   analysis.match.away = req.away;
+  if (req.sport === "hockey") analysis.lineups = null;
   if (offline) {
     // Sans recherche web, rien de daté ni de nominatif : pas de compositions, d'absences ni de paris sur un joueur,
     // et jamais une confiance élevée.

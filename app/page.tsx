@@ -78,6 +78,7 @@ function matchOver(r: AnalysisResult, now: number) {
 const DEFAULT_FAVORITES: Record<Sport, string[]> = {
   football: ["Ligue des Champions", "Ligue 1", "Premier League"],
   tennis: ["ATP", "WTA"],
+  hockey: ["NHL"],
 };
 
 type Tab = "matchs" | "direct" | "analyses" | "coupon" | "suivi";
@@ -925,14 +926,14 @@ function App() {
                 </p>
               </div>
               <div className="flex rounded-xl border border-border bg-surface p-1">
-                {(["football", "tennis"] as Sport[]).map((s) => (
+                {(["football", "tennis", "hockey"] as Sport[]).map((s) => (
                   <button
                     key={s}
                     onClick={() => switchSport(s)}
                     disabled={running}
                     className={`rounded-lg px-3.5 py-1.5 text-sm font-semibold ${sport === s ? "bg-accent text-on-accent" : "text-muted hover:text-text"}`}
                   >
-                    {s === "football" ? "⚽ Football" : "🎾 Tennis"}
+                    {s === "football" ? "⚽ Football" : s === "tennis" ? "🎾 Tennis" : "🏒 Hockey"}
                   </button>
                 ))}
               </div>
@@ -1246,7 +1247,7 @@ function App() {
                           className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-surface px-3 py-2.5 text-left hover:border-accent/60"
                         >
                           <span className="min-w-0 truncate text-sm font-medium">
-                            {r.analysis.match.sport === "tennis" ? "🎾" : "⚽"}{" "}
+                            {r.analysis.match.sport === "tennis" ? "🎾" : r.analysis.match.sport === "hockey" ? "🏒" : "⚽"}{" "}
                             {r.analysis.match.home} – {r.analysis.match.away}
                           </span>
                           <span className="shrink-0 text-xs text-muted">

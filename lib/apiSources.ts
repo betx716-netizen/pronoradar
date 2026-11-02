@@ -20,7 +20,7 @@ export function emptySource(partial: Partial<Source> & Pick<Source, "name" | "ty
 // Sources « fiables » venues des API, ajoutées telles quelles à la liste des pronostics.
 export function apiSources(req: AnalyzeRequest, insight: ApiFootballInsight | null): Source[] {
   const sources: Source[] = [];
-  const tennis = req.sport === "tennis";
+  const tennis = req.sport !== "football"; // pas de nul : tennis, hockey
   const o = req.odds;
   if (o) {
     sources.push(

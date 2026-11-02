@@ -286,6 +286,9 @@ export type LiveMatch = {
   // Buts par mi-temps quand ESPN les donne ([1re, 2e]), pour régler les paris sur les mi-temps.
   homeHalves?: number[];
   awayHalves?: number[];
+  // Toutes les périodes (hockey : 1re, 2e, 3e, puis prolongation).
+  homeLines?: number[];
+  awayLines?: number[];
 };
 
 type LiveEvent = {
@@ -344,18 +347,25 @@ export function parseScoreboard(data: unknown, slug: string): LiveMatch[] {
         date: e.date,
         homeHalves: halves(h.linescores),
         awayHalves: halves(a.linescores),
+        homeLines: lines(h.linescores),
+        awayLines: lines(a.linescores),
       },
     ];
   });
 }
 
+const lines = (l?: { value?: number | string }[]) => {
+  const v = (l ?? []).map((x) => Number(x.value)).filter(Number.isFinite);
+  return v.length ? v : undefined;
+};
 const halves = (l?: { value?: number | string }[]) => {
   const v = (l ?? []).map((x) => Number(x.value)).filter(Number.isFinite);
   return v.length >= 2 ? v.slice(0, 2) : undefined;
 };
 
+// slug de football (« fra.1 ») ou chemin complet pour un autre sport (« hockey/nhl »).
 export const scoreboardUrl = (slug: string, range: string) =>
-  `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard?dates=${range}&limit=200`;
+  `https://site.api.espn.com/apis/site/v2/sports/${slug.includes("/") ? slug : `soccer/${slug}`}/scoreboard?dates=${range}&limit=200`;
 
 async function fetchSlug(slug: string, range: string, revalidate: number): Promise<LiveMatch[]> {
   // Délai maximal : une source lente ne doit pas bloquer tout l'onglet Direct.

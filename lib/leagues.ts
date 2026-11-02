@@ -47,6 +47,7 @@ export const LEAGUES: Record<Sport, League[]> = {
     { name: "ATP", oddsKey: "tennis_atp", apiFootballId: null },
     { name: "WTA", oddsKey: "tennis_wta", apiFootballId: null },
   ],
+  hockey: [{ name: "NHL", oddsKey: "icehockey_nhl", apiFootballId: null }],
 };
 
 export const findLeague = (sport: Sport, name: string) => LEAGUES[sport].find((l) => l.name === name);

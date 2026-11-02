@@ -1,5 +1,6 @@
 // Données fictives utilisées quand DEMO_MODE=1 : permettent de tester l'interface
 // sans clé API et sans frais. Les sources et les chiffres sont inventés.
+import type { Sport } from "./schemas";
 import { computeConsensus } from "./consensus";
 import { buildPicks } from "./markets";
 import type { Analysis, AnalysisResult, AnalyzeRequest, Fixture, Source } from "./schemas";
@@ -172,7 +173,7 @@ function demoOdds(tennis: boolean, swap: boolean) {
 }
 
 export async function demoFixtures(
-  sport: "football" | "tennis",
+  sport: Sport,
   competition: string,
   onProgress: (m: string) => void,
 ): Promise<Fixture[]> {

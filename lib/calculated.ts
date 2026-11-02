@@ -18,7 +18,7 @@ function confidence(top: number, tennis: boolean): Analysis["ai_analysis"]["conf
 }
 
 export function analysisWithoutAI(req: AnalyzeRequest, insight: ApiFootballInsight | null): Analysis {
-  const tennis = req.sport === "tennis";
+  const tennis = req.sport !== "football"; // deux issues : tennis, hockey
   const outcomes: Outcome[] = tennis ? ["home", "away"] : ["home", "draw", "away"];
   const label = (o: Outcome) => (o === "home" ? req.home : o === "away" ? req.away : "le match nul");
 

@@ -8,6 +8,7 @@ import {
   type Distribution,
 } from "@/lib/consensus";
 import type {
+  Sport,
   PastGame,
   AnalysisResult,
   Outcome,
@@ -123,7 +124,7 @@ function SourceCard({
 }: {
   s: Source;
   name: (o: Outcome) => string;
-  sport: "football" | "tennis";
+  sport: Sport;
 }) {
   const pick = sourcePick(s, sport);
   const dist = sourceDistribution(s, sport);

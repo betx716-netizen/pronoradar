@@ -92,7 +92,26 @@ async function findDayFixtures(day: string, log: (m: string) => void) {
   const ranked = found
     .map((f, i) => ({ f, i, p: matchPriority(f) }))
     .sort((a, b) => b.p - a.p || a.i - b.i);
-  return { fixtures: ranked.slice(0, MAX_MATCHES).map((x) => x.f), notes };
+  const main = ranked.slice(0, MAX_MATCHES).map((x) => x.f);
+  return { fixtures: [...main, ...(await nhlTonight(day, notes, log))], notes };
+}
+
+// Hockey (NHL) : les matchs de la soirée américaine, joués la nuit suivante en heure de Paris (de 18 h le jour même
+// à 10 h le lendemain), en plus des matchs de football et au plus MAX_HOCKEY (par défaut 6), ceux avec des cotes d'abord.
+const MAX_HOCKEY = Number(process.env.DAILY_HOCKEY ?? 6);
+async function nhlTonight(day: string, notes: string[], log: (m: string) => void): Promise<DayFixture[]> {
+  if (MAX_HOCKEY <= 0) return [];
+  const next = new Date(Date.parse(`${day}T12:00:00Z`) + 86400000).toISOString().slice(0, 10);
+  try {
+    const r = await findFixtures("hockey", "NHL", () => {});
+    const tonight = r.fixtures.filter((f) => (f.date === day && (f.time ?? "") >= "18:00") || (f.date === next && (f.time ?? "99") < "10:00"));
+    const picked = tonight.sort((a, b) => Number(Boolean(b.odds)) - Number(Boolean(a.odds))).slice(0, MAX_HOCKEY);
+    log(`NHL : ${picked.length} match(s) cette nuit`);
+    return picked.map((f) => ({ ...f, sport: "hockey" as const }));
+  } catch (e) {
+    notes.push(`NHL : ${e instanceof Error ? e.message : String(e)}`);
+    return [];
+  }
 }
 
 async function plan(day: string, log: (m: string) => void) {

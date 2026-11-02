@@ -26,7 +26,7 @@ export type Consensus = {
 };
 
 function outcomesFor(sport: Sport): Outcome[] {
-  return sport === "tennis" ? ["home", "away"] : ["home", "draw", "away"];
+  return sport === "football" ? ["home", "draw", "away"] : ["home", "away"];
 }
 
 function normalize(values: Partial<Record<Outcome, number>>, outcomes: Outcome[]): Distribution | null {

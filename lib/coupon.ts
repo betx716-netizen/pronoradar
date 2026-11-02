@@ -57,6 +57,9 @@ export const CATEGORY_LABELS: Record<MarketCategory, string> = {
   carton_rouge: "Carton rouge",
   aces: "Aces",
   doubles_fautes: "Doubles fautes",
+  btts_periodes: "Les deux marquent (périodes)",
+  buts_periode: "Buts par période",
+  marque_chaque_periode: "Marque dans chaque période",
 };
 
 export type CouponLeg = { match: string; competition: string; date: string | null; pick: MarketPick };

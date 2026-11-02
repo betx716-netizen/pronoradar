@@ -45,6 +45,7 @@ const FOOTBALL_CATEGORIES: MarketCategory[] = [
   "penalty",
   "carton_rouge",
 ];
+const HOCKEY_CATEGORIES: MarketCategory[] = ["btts_periodes", "buts_periode", "marque_chaque_periode", "buteur", "buteur_ou_passeur"];
 const TENNIS_CATEGORIES: MarketCategory[] = [
   "resultat",
   "sets",
@@ -92,9 +93,14 @@ export function CouponBuilder({
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const available = results.some((r) => r.analysis.match.sport === "tennis")
-    ? [...new Set([...FOOTBALL_CATEGORIES, ...TENNIS_CATEGORIES])]
-    : FOOTBALL_CATEGORIES;
+  const sports = new Set(results.map((r) => r.analysis.match.sport));
+  const available = [
+    ...new Set([
+      ...FOOTBALL_CATEGORIES,
+      ...(sports.has("tennis") ? TENNIS_CATEGORIES : []),
+      ...(sports.has("hockey") ? HOCKEY_CATEGORIES : []),
+    ]),
+  ];
   // Matchs retirés sur conseil du coach : exclus du coupon jusqu'à ce qu'on les rétablisse.
   const [excluded, setExcluded] = useState<string[]>([]);
   const [forced, setForced] = useState<Record<string, string>>({});

@@ -129,6 +129,31 @@ export function legState(pick: MarketPick, home: string, away: string, m: LiveMa
       if (/impair/.test(sel)) return decide((h + a) % 2 === 1);
       if (/pair/.test(sel)) return decide((h + a) % 2 === 0);
       return "unknown";
+    case "btts_periodes":
+    case "buts_periode":
+    case "marque_chaque_periode": {
+      // Hockey : périodes 1 à 3 (la prolongation ne compte pas).
+      const hl = m.homeLines?.slice(0, 3);
+      const al = m.awayLines?.slice(0, 3);
+      if (!final) return "pending";
+      if (!hl || !al || hl.length < 3 || al.length < 3) return "unknown";
+      const per = sel.match(/(1re|1ère|premi|2e|2ème|deuxi|3e|3ème|troisi)/);
+      const idx = per ? (/^(1|premi)/.test(per[1]) ? 0 : /^(2|deuxi)/.test(per[1]) ? 1 : 2) : -1;
+      if (pick.category === "btts_periodes") {
+        const both = (i: number) => hl[i] > 0 && al[i] > 0;
+        return decide(idx >= 0 ? both(idx) : /chaque|toutes|3 périodes/.test(sel) ? [0, 1, 2].every(both) : [0, 1, 2].some(both));
+      }
+      if (pick.category === "buts_periode") {
+        const n = Number(sel.match(/(\d+[,.]\d)/)?.[1]?.replace(",", "."));
+        if (!Number.isFinite(n) || idx < 0) return "unknown";
+        const g = hl[idx] + al[idx];
+        return decide(/moins/.test(sel) ? g < n : g > n);
+      }
+      const side = teamIn(pick.selection, isHome, isAway);
+      if (!side) return "unknown";
+      const mine = side === "home" ? hl : al;
+      return decide(mine.every((g) => g > 0));
+    }
     case "mi_temps": {
       // Résultat à la mi-temps : « Mi-temps : PSG », « Nul à la mi-temps »
       if (!m.homeHalves || !m.awayHalves) return final ? "unknown" : "pending";

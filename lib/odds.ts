@@ -124,7 +124,7 @@ async function oddsForSport(sportKey: string, competition: string, sport: Sport)
       date,
       time,
       stage: null,
-      odds: odds && sport === "tennis" ? { ...odds, draw: null, exchange: odds.exchange && { ...odds.exchange, draw: null } } : odds,
+      odds: odds && sport !== "football" ? { ...odds, draw: null, exchange: odds.exchange && { ...odds.exchange, draw: null } } : odds,
     };
   });
   return { fixtures, remaining };

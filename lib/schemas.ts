@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const SportSchema = z.enum(["football", "tennis"]);
+export const SportSchema = z.enum(["football", "tennis", "hockey"]);
 export type Sport = z.infer<typeof SportSchema>;
 
 // "home" = équipe à domicile / joueur 1, "away" = équipe à l'extérieur / joueur 2.
@@ -77,6 +77,9 @@ export const MarketCategorySchema = z.enum([
   "carton_rouge",
   "aces",
   "doubles_fautes",
+  "btts_periodes",
+  "buts_periode",
+  "marque_chaque_periode",
 ]);
 export type MarketCategory = z.infer<typeof MarketCategorySchema>;
 
@@ -177,7 +180,7 @@ export const AnalysisSchema = z.object({
   markets: z
     .array(MarketEstimateSchema)
     .describe(
-      "Football : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (plus/moins 8,5 à 10,5), fautes (plus/moins 20,5 à 24,5), cartons (plus/moins 3,5 ou 4,5), résultat à la mi-temps (mi_temps), mi-temps/fin de match (mi_temps_fin), handicap européen ou asiatique (handicap), 2 ou 3 scores exacts les plus probables (score_exact), buts de chaque équipe (buts_equipe, ex : 'PSG plus de 1,5 buts'), résultat + plus/moins 2,5 buts (resultat_buts), résultat + les deux marquent (resultat_btts), tirs cadrés (tirs_cadres), hors-jeu (hors_jeu), les 3 buteurs les plus probables, une ligne par joueur (buteur, ex : 'Kylian Mbappé buteur'), avec sa probabilité de marquer au moins un but ; les 2 passeurs décisifs les plus probables (passeur, ex : 'Ousmane Dembélé passeur décisif') ; et les 2 joueurs les plus probables pour « buteur ou passeur décisif » (buteur_ou_passeur) ; buts en 1re mi-temps (buts_1re_mt, ex : 'Plus de 0,5 but en 1re mi-temps'), mi-temps la plus prolifique (mi_temps_prolifique, ex : '2e mi-temps la plus prolifique'), victoire ou match sans encaisser (sans_encaisser, ex : 'PSG ne prend pas de but'), écart de buts (ecart, ex : 'PSG gagne par 2 buts d\'écart ou plus'), équipe qui marque dans les deux mi-temps (marque_deux_mt), équipe qui gagne au moins une mi-temps (gagne_une_mt), équipe qui marque le premier but (premier_but), nombre de buts pair ou impair (pair_impair), penalty dans le match (penalty, oui/non), carton rouge (carton_rouge, oui/non). Tennis : nombre de sets, nombre de jeux, vainqueur du 1er set (premier_set), handicap jeux (handicap_jeux), score exact en sets (score_sets), au moins un tie-break (tie_break), aces (aces, ex : 'Plus de 12,5 aces'), doubles fautes (doubles_fautes). Une ligne par pari, en choisissant le côté le plus probable.",
+      "Football : nombre de buts (plus/moins 1,5, 2,5 et 3,5), les deux équipes marquent, corners (plus/moins 8,5 à 10,5), fautes (plus/moins 20,5 à 24,5), cartons (plus/moins 3,5 ou 4,5), résultat à la mi-temps (mi_temps), mi-temps/fin de match (mi_temps_fin), handicap européen ou asiatique (handicap), 2 ou 3 scores exacts les plus probables (score_exact), buts de chaque équipe (buts_equipe, ex : 'PSG plus de 1,5 buts'), résultat + plus/moins 2,5 buts (resultat_buts), résultat + les deux marquent (resultat_btts), tirs cadrés (tirs_cadres), hors-jeu (hors_jeu), les 3 buteurs les plus probables, une ligne par joueur (buteur, ex : 'Kylian Mbappé buteur'), avec sa probabilité de marquer au moins un but ; les 2 passeurs décisifs les plus probables (passeur, ex : 'Ousmane Dembélé passeur décisif') ; et les 2 joueurs les plus probables pour « buteur ou passeur décisif » (buteur_ou_passeur) ; buts en 1re mi-temps (buts_1re_mt, ex : 'Plus de 0,5 but en 1re mi-temps'), mi-temps la plus prolifique (mi_temps_prolifique, ex : '2e mi-temps la plus prolifique'), victoire ou match sans encaisser (sans_encaisser, ex : 'PSG ne prend pas de but'), écart de buts (ecart, ex : 'PSG gagne par 2 buts d\'écart ou plus'), équipe qui marque dans les deux mi-temps (marque_deux_mt), équipe qui gagne au moins une mi-temps (gagne_une_mt), équipe qui marque le premier but (premier_but), nombre de buts pair ou impair (pair_impair), penalty dans le match (penalty, oui/non), carton rouge (carton_rouge, oui/non). Tennis : nombre de sets, nombre de jeux, vainqueur du 1er set (premier_set), handicap jeux (handicap_jeux), score exact en sets (score_sets), au moins un tie-break (tie_break), aces (aces, ex : 'Plus de 12,5 aces'), doubles fautes (doubles_fautes). Hockey (NHL) : vainqueur prolongation comprise (resultat), total de buts (buts, ex : 'Plus de 5,5 buts'), puck line (handicap, ex : 'Toronto -1,5'), les deux équipes marquent dans chaque période ou dans une période donnée (btts_periodes, ex : 'Les deux équipes marquent dans chaque période', 'Les deux équipes marquent en 2e période'), buts dans une période (buts_periode, ex : 'Plus de 1,5 buts en 1re période'), équipe qui marque dans chaque période (marque_chaque_periode, ex : 'Toronto marque dans chaque période'), les 4 ou 5 buteurs les plus en forme (buteur, ex : 'Auston Matthews buteur'), et 'X marque ou fait une passe' (buteur_ou_passeur). Une ligne par pari, en choisissant le côté le plus probable.",
     ),
 });
 export type Analysis = z.infer<typeof AnalysisSchema>;

@@ -30,7 +30,11 @@ function outcomeProbabilities(analysis: Analysis, tennis: boolean, odds: OddsSum
 }
 
 export function buildPicks(analysis: Analysis, odds: OddsSummary | null | undefined, engine: "ia" | "calcul"): MarketPick[] {
-  const tennis = analysis.match.sport === "tennis";
+  const sport = analysis.match.sport;
+  // Tennis et hockey (NHL) : deux issues, sans nul (au hockey, prolongation et tirs au but compris).
+  const tennis = sport !== "football";
+  const isTennis = sport === "tennis";
+  const ot = sport === "hockey" ? " (prolongation comprise)" : "";
   const { home, away } = analysis.match;
   const p = outcomeProbabilities(analysis, tennis, odds);
   const picks: MarketPick[] = [];
@@ -40,8 +44,8 @@ export function buildPicks(analysis: Analysis, odds: OddsSummary | null | undefi
   // Résultat sec.
   const outcomes: [Outcome, string, number | null | undefined][] = tennis
     ? [
-        ["home", `Victoire ${home}`, odds?.home],
-        ["away", `Victoire ${away}`, odds?.away],
+        ["home", `Victoire ${home}${ot}`, odds?.home],
+        ["away", `Victoire ${away}${ot}`, odds?.away],
       ]
     : [
         ["home", `Victoire ${home}`, odds?.home],
@@ -105,10 +109,10 @@ export function buildPicks(analysis: Analysis, odds: OddsSummary | null | undefi
   const t = odds?.totals;
   if (t) {
     const over = (1 / t.over / (1 / t.over + 1 / t.under)) * 100;
-    const unit = tennis ? "jeux" : "buts";
+    const unit = isTennis ? "jeux" : "buts";
     picks.push(
       {
-        category: tennis ? "jeux" : "buts",
+        category: isTennis ? "jeux" : "buts",
         selection: `Plus de ${String(t.point).replace(".", ",")} ${unit}`,
         probability: round(over),
         odds: t.over,
@@ -117,7 +121,7 @@ export function buildPicks(analysis: Analysis, odds: OddsSummary | null | undefi
         reasoning: "Probabilité tirée des cotes des bookmakers.",
       },
       {
-        category: tennis ? "jeux" : "buts",
+        category: isTennis ? "jeux" : "buts",
         selection: `Moins de ${String(t.point).replace(".", ",")} ${unit}`,
         probability: round(100 - over),
         odds: t.under,
