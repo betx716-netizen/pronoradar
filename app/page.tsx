@@ -26,6 +26,7 @@ import { Sheet } from "@/components/app/Sheet";
 import { usePasswordRecovery, useSession } from "@/lib/session";
 import { ChangePassword } from "@/components/app/ChangePassword";
 import { INFO_PAGES } from "@/lib/legal";
+import { LeagueFilter } from "@/components/LeagueFilter";
 import { Landing } from "@/components/Landing";
 import { MaintenanceScreen, fetchMaintenance, type MaintenanceState } from "@/components/Maintenance";
 import { useReferralCapture } from "@/components/app/Referral";
@@ -251,6 +252,20 @@ function App() {
   const [running, setRunning] = useState(false);
   const [autoCoupons, setAutoCoupons] = useState(0);
   const [couponTab, setCouponTab] = useState<"ia" | "manuel">("ia");
+  // Championnats choisis pour les analyses et les coupons (vide = tous), gardés sur l'appareil.
+  const [leagueFilter, setLeagueFilterState] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem("pronoradar.leagueFilter") ?? "[]");
+      if (Array.isArray(v)) setLeagueFilterState(v.filter((x) => typeof x === "string"));
+    } catch {}
+  }, []);
+  const setLeagueFilter = (next: string[]) => {
+    setLeagueFilterState(next);
+    try {
+      localStorage.setItem("pronoradar.leagueFilter", JSON.stringify(next));
+    } catch {}
+  };
   const stopRef = useRef(false);
   // Annule les analyses en cours quand on appuie sur « Arrêter ».
   const abortRef = useRef<AbortController | null>(null);
@@ -778,6 +793,16 @@ function App() {
     j.status === "done" && j.result ? [j.result] : [],
   );
 
+  // Filtre par championnat : nombre de matchs analysés par championnat, puis analyses et coupons filtrés.
+  const competitionOf = (j: { fixture: { competition: string }; result?: AnalysisResult }) => j.result?.analysis.match.competition ?? j.fixture.competition;
+  const leagueCounts: Record<string, number> = {};
+  for (const c of [...couponResults.map((r) => r.analysis.match.competition), ...visibleJobs.filter((j) => !j.result).map(competitionOf)])
+    leagueCounts[c] = (leagueCounts[c] ?? 0) + 1;
+  const activeFilter = leagueFilter.filter((l) => l in leagueCounts);
+  const inFilter = (c: string) => activeFilter.length === 0 || activeFilter.includes(c);
+  const filteredJobs = visibleJobs.filter((j) => inFilter(competitionOf(j)));
+  const couponPool = couponResults.filter((r) => inFilter(r.analysis.match.competition));
+
   const tabs: { id: Tab; label: string; icon: IconName; count?: number }[] = [
     {
       id: "matchs",
@@ -1194,8 +1219,9 @@ function App() {
         {tab === "analyses" && (
           <section className="fade-in">
             <h1 className="mb-4 text-2xl font-bold tracking-tight">Analyses</h1>
+            <LeagueFilter counts={leagueCounts} selected={activeFilter} onChange={setLeagueFilter} />
             <ResultsGrid
-              jobs={visibleJobs}
+              jobs={filteredJobs}
               running={running}
               onOpen={(j) => j.result && setDetail(j.result)}
               onStop={() => {
@@ -1265,6 +1291,7 @@ function App() {
         {/* Toujours monté (caché hors de l'onglet) : les coupons de l'IA se génèrent même depuis l'accueil. */}
         <section className={tab === "coupon" ? "fade-in" : "hidden"}>
             {/* Deux espaces séparés : les coupons faits par l'IA, et le générateur où l'on règle tout soi-même. */}
+            <LeagueFilter counts={leagueCounts} selected={activeFilter} onChange={setLeagueFilter} />
             <div className="mb-5 grid grid-cols-2 gap-1 rounded-2xl border border-border bg-surface p-1">
               {(
                 [
@@ -1293,8 +1320,13 @@ function App() {
                 />
               )}
               <h2 className="mb-2 font-display text-3xl leading-none">Coupons sur tes analyses</h2>
+              {activeFilter.length > 0 && (
+                <p className="mb-3 rounded-xl bg-accent-soft px-3 py-2 text-sm text-accent">
+                  Championnats choisis : {activeFilter.join(", ")} ({couponPool.length} match{couponPool.length > 1 ? "s" : ""}). Touche « Générer » pour que l&apos;IA refasse les coupons avec ce choix.
+                </p>
+              )}
               <AiCoupons
-                results={couponResults}
+                results={couponPool}
                 autoKey={autoCoupons}
                 clearedAt={couponClearedAt}
                 onClearAll={clearCoupon}
@@ -1304,10 +1336,11 @@ function App() {
               <p className="mb-4 text-sm text-muted">
                 Vous choisissez l&apos;objectif, le nombre maximum de sélections
                 et les marchés : le coupon se construit à partir de vos analyses
-                de matchs pas encore joués ({couponResults.length} match
-                {couponResults.length > 1 ? "s" : ""}).
+                de matchs pas encore joués ({couponPool.length} match
+                {couponPool.length > 1 ? "s" : ""}
+                {activeFilter.length ? ` · ${activeFilter.join(", ")}` : ""}).
               </p>
-              <CouponBuilder results={couponResults} onClear={clearCoupon} />
+              <CouponBuilder results={couponPool} onClear={clearCoupon} />
             </div>
           </section>
 
