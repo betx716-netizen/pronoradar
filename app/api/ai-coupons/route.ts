@@ -1,3 +1,4 @@
+import { recordSummaryForAI } from "@/lib/record";
 import { AiCouponsRequestSchema, buildAiCoupons, type AiCoupons } from "@/lib/aiCoupons";
 import { guard, isDemo, streamTask } from "@/lib/http";
 
@@ -22,7 +23,8 @@ export async function POST(req: Request) {
   if (denied) return denied;
   const parsed = AiCouponsRequestSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Analyses invalides." }, { status: 400 });
-  const body = parsed.data;
+  // Le bilan récent est ajouté par le serveur (le navigateur ne peut pas le falsifier).
+  const body = { ...parsed.data, record: (await recordSummaryForAI().catch(() => "")) || undefined };
   return streamTask((progress) =>
     isDemo()
       ? Promise.resolve(demo(body.size, body.matches.map((m) => m.picks.map((p) => p.split(" | ")[0]))))

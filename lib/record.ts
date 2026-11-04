@@ -23,7 +23,7 @@ export function couponStatus(states: LegState[]): RecordStatus {
 }
 
 // Compétitions d'autres sports que le football, avec leur chemin ESPN.
-const OTHER_SPORTS: Record<string, string> = { NHL: "hockey/nhl" };
+const OTHER_SPORTS: Record<string, string> = { NHL: "hockey/nhl", "Coupe du Roi": "esp.copa_del_rey" };
 
 // Scores d'un championnat pour un jour, gardés pendant le calcul (plusieurs sélections partagent un match).
 function scoresLoader() {
@@ -131,7 +131,10 @@ async function settleCoupon(
         if (st) state = settleStat(l.pick.category, l.pick.selection, home, away, st);
       }
       // Match introuvable plus de deux jours après : on ne pourra pas le vérifier.
-      if (state === "unknown" && !live && Date.now() - new Date(`${date}T23:59:00Z`).getTime() < 2 * 86400000) state = "pending";
+      const age = Date.now() - new Date(`${date}T23:59:00Z`).getTime();
+      if (state === "unknown" && !live && age < 2 * 86400000) state = "pending";
+      // Toujours « pas joué » 36 h après la date (match reporté ou résultat jamais publié) : on ne pourra pas le vérifier.
+      if (state === "pending" && age > 36 * 3600000) state = "unknown";
       const score = live && live.homeScore != null && live.awayScore != null && live.state === "post" ? `${live.homeScore}-${live.awayScore}` : null;
       return { match: l.match, competition: l.competition, selection: l.pick.selection, odds: l.pick.odds, state, score };
     }),
@@ -199,4 +202,41 @@ export function recordStats(records: CouponRecord[], stake = 1000) {
     { profile: "all", title: "Tous les coupons", played: 0, won: 0, lost: 0, voided: 0, profit: 0, staked: 0 } as ProfileStats,
   );
   return { list, total };
+}
+
+/**
+ * Résumé du bilan récent, transmis à l'IA avant qu'elle compose les coupons du jour : réussite par type de coupon
+ * et par type de pari (sélection par sélection), pour qu'elle garde ce qui marche et évite ce qui perd.
+ */
+export async function recordSummaryForAI(days = 30): Promise<string> {
+  if (!supabaseConfigured()) return "";
+  const since = parisDay(new Date(Date.now() - days * 86400000));
+  const { data } = await db().from("coupon_record").select("title, status, legs").gte("day", since > RECORD_START ? since : RECORD_START);
+  const rows = (data ?? []) as { title: string; status: RecordStatus; legs: RecordLeg[] }[];
+  if (!rows.length) return "";
+  const byTitle = new Map<string, { w: number; l: number }>();
+  const byMarket = new Map<string, { w: number; l: number }>();
+  for (const r of rows) {
+    if (r.status === "won" || r.status === "lost") {
+      const t = byTitle.get(r.title) ?? { w: 0, l: 0 };
+      r.status === "won" ? t.w++ : t.l++;
+      byTitle.set(r.title, t);
+    }
+    for (const leg of r.legs ?? []) {
+      if (leg.state !== "won" && leg.state !== "lost") continue;
+      const key = leg.selection.replace(/^.*?(plus|moins) de/i, "$1 de").replace(/\d+[,.]?\d*/g, "N").slice(0, 40);
+      const m = byMarket.get(key) ?? { w: 0, l: 0 };
+      leg.state === "won" ? m.w++ : m.l++;
+      byMarket.set(key, m);
+    }
+  }
+  const pct = (x: { w: number; l: number }) => Math.round((x.w / Math.max(1, x.w + x.l)) * 100);
+  const coupons = [...byTitle].map(([k, v]) => `${k} : ${v.w} gagné(s) sur ${v.w + v.l}`).join(" ; ");
+  const markets = [...byMarket]
+    .filter(([, v]) => v.w + v.l >= 3)
+    .sort((a, b) => pct(b[1]) - pct(a[1]))
+    .map(([k, v]) => `« ${k} » ${pct(v)} % (${v.w}/${v.w + v.l})`)
+    .slice(0, 12)
+    .join(" ; ");
+  return [coupons && `Coupons : ${coupons}.`, markets && `Sélections par type de pari : ${markets}.`].filter(Boolean).join("\n");
 }

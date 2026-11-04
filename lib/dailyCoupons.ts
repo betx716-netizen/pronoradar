@@ -4,6 +4,7 @@ import { AI_PROFILES, buildAiCoupons, type AiCouponsRequest, type AiProfile } fr
 import { CATEGORY_LABELS, buildCoupon, clubAlreadyIn, couponTitle, type CouponLeg } from "./coupon";
 import type { AnalysisResult, MarketCategory, MarketPick } from "./schemas";
 import { composeHockeyCoupons } from "./hockeyCoupons";
+import { recordSummaryForAI } from "./record";
 
 export type DailyLeg = CouponLeg & { reason: string; matchId: string };
 
@@ -24,7 +25,7 @@ export const COUPON_META: Record<AiProfile, { title: string; subtitle: string }>
   x10: { title: "L'ambitieux", subtitle: "Cote ≈ 10" },
   x20: { title: "Le coup", subtitle: "Cote ≈ 20" },
   x50: { title: "La grosse cote", subtitle: "Cote ≈ 50" },
-  multi: { title: "Le grand combiné", subtitle: "10 à 15 sélections sûres" },
+  multi: { title: "Le grand combiné", subtitle: "6 à 8 sélections sûres" },
 };
 
 export type DayResult = { id: string; result: AnalysisResult };
@@ -46,7 +47,7 @@ function candidates(r: AnalysisResult): MarketPick[] {
   const secondOfEach = [...byCategory.values()].flatMap((list) => list.slice(1, 2));
   const byValue = [...ok].sort((a, b) => value(b) - value(a)).slice(0, 6);
   const safe = (r.picks ?? [])
-    .filter((p) => p.odds >= 1.04 && p.odds < 1.45 && p.probability >= 78 && p.reliability !== "fragile")
+    .filter((p) => p.odds >= 1.08 && p.odds < 1.45 && p.probability >= 85 && p.reliability !== "fragile")
     .sort((a, b) => b.probability - a.probability)
     .slice(0, 3);
   return [...new Set([...bestOfEach, ...byValue, ...safe, ...secondOfEach])].slice(0, 20);
@@ -67,6 +68,7 @@ function finish(profile: AiProfile, legs: DailyLeg[], comment: string, stakePerc
   };
 }
 
+const UNVERIFIABLE = new Set<MarketCategory>(["buteur", "passeur", "buteur_ou_passeur", "premier_but", "penalty"]);
 const ALL_CATEGORIES = Object.keys(CATEGORY_LABELS) as MarketCategory[];
 const DEFAULT_STAKE: Record<AiProfile, number> = { x2: 4, x5: 2.5, x10: 1.5, x20: 1, x50: 0.5, multi: 1.5 };
 
@@ -76,7 +78,7 @@ export function computedCoupons(day: DayResult[]): DailyCoupon[] {
   return AI_PROFILES.map((profile) => {
     const c = buildCoupon(
       day.map((d) => d.result),
-      { profile, size: profile === "multi" ? 15 : 8, categories: ALL_CATEGORIES },
+      { profile, size: 8, categories: ALL_CATEGORIES },
     );
     const legs = c.legs.map((l) => ({ ...l, matchId: idOf.get(l.match) ?? "", reason: l.pick.reasoning || "Sélection choisie pour sa probabilité et sa cote." }));
     return finish(profile, legs, "Coupon calculé à partir des cotes et des probabilités des analyses.", DEFAULT_STAKE[profile]);
@@ -111,7 +113,10 @@ async function composeMainCoupons(all: DayResult[], onProgress: (m: string) => v
   const day = verified.length >= 6 ? verified : all;
   if (day.length === 0) return [];
   const index = new Map<string, DailyLeg>();
+  const record = await recordSummaryForAI().catch(() => "");
+  if (record) onProgress("Bilan récent transmis à l'IA.");
   const body: AiCouponsRequest = {
+    record: record || undefined,
     size: null,
     matches: day.slice(0, 60).map(({ id, result: r }, i) => {
       const ai = r.analysis.ai_analysis;
@@ -146,8 +151,10 @@ async function composeMainCoupons(all: DayResult[], onProgress: (m: string) => v
         // Un seul pari par club (même écrit autrement), et seulement des paris existants. Hors grand combiné, rien sous 1,35.
         if (!leg || clubAlreadyIn(leg.match, legs)) continue;
         if (profile !== "multi" && leg.pick.odds < 1.35) continue;
-        // Au plus un marché à forte variance (corners, cartons, buteur…) par coupon.
+        // Au plus un marché à forte variance (corners, cartons, buteur…) et un pari invérifiable par coupon.
         if (leg.pick.reliability === "fragile" && fragile++ >= 1) continue;
+        if (UNVERIFIABLE.has(leg.pick.category) && legs.some((x) => UNVERIFIABLE.has(x.pick.category))) continue;
+        if (profile === "multi" && legs.length >= 8) continue;
         legs.push({ ...leg, reason: l.reason });
       }
       return finish(profile, legs, c?.comment ?? "", c?.stake_percent ?? DEFAULT_STAKE[profile]);

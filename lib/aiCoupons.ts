@@ -7,6 +7,7 @@ export const AI_PROFILES = ["x2", "x5", "x10", "x20", "x50", "multi"] as const;
 export type AiProfile = (typeof AI_PROFILES)[number];
 
 export const AiCouponsRequestSchema = z.object({
+  record: z.string().max(2000).optional().describe("Bilan récent des coupons de l'IA, pour apprendre de ses résultats"),
   size: z.number().int().min(1).max(30).nullable().describe("Nombre maximum de sélections par coupon, null = au choix de l'IA"),
   matches: z
     .array(
@@ -46,7 +47,7 @@ const SYSTEM = (size: number | null) => `Tu es un parieur professionnel. Ton but
 - "x20" — Le coup : cote totale entre 16 et 35.
 - "x50" — La grosse cote : cote totale d'au moins 35 (idéalement 40 à 80).
 La cote doit MONTER d'un coupon à l'autre et rester dans sa fourchette : un coupon « grosse cote » à 12 est faux.
-- "multi" : un GRAND COMBINÉ de 10 à 15 sélections à petite cote (1,05 à 1,40 chacune), les plus sûres de toutes les analyses : favoris très solides, double chance, « plus de 0,5 but », etc. Chaque sélection doit avoir au moins 80 % de probabilité. Pour ce coupon seulement, les règles de cote minimum et de nombre de favoris ne s'appliquent pas.
+- "multi" : un GRAND COMBINÉ de 6 à 8 sélections à petite cote (1,10 à 1,40 chacune), les plus sûres de toutes les analyses : favoris très solides, double chance, « plus de 0,5 but », etc. Chaque sélection doit avoir au moins 85 % de probabilité. Pour ce coupon seulement, les règles de cote minimum et de nombre de favoris ne s'appliquent pas. Le bilan montre que les combinés trop longs perdent presque toujours : jamais plus de 8 sélections.
 
 Ta philosophie :
 - Une petite cote ne garantit rien. Un favori à 1,25 perd une fois sur quatre et rapporte très peu : il ne vaut que si sa probabilité réelle dépasse nettement 80 %.
@@ -65,7 +66,7 @@ Variété (à condition que ça reste gagnant) :
 - Utilise tout l'éventail des marchés proposés : résultat, double chance, remboursé si nul, nombre de buts, les deux marquent, buts d'une équipe, mi-temps, handicap, combinés résultat + buts, buts en 1re mi-temps, mi-temps la plus prolifique, victoire sans encaisser, écart de buts, marque dans les deux mi-temps, gagne au moins une mi-temps, premier but, pair/impair, penalty, carton rouge, corners, tirs cadrés, cartons, buteur, passeur ; au tennis : sets, jeux, 1er set, handicap jeux, tie-break, aces, doubles fautes…
 - Ne te limite pas aux victoires : quand un autre type de pari (buts, les deux marquent, mi-temps, corners…) est plus sûr ou a plus de valeur pour un match, prends-le.
 - Varier ne doit JAMAIS faire baisser la qualité : entre un pari solide et un pari « différent » mais plus faible, garde le pari solide.
-- Corners, tirs cadrés, cartons, buteur et passeur sont permis : au plus un par coupon, seulement avec au moins 55 % de probabilité et une raison concrète tirée de l'analyse (moyennes de la saison, style de jeu, arbitre, titulaire confirmé).
+- Au plus UN pari par coupon que le score seul ne permet pas de vérifier (buteur, passeur, premier but, penalty). Corners, tirs cadrés, cartons, buteur et passeur sont permis : au plus un par coupon, seulement avec au moins 55 % de probabilité et une raison concrète tirée de l'analyse (moyennes de la saison, style de jeu, arbitre, titulaire confirmé).
 - Le nombre de sélections n'est PAS lié au type de coupon. Ne suis aucun schéma du type 2, 3, 4, 5 : choisis-le selon la qualité des paris du jour. "x2" peut être un pari simple à environ 2,00 ou un combiné de 2 ou 3 ; "x10" peut tenir en 3 sélections bien cotées ou en demander 5. Si un même schéma marche, garde-le, mais ne le force pas.
 - D'un jour à l'autre, ne reproduis pas mécaniquement la même structure de coupons.
 
@@ -91,6 +92,9 @@ export async function buildAiCoupons(req: AiCouponsRequest, onProgress: (m: stri
   onProgress(`L'IA compose les coupons à partir de ${req.matches.length} match${req.matches.length > 1 ? "s" : ""}…`);
   const text = [
     `Nous sommes le ${todayInParis()}.`,
+    req.record
+      ? `\nTON BILAN RÉCENT (résultats réels, vérifiés) — sers-t'en : privilégie les types de coupons et de paris qui gagnent, évite ceux qui perdent souvent :\n${req.record}\n`
+      : "",
     ...req.matches.map((m) =>
       [
         `\n### ${m.match} (${m.competition}${m.date ? `, ${m.date}` : ""}) — confiance de l'analyse : ${m.confidence ?? "inconnue"}`,

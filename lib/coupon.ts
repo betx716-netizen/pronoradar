@@ -14,7 +14,7 @@ export const PROFILES: Record<RiskProfile, { label: string; description: string;
   x10: { label: "Objectif cote 10", description: "Sélections solides qui ont de la valeur, cote totale autour de 10", minProbability: 54, target: 10 },
   x20: { label: "Objectif cote 20", description: "Cote totale autour de 20 : des outsiders bien analysés plutôt qu'une pile de favoris", minProbability: 52, target: 20 },
   x50: { label: "Objectif cote 50", description: "Cote totale autour de 50 : plus de matchs, donc plus de risque global", minProbability: 50, target: 50 },
-  multi: { label: "Grand combiné sûr", description: "10 à 15 sélections parmi les plus sûres, à petite cote (1,05 à 1,40)", minProbability: 78 },
+  multi: { label: "Grand combiné sûr", description: "6 à 8 sélections parmi les plus sûres, à petite cote (1,10 à 1,40)", minProbability: 85 },
   value: { label: "Value", description: "Uniquement les paris où notre probabilité bat la cote du bookmaker (avantage ≥ 3 %), cote totale autour de 4", minProbability: 40, target: 4 },
 };
 
@@ -139,7 +139,7 @@ export function buildCoupon(
     }
     const allowed = (r.picks ?? []).filter((p) =>
       options.profile === "multi"
-        ? options.categories.includes(p.category) && p.probability >= minProbability && p.reliability !== "fragile" && p.odds >= 1.04 && p.odds < 1.45
+        ? options.categories.includes(p.category) && p.probability >= minProbability && p.reliability !== "fragile" && p.odds >= 1.08 && p.odds < 1.45
         : options.categories.includes(p.category) && reliable(p, minProbability) && (options.profile !== "value" || isValueBet(p)),
     );
     if (allowed.length === 0) continue;
